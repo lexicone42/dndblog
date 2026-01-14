@@ -6,6 +6,7 @@
 
 import { getCollection } from 'astro:content';
 import BaseLayout from '@layouts/BaseLayout.astro';
+import BreadcrumbNav from '@components/BreadcrumbNav.astro';
 
 // Get all items
 const allItems = await getCollection('items');
@@ -40,6 +41,12 @@ function formatRarity(rarity: string): string {
   description="Browse all D&D items. Filter by type and rarity."
 >
   <div class="container">
+    <BreadcrumbNav items={[
+      { label: 'Home', href: '/' },
+      { label: 'Reference', href: '/reference' },
+      { label: 'Items' },
+    ]} />
+
     <header class="page-header">
       <h1 class="page-title">Items</h1>
       <p class="page-description">

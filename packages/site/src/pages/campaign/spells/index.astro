@@ -6,6 +6,7 @@
 
 import { getCollection } from 'astro:content';
 import BaseLayout from '@layouts/BaseLayout.astro';
+import BreadcrumbNav from '@components/BreadcrumbNav.astro';
 
 // Get all spells
 const allSpells = await getCollection('spells');
@@ -47,6 +48,12 @@ function formatLevel(level: number): string {
   description="Browse all D&D 5e spells. Filter by level, school, and class."
 >
   <div class="container">
+    <BreadcrumbNav items={[
+      { label: 'Home', href: '/' },
+      { label: 'Reference', href: '/reference' },
+      { label: 'Spells' },
+    ]} />
+
     <header class="page-header">
       <h1 class="page-title">Spells</h1>
       <p class="page-description">

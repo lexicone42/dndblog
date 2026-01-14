@@ -6,6 +6,7 @@
 
 import { getCollection } from 'astro:content';
 import BaseLayout from '@layouts/BaseLayout.astro';
+import BreadcrumbNav from '@components/BreadcrumbNav.astro';
 
 // Get all enemies
 const allEnemies = await getCollection('enemies');
@@ -54,6 +55,12 @@ const subtypeInfo: Record<string, { name: string; description: string; color: st
   description="Browse all enemies and threats in the campaign."
 >
   <div class="container">
+    <BreadcrumbNav items={[
+      { label: 'Home', href: '/' },
+      { label: 'Reference', href: '/reference' },
+      { label: 'Enemies' },
+    ]} />
+
     <header class="page-header">
       <h1 class="page-title">Enemies & Threats</h1>
       <p class="page-description">

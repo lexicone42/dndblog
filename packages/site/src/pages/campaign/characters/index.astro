@@ -6,6 +6,7 @@
 
 import { getCollection } from 'astro:content';
 import BaseLayout from '@layouts/BaseLayout.astro';
+import BreadcrumbNav from '@components/BreadcrumbNav.astro';
 
 // Get all characters
 const allCharacters = await getCollection('characters');
@@ -29,6 +30,12 @@ const npcs = sortedCharacters.filter(c => c.data.subtype !== 'pc');
   description="Browse all characters in the campaign."
 >
   <div class="container">
+    <BreadcrumbNav items={[
+      { label: 'Home', href: '/' },
+      { label: 'Reference', href: '/reference' },
+      { label: 'Characters' },
+    ]} />
+
     <header class="page-header">
       <h1 class="page-title">Characters</h1>
       <p class="page-description">
