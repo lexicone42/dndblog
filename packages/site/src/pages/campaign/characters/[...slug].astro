@@ -59,6 +59,17 @@ const statusColors: Record<string, string> = {
         )}
       </div>
 
+      {entry.id === 'rudiger' && (
+        <a href="/rudiger" class="rudiger-promo">
+          <span class="promo-sparkle">&#10022;</span>
+          <span class="promo-text">
+            <strong>EXCLUSIVE ORIGIN STORY!</strong>
+            <em>The Tale of Two Rudigers — A cosmic coincidence you WON'T believe!</em>
+          </span>
+          <span class="promo-sparkle">&#10022;</span>
+        </a>
+      )}
+
       {entry.data.tags && entry.data.tags.length > 0 && (
         <ul class="entity-tags">
           {entry.data.tags.map((tag: string) => (
@@ -199,6 +210,94 @@ const statusColors: Record<string, string> = {
     border-radius: var(--radius-sm);
     font-size: var(--text-xs);
     color: var(--color-text-muted);
+  }
+
+  /* Obnoxiously hyped Rudiger promo */
+  .rudiger-promo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    margin: var(--space-lg) 0;
+    padding: var(--space-md) var(--space-lg);
+    background: linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #1a0a2e 100%);
+    border: 2px solid var(--color-gold);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    animation: promo-glow 2s ease-in-out infinite;
+  }
+
+  .rudiger-promo::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(212, 175, 55, 0.1) 50%,
+      transparent 70%
+    );
+    animation: promo-shine 3s ease-in-out infinite;
+  }
+
+  @keyframes promo-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.3), 0 0 20px rgba(212, 175, 55, 0.1); }
+    50% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.5), 0 0 40px rgba(212, 175, 55, 0.2); }
+  }
+
+  @keyframes promo-shine {
+    0% { transform: translateX(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) rotate(45deg); }
+  }
+
+  .promo-sparkle {
+    font-size: var(--text-xl);
+    color: var(--color-gold);
+    animation: sparkle-spin 4s linear infinite;
+  }
+
+  @keyframes sparkle-spin {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(90deg) scale(1.2); }
+    50% { transform: rotate(180deg) scale(1); }
+    75% { transform: rotate(270deg) scale(1.2); }
+    100% { transform: rotate(360deg) scale(1); }
+  }
+
+  .promo-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    z-index: 1;
+  }
+
+  .promo-text strong {
+    font-size: var(--text-sm);
+    color: var(--color-gold);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+  }
+
+  .promo-text em {
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+    margin-top: 2px;
+  }
+
+  .rudiger-promo:hover {
+    transform: scale(1.02);
+    border-color: #fff;
+  }
+
+  .rudiger-promo:hover .promo-text strong {
+    text-shadow: 0 0 20px rgba(212, 175, 55, 0.8);
   }
 
   .entity-content {
