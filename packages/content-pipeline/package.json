@@ -17,7 +17,9 @@
     "publish": "tsx src/cli.ts publish",
     "build:knowledge": "tsx src/knowledge-builder.ts",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "commander": "^14.0.2",
@@ -28,6 +30,7 @@
   "devDependencies": {
     "@types/node": "^25.0.8",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.0"
   }
 }

@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/lexicone42/dndblog/actions/workflows/ci.yml/badge.svg)](https://github.com/lexicone42/dndblog/actions/workflows/ci.yml)
 [![Deploy](https://github.com/lexicone42/dndblog/actions/workflows/deploy.yml/badge.svg)](https://github.com/lexicone42/dndblog/actions/workflows/deploy.yml)
+[![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-6B5CE7?logo=anthropic)](https://claude.ai/code)
 
 A modular static blog platform built with Astro and deployed to AWS, designed for future extension into a private RPG campaign note-tracking system.
 

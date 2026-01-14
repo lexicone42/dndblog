@@ -63,6 +63,10 @@ jobs:
         working-directory: packages/infra
         run: pnpm test
 
+      - name: Run content-pipeline tests
+        working-directory: packages/content-pipeline
+        run: pnpm test
+
   build:
     name: Build Site
     runs-on: ubuntu-latest
