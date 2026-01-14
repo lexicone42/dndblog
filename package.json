@@ -4,7 +4,7 @@
   "private": true,
   "description": "Modular static blog platform with future RPG campaign extension",
   "keywords": ["blog", "astro", "aws", "cdk", "static-site"],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "build": "./scripts/build.sh",
