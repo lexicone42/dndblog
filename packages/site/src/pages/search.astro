@@ -11,6 +11,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
   title="Search - Campaign Reference"
   description="Search across all campaign content including characters, locations, spells, and more."
 >
+  <link slot="head" href="/pagefind/pagefind-ui.css" rel="stylesheet" />
+
   <div class="container">
     <header class="page-header">
       <h1 class="page-title">Search</h1>
@@ -34,38 +36,36 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       </ul>
     </div>
   </div>
-</BaseLayout>
 
-<link href="/pagefind/pagefind-ui.css" rel="stylesheet" />
-<script src="/pagefind/pagefind-ui.js" is:inline></script>
+  <script is:inline src="/pagefind/pagefind-ui.js"></script>
+  <script is:inline>
+    window.addEventListener('DOMContentLoaded', () => {
+      // Get query parameter from URL (from header search box)
+      const urlParams = new URLSearchParams(window.location.search);
+      const query = urlParams.get('q');
 
-<script is:inline>
-  window.addEventListener('DOMContentLoaded', () => {
-    // Get query parameter from URL (from header search box)
-    const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('q');
+      new PagefindUI({
+        element: '#search',
+        showSubResults: true,
+        showImages: false,
+        excerptLength: 20,
+        translations: {
+          placeholder: 'Search the campaign...',
+          zero_results: 'No results found for "[SEARCH_TERM]"',
+        },
+      });
 
-    new PagefindUI({
-      element: '#search',
-      showSubResults: true,
-      showImages: false,
-      excerptLength: 20,
-      translations: {
-        placeholder: 'Search the campaign...',
-        zero_results: 'No results found for "[SEARCH_TERM]"',
-      },
-    });
-
-    // If there's a query parameter, populate and trigger search
-    if (query) {
-      const searchInput = document.querySelector('.pagefind-ui__search-input');
-      if (searchInput) {
-        searchInput.value = query;
-        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+      // If there's a query parameter, populate and trigger search
+      if (query) {
+        const searchInput = document.querySelector('.pagefind-ui__search-input');
+        if (searchInput) {
+          searchInput.value = query;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
       }
-    }
-  });
-</script>
+    });
+  </script>
+</BaseLayout>
 
 <style>
   .page-header {
