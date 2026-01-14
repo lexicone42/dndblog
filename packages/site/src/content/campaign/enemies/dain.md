@@ -31,3 +31,7 @@ At Umbrage Hill, Dain triggered a hidden door that sprang a trap on the party. T
 ## Fate Unknown
 
 Dain escaped during the chaos of the ambush. His current whereabouts and fate are unknown, but his betrayal remains a bitter memory for the party.
+
+## The Price of Silence
+
+Dain's actions may not have been entirely his own—evidence suggests he was being blackmailed. His tongue was [taken by his captors](/tongue), silencing whatever secrets he might have revealed.
