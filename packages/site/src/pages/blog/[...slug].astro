@@ -1,6 +1,18 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '@layouts/BaseLayout.astro';
+import SessionContent from '@components/SessionContent.astro';
+
+/**
+ * Entity info structure for auto-linking in session content.
+ */
+interface EntityInfo {
+  name: string;
+  slug: string;
+  type: 'character' | 'enemy' | 'location' | 'faction' | 'item';
+  subtype?: string;
+  status?: string;
+}
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog', ({ data }) => {
@@ -8,9 +20,101 @@ export async function getStaticPaths() {
     return import.meta.env.PROD ? !data.draft : true;
   });
 
-  // Get all entities to match with sessions
+  // Get all entities for auto-linking and first appearance tracking
   const characters = await getCollection('characters');
   const enemies = await getCollection('enemies');
+  const locations = await getCollection('locations');
+  const factions = await getCollection('factions');
+  const items = await getCollection('items');
+
+  // Build entity lookup map for auto-linking
+  const entityLookup: Record<string, EntityInfo> = {};
+
+  // Add characters
+  for (const char of characters) {
+    const key = char.data.name.toLowerCase();
+    entityLookup[key] = {
+      name: char.data.name,
+      slug: char.id,
+      type: 'character',
+      subtype: char.data.subtype,
+      status: char.data.status,
+    };
+    // Also add any name variants from authority control
+    if (char.data.authority?.variants) {
+      for (const variant of char.data.authority.variants) {
+        entityLookup[variant.toLowerCase()] = entityLookup[key];
+      }
+    }
+  }
+
+  // Add enemies
+  for (const enemy of enemies) {
+    const key = enemy.data.name.toLowerCase();
+    entityLookup[key] = {
+      name: enemy.data.name,
+      slug: enemy.id,
+      type: 'enemy',
+      subtype: enemy.data.subtype,
+      status: enemy.data.status,
+    };
+    if (enemy.data.authority?.variants) {
+      for (const variant of enemy.data.authority.variants) {
+        entityLookup[variant.toLowerCase()] = entityLookup[key];
+      }
+    }
+  }
+
+  // Add locations
+  for (const loc of locations) {
+    const key = loc.data.name.toLowerCase();
+    entityLookup[key] = {
+      name: loc.data.name,
+      slug: loc.id,
+      type: 'location',
+      subtype: loc.data.subtype,
+      status: loc.data.status,
+    };
+    if (loc.data.authority?.variants) {
+      for (const variant of loc.data.authority.variants) {
+        entityLookup[variant.toLowerCase()] = entityLookup[key];
+      }
+    }
+  }
+
+  // Add factions
+  for (const faction of factions) {
+    const key = faction.data.name.toLowerCase();
+    entityLookup[key] = {
+      name: faction.data.name,
+      slug: faction.id,
+      type: 'faction',
+      subtype: faction.data.subtype,
+      status: faction.data.status,
+    };
+    if (faction.data.authority?.variants) {
+      for (const variant of faction.data.authority.variants) {
+        entityLookup[variant.toLowerCase()] = entityLookup[key];
+      }
+    }
+  }
+
+  // Add items
+  for (const item of items) {
+    const key = item.data.name.toLowerCase();
+    entityLookup[key] = {
+      name: item.data.name,
+      slug: item.id,
+      type: 'item',
+      subtype: item.data.subtype,
+      status: item.data.status,
+    };
+    if (item.data.authority?.variants) {
+      for (const variant of item.data.authority.variants) {
+        entityLookup[variant.toLowerCase()] = entityLookup[key];
+      }
+    }
+  }
 
   return posts.map((post) => {
     // Find entities that first appeared in this session
@@ -19,13 +123,12 @@ export async function getStaticPaths() {
 
     return {
       params: { slug: post.id },
-      props: { post, sessionCharacters, sessionEnemies },
+      props: { post, sessionCharacters, sessionEnemies, entityLookup },
     };
   });
 }
 
-const { post, sessionCharacters, sessionEnemies } = Astro.props;
-const { Content } = await render(post);
+const { post, sessionCharacters, sessionEnemies, entityLookup } = Astro.props;
 
 const {
   title,
@@ -154,9 +257,7 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-US', {
         </figure>
       )}
 
-      <div class="post__content prose">
-        <Content />
-      </div>
+      <SessionContent content={post.body || ''} entityLookup={entityLookup} />
 
       {(sessionCharacters.length > 0 || sessionEnemies.length > 0) && (
         <aside class="session-entities">
@@ -332,27 +433,28 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-US', {
     object-fit: cover;
   }
 
-  .post__content {
+  /* Session content spacing */
+  :global(.session-content) {
     margin-bottom: var(--space-2xl);
   }
 
   /* Ensure proper spacing in prose content */
-  .post__content :global(h2) {
+  :global(.session-content h2) {
     margin-top: var(--space-2xl);
   }
 
-  .post__content :global(h3) {
+  :global(.session-content h3) {
     margin-top: var(--space-xl);
   }
 
-  .post__content :global(pre) {
+  :global(.session-content pre) {
     margin: var(--space-lg) calc(-1 * var(--space-md));
     padding: var(--space-md);
     border-radius: 0;
   }
 
   @media (min-width: 640px) {
-    .post__content :global(pre) {
+    :global(.session-content pre) {
       margin-left: 0;
       margin-right: 0;
       border-radius: var(--radius-md);

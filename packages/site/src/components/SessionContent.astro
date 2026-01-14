@@ -1,0 +1,147 @@
+---
+/**
+ * SessionContent.astro
+ * Wraps blog post content and auto-links entity names mentioned in bold.
+ *
+ * This component processes rendered HTML to find **bold text** that matches
+ * campaign entity names (characters, locations, enemies, etc.) and converts
+ * them into clickable links to the entity pages.
+ *
+ * Usage:
+ *   <SessionContent content={post.body} entityLookup={entityLookup} />
+ */
+
+import { marked } from 'marked';
+
+interface EntityInfo {
+  name: string;
+  slug: string;
+  type: 'character' | 'enemy' | 'location' | 'faction' | 'item';
+  subtype?: string;
+  status?: string;
+}
+
+interface Props {
+  /** Raw markdown content to process */
+  content: string;
+  /** Map of entity names (lowercase) to their info */
+  entityLookup: Record<string, EntityInfo>;
+}
+
+const { content, entityLookup } = Astro.props;
+
+/**
+ * Process markdown content and convert bold entity names to links.
+ * Preserves bold text that doesn't match any entity.
+ */
+function processContent(markdown: string, entities: Record<string, EntityInfo>): string {
+  // First, render markdown to HTML
+  let html = marked.parse(markdown) as string;
+
+  // Find all <strong> tags and check if content matches an entity
+  // Pattern matches: <strong>Entity Name</strong>
+  html = html.replace(/<strong>([^<]+)<\/strong>/gi, (match, entityName) => {
+    const lookupKey = entityName.toLowerCase().trim();
+
+    // Check for exact match
+    let entity = entities[lookupKey];
+
+    // If no exact match, try common variations
+    if (!entity) {
+      // Try with "the " prefix removed
+      if (lookupKey.startsWith('the ')) {
+        entity = entities[lookupKey.slice(4)];
+      }
+    }
+
+    if (entity) {
+      // Build the URL based on entity type
+      const urlPath = getEntityPath(entity);
+      const statusClass = entity.status && entity.status !== 'active'
+        ? ` class="entity-link entity-link--${entity.status}"`
+        : ' class="entity-link"';
+
+      return `<a href="${urlPath}"${statusClass} data-entity-type="${entity.type}">${entityName}</a>`;
+    }
+
+    // No match found, return original bold text
+    return match;
+  });
+
+  return html;
+}
+
+/**
+ * Get the URL path for an entity based on its type.
+ */
+function getEntityPath(entity: EntityInfo): string {
+  const basePaths: Record<string, string> = {
+    character: '/campaign/characters/',
+    enemy: '/campaign/enemies/',
+    location: '/campaign/locations/',
+    faction: '/campaign/factions/',
+    item: '/campaign/items/',
+  };
+
+  return `${basePaths[entity.type]}${entity.slug}`;
+}
+
+const processedContent = processContent(content || '', entityLookup);
+---
+
+<div class="session-content prose" set:html={processedContent} />
+
+<style>
+  .session-content :global(.entity-link) {
+    color: var(--color-accent);
+    text-decoration: none;
+    font-weight: 600;
+    border-bottom: 1px dotted var(--color-accent);
+    transition: all var(--transition-fast);
+  }
+
+  .session-content :global(.entity-link:hover) {
+    border-bottom-style: solid;
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+    border-radius: var(--radius-sm);
+    padding: 0 2px;
+    margin: 0 -2px;
+  }
+
+  /* Entity type color coding */
+  .session-content :global(.entity-link[data-entity-type="character"]) {
+    color: var(--color-accent);
+  }
+
+  .session-content :global(.entity-link[data-entity-type="location"]) {
+    color: var(--color-success);
+  }
+
+  .session-content :global(.entity-link[data-entity-type="enemy"]) {
+    color: var(--color-error);
+  }
+
+  .session-content :global(.entity-link[data-entity-type="faction"]) {
+    color: var(--color-warning);
+  }
+
+  .session-content :global(.entity-link[data-entity-type="item"]) {
+    color: var(--color-gold);
+  }
+
+  /* Status variations */
+  .session-content :global(.entity-link--dead),
+  .session-content :global(.entity-link--destroyed) {
+    text-decoration: line-through;
+    opacity: 0.8;
+  }
+
+  .session-content :global(.entity-link--transformed) {
+    font-style: italic;
+  }
+
+  .session-content :global(.entity-link--unknown),
+  .session-content :global(.entity-link--missing) {
+    opacity: 0.7;
+  }
+</style>
