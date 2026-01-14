@@ -96,7 +96,7 @@ spellcasting:
 equipment:
   equipped:
     - slot: "two-hand"
-      item: "dryads-blessing-longbow"
+      item: "dryads-bow"
       mastery: "slow"
     - slot: "armor"
       item: "studded-leather"
