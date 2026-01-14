@@ -7,9 +7,11 @@ export interface Props {
   heroImage?: string;
   tags?: string[];
   readingTime?: number;
+  /** Set to true for the first visible card to optimize LCP */
+  priority?: boolean;
 }
 
-const { title, description, pubDate, slug, heroImage, tags = [], readingTime } = Astro.props;
+const { title, description, pubDate, slug, heroImage, tags = [], readingTime, priority = false } = Astro.props;
 
 const formattedDate = pubDate.toLocaleDateString('en-US', {
   year: 'numeric',
@@ -26,8 +28,11 @@ const formattedDate = pubDate.toLocaleDateString('en-US', {
           src={heroImage}
           alt=""
           class="post-card__image"
-          loading="lazy"
-          decoding="async"
+          loading={priority ? "eager" : "lazy"}
+          decoding={priority ? "sync" : "async"}
+          fetchpriority={priority ? "high" : "auto"}
+          width="640"
+          height="360"
         />
       </div>
     )}

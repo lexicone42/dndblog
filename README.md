@@ -151,4 +151,4 @@ This project implements security best practices:
 
 ## License
 
-MIT
+Apache-2.0 - See [LICENSE](LICENSE) for details.

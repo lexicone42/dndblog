@@ -194,8 +194,33 @@ function isActive(href: string): boolean {
   }
 
   @media (max-width: 640px) {
+    .header__container {
+      gap: var(--space-sm);
+    }
+
+    .header__logo {
+      font-size: var(--text-base);
+      line-height: 1.2;
+    }
+
     .header__nav-list {
-      gap: var(--space-md);
+      gap: var(--space-sm);
+    }
+
+    .header__nav-link {
+      padding: var(--space-xs);
+      font-size: var(--text-sm);
+    }
+
+    .header__theme-toggle {
+      padding: var(--space-xs);
+    }
+  }
+
+  @media (max-width: 400px) {
+    .header__logo {
+      font-size: var(--text-sm);
+      max-width: 140px;
     }
   }
 </style>

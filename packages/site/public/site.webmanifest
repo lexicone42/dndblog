@@ -1,0 +1,26 @@
+{
+  "name": "Rudiger's Evocation of Events",
+  "short_name": "Evocation",
+  "description": "Chronicles of our D&D 5e campaign - session recaps, character stories, and adventure logs.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#c9a227",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "games"],
+  "lang": "en"
+}

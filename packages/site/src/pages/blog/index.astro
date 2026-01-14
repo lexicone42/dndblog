@@ -66,7 +66,7 @@ const allTags = [...new Set(sortedPosts.flatMap((post) => post.data.tags))].sort
     {paginatedPosts.length > 0 ? (
       <>
         <div class="posts-grid">
-          {paginatedPosts.map((post) => (
+          {paginatedPosts.map((post, index) => (
             <PostCard
               title={post.data.title}
               description={post.data.description}
@@ -75,6 +75,7 @@ const allTags = [...new Set(sortedPosts.flatMap((post) => post.data.tags))].sort
               heroImage={post.data.heroImage}
               tags={post.data.tags}
               readingTime={getReadingTime(post.body || '')}
+              priority={index === 0 && currentPage === 1}
             />
           ))}
         </div>
