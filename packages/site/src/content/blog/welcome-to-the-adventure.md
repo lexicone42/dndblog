@@ -46,3 +46,7 @@ Roll well, and may your natural 20s be plentiful!
 ---
 
 *"The story has just begun..."*
+
+---
+
+<small>This site is automatically built and deployed via GitHub Actions CI/CD.</small>
