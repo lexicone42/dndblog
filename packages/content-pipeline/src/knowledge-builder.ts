@@ -221,7 +221,7 @@ function loadSessions(): Record<string, Session> {
 
 function buildIndexes(
   entities: CampaignKnowledge['entities'],
-  sessions: Record<string, Session>
+  _sessions: Record<string, Session>
 ): KnowledgeIndex {
   const indexes: KnowledgeIndex = {
     byName: {},
