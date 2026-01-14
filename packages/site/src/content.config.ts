@@ -172,6 +172,127 @@ const defensesSchema = z.object({
   conditionImmunities: z.array(z.string()).default([]),
 }).optional();
 
+// ============================================================================
+// D&D 5e 2024 (SRD 5.2) Schemas
+// ============================================================================
+
+/**
+ * Origin schema for 5e 2024 Species + Background system.
+ * Species replaces "Race" in 5e 2024 terminology.
+ * Background now provides ability score increases and origin feat.
+ */
+const originSchema = z.object({
+  // Species (5e 2024 terminology - replaces "race")
+  species: z.string(), // "Human", "Elf", "Dwarf", "Aasimar", etc.
+  lineage: z.string().optional(), // "High Elf", "Protector Aasimar", "Gold Dragon", etc.
+  size: z.enum(['tiny', 'small', 'medium', 'large']).default('medium'),
+
+  // Background (5e 2024 - provides ASIs + origin feat)
+  background: z.string(), // "Acolyte", "Criminal", "Soldier", etc.
+  originFeat: z.string().optional(), // Feat from background (e.g., "Magic Initiate")
+  backgroundAbilityMods: z.array(z.enum(['str', 'dex', 'con', 'int', 'wis', 'cha']))
+    .max(3).optional(), // Which abilities background boosted (+2/+1 or +1/+1/+1)
+}).optional();
+
+/**
+ * Equipped item schema with 5e 2024 Weapon Mastery support.
+ */
+const equippedItemSchema = z.object({
+  slot: z.enum([
+    'main-hand', 'off-hand', 'two-hand',
+    'armor', 'shield',
+    'head', 'cloak', 'neck', 'ring-1', 'ring-2',
+    'gloves', 'boots', 'belt', 'other'
+  ]),
+  item: z.string(), // Entity slug reference to items collection
+  attuned: z.boolean().default(false),
+  // 5e 2024 Weapon Mastery properties
+  mastery: z.enum(['cleave', 'graze', 'nick', 'push', 'sap', 'slow', 'topple', 'vex']).optional(),
+});
+
+/**
+ * Equipment schema for character inventory.
+ */
+const equipmentSchema = z.object({
+  equipped: z.array(equippedItemSchema).default([]),
+  mundane: z.array(z.object({
+    name: z.string(),
+    quantity: z.number().default(1),
+    weight: z.number().optional(),
+    notes: z.string().optional(),
+  })).default([]),
+  currency: z.object({
+    pp: z.number().default(0),
+    gp: z.number().default(0),
+    ep: z.number().default(0),
+    sp: z.number().default(0),
+    cp: z.number().default(0),
+  }).optional(),
+}).optional();
+
+/**
+ * Spellcasting schema for caster characters.
+ */
+const spellSlotSchema = z.object({
+  level: z.number().int().min(1).max(9),
+  total: z.number().int(),
+  expended: z.number().int().default(0),
+});
+
+const spellcastingSchema = z.object({
+  ability: z.enum(['int', 'wis', 'cha']),
+  spellSaveDC: z.number().int().optional(),
+  spellAttackBonus: z.number().int().optional(),
+  spellSlots: z.array(spellSlotSchema).default([]),
+  pactSlots: z.object({ // Warlock Pact Magic
+    level: z.number().int().min(1).max(5),
+    total: z.number().int(),
+    expended: z.number().int().default(0),
+  }).optional(),
+  cantrips: z.array(z.string()).default([]),
+  preparedSpells: z.array(z.string()).default([]),
+  knownSpells: z.array(z.string()).default([]), // For spontaneous casters
+  spellbook: z.array(z.string()).default([]), // Wizards only
+  ritualCaster: z.boolean().default(false),
+}).optional();
+
+/**
+ * Class/species/feat feature schema with resource tracking.
+ */
+const featureSchema = z.object({
+  name: z.string(),
+  source: z.enum(['class', 'subclass', 'species', 'background', 'feat', 'epic-boon', 'item']),
+  level: z.number().int().optional(), // Level gained (if class/subclass)
+  description: z.string().optional(),
+  uses: z.object({
+    current: z.number().int(),
+    max: z.number().int(),
+    recharge: z.enum(['short-rest', 'long-rest', 'dawn', 'turn', 'encounter']),
+  }).optional(),
+});
+
+const featuresSchema = z.array(featureSchema).default([]);
+
+/**
+ * Level progression tracking for character history.
+ */
+const levelEntrySchema = z.object({
+  level: z.number().int().min(1).max(20),
+  session: z.string().optional(), // Session slug where level was gained
+  hpGained: z.number().int().optional(),
+  hpMethod: z.enum(['rolled', 'average', 'max']).optional(),
+  featuresGained: z.array(z.string()).default([]),
+  asiOrFeat: z.object({
+    type: z.enum(['asi', 'feat']),
+    choice: z.string(), // "+2 DEX" or "Alert"
+  }).optional(),
+  subclassChosen: z.string().optional(), // At level 3 in 5e 2024
+  epicBoon: z.string().optional(), // At levels 19+
+  notes: z.string().optional(),
+});
+
+const levelProgressionSchema = z.array(levelEntrySchema).default([]);
+
 /**
  * Character entity schema (PCs, NPCs, deities).
  * Links to D&D 5e API for race, class, and spell data.
@@ -212,6 +333,13 @@ const characterCollection = defineCollection({
     toolProficiencies: z.array(z.string()).default([]),
     weaponProficiencies: z.array(z.string()).default([]),
     armorProficiencies: z.array(z.string()).default([]),
+
+    // D&D 5e 2024 (SRD 5.2) fields
+    origin: originSchema,
+    equipment: equipmentSchema,
+    spellcasting: spellcastingSchema,
+    features: featuresSchema,
+    levelProgression: levelProgressionSchema,
   }),
 });
 

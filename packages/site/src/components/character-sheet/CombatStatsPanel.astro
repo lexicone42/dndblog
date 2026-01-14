@@ -1,0 +1,247 @@
+---
+/**
+ * CombatStatsPanel.astro
+ * Displays combat-relevant statistics: AC, HP bar, Speed, Initiative, Proficiency Bonus.
+ */
+
+interface Props {
+  combat?: {
+    ac?: number;
+    hp?: number;
+    maxHp?: number;
+    tempHp?: number;
+    speed?: number;
+    initiative?: number;
+    proficiencyBonus?: number;
+    hitDice?: string;
+  };
+}
+
+const { combat } = Astro.props;
+
+// Calculate HP percentage for the bar
+const hpPercent = combat?.maxHp && combat?.hp
+  ? Math.min(100, Math.max(0, (combat.hp / combat.maxHp) * 100))
+  : 100;
+
+// Determine HP bar color based on percentage
+function getHpColor(percent: number): string {
+  if (percent <= 25) return 'var(--color-error)';
+  if (percent <= 50) return 'var(--color-warning)';
+  return 'var(--color-success)';
+}
+
+// Format initiative with sign
+function formatInitiative(init: number | undefined): string {
+  if (init === undefined) return '—';
+  return init >= 0 ? `+${init}` : `${init}`;
+}
+---
+
+{combat && (
+  <section class="combat-stats">
+    <h3 class="combat-stats__title">Combat</h3>
+
+    <div class="combat-stats__grid">
+      <!-- Armor Class -->
+      <div class="stat-block stat-block--ac">
+        <div class="ac-shield">
+          <span class="ac-value">{combat.ac ?? '—'}</span>
+        </div>
+        <span class="stat-label">Armor Class</span>
+      </div>
+
+      <!-- Hit Points -->
+      <div class="stat-block stat-block--hp">
+        <div class="hp-display">
+          <span class="hp-current">{combat.hp ?? '—'}</span>
+          <span class="hp-divider">/</span>
+          <span class="hp-max">{combat.maxHp ?? '—'}</span>
+          {combat.tempHp && combat.tempHp > 0 && (
+            <span class="hp-temp">+{combat.tempHp}</span>
+          )}
+        </div>
+        <div class="hp-bar">
+          <div
+            class="hp-bar__fill"
+            style={`width: ${hpPercent}%; background: ${getHpColor(hpPercent)}`}
+          />
+        </div>
+        <span class="stat-label">Hit Points</span>
+        {combat.hitDice && (
+          <span class="hit-dice">Hit Dice: {combat.hitDice}</span>
+        )}
+      </div>
+
+      <!-- Speed -->
+      <div class="stat-block">
+        <span class="stat-value">{combat.speed ?? '—'}</span>
+        <span class="stat-unit">ft</span>
+        <span class="stat-label">Speed</span>
+      </div>
+
+      <!-- Initiative -->
+      <div class="stat-block">
+        <span class="stat-value">{formatInitiative(combat.initiative)}</span>
+        <span class="stat-label">Initiative</span>
+      </div>
+
+      <!-- Proficiency Bonus -->
+      <div class="stat-block">
+        <span class="stat-value">+{combat.proficiencyBonus ?? 2}</span>
+        <span class="stat-label">Proficiency</span>
+      </div>
+    </div>
+  </section>
+)}
+
+<style>
+  .combat-stats {
+    margin-bottom: var(--space-xl);
+  }
+
+  .combat-stats__title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .combat-stats__grid {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto;
+    gap: var(--space-md);
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .combat-stats__grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-sm);
+    }
+
+    .stat-block--hp {
+      grid-column: span 3;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .combat-stats__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-block--hp {
+      grid-column: span 2;
+    }
+  }
+
+  .stat-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm);
+    text-align: center;
+  }
+
+  .stat-block--ac {
+    border-color: var(--color-accent);
+  }
+
+  .stat-block--hp {
+    border-color: var(--color-success);
+  }
+
+  .ac-shield {
+    width: 48px;
+    height: 56px;
+    background: var(--color-accent);
+    clip-path: polygon(50% 0%, 100% 15%, 100% 75%, 50% 100%, 0% 75%, 0% 15%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-xs);
+  }
+
+  .ac-value {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: white;
+  }
+
+  .stat-value {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--color-text);
+    line-height: 1;
+  }
+
+  .stat-unit {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+
+  .stat-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: var(--space-xs);
+  }
+
+  .hp-display {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    margin-bottom: var(--space-xs);
+  }
+
+  .hp-current {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .hp-divider {
+    font-size: var(--text-lg);
+    color: var(--color-text-muted);
+  }
+
+  .hp-max {
+    font-size: var(--text-lg);
+    color: var(--color-text-secondary);
+  }
+
+  .hp-temp {
+    font-size: var(--text-sm);
+    color: var(--color-accent);
+    font-weight: 600;
+    margin-left: 4px;
+  }
+
+  .hp-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: var(--space-xs);
+  }
+
+  .hp-bar__fill {
+    height: 100%;
+    transition: width 0.3s ease, background 0.3s ease;
+    border-radius: var(--radius-sm);
+  }
+
+  .hit-dice {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+</style>

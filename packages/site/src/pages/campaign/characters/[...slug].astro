@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
+import CharacterSheet from '@components/character-sheet/CharacterSheet.astro';
 import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -21,13 +22,21 @@ export async function getStaticPaths() {
   factions.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/factions/${e.id}` });
   items.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/items/${e.id}` });
 
+  // Build enhanced item lookup with rarity for character sheet equipment display
+  const itemLookup: Record<string, { name: string; path: string; rarity?: string }> = {};
+  items.forEach(e => itemLookup[e.id] = {
+    name: e.data.name,
+    path: `/campaign/items/${e.id}`,
+    rarity: e.data.rarity,
+  });
+
   return entries.map(entry => ({
     params: { slug: entry.id },
-    props: { entry, entityLookup },
+    props: { entry, entityLookup, itemLookup },
   }));
 }
 
-const { entry, entityLookup } = Astro.props;
+const { entry, entityLookup, itemLookup } = Astro.props;
 const { Content } = await render(entry);
 
 const statusColors: Record<string, string> = {
@@ -95,6 +104,14 @@ const statusColors: Record<string, string> = {
         </ul>
       )}
     </header>
+
+    {/* Character Sheet for PCs with mechanical data */}
+    {entry.data.subtype === 'pc' && (
+      <CharacterSheet
+        character={entry.data}
+        itemLookup={itemLookup}
+      />
+    )}
 
     <div class="entity-content prose">
       <Content />

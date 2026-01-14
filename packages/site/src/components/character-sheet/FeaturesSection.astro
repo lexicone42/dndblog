@@ -1,0 +1,212 @@
+---
+/**
+ * FeaturesSection.astro
+ * Displays class features, species traits, feats, and epic boons.
+ * Supports resource tracking (uses per rest).
+ */
+
+interface Feature {
+  name: string;
+  source: 'class' | 'subclass' | 'species' | 'background' | 'feat' | 'epic-boon' | 'item';
+  level?: number;
+  description?: string;
+  uses?: {
+    current: number;
+    max: number;
+    recharge: 'short-rest' | 'long-rest' | 'dawn' | 'turn' | 'encounter';
+  };
+}
+
+interface Props {
+  features?: Feature[];
+  className?: string;
+  subclass?: string;
+}
+
+const { features = [], className, subclass } = Astro.props;
+
+if (features.length === 0) return;
+
+// Group features by source
+const grouped = {
+  class: features.filter(f => f.source === 'class'),
+  subclass: features.filter(f => f.source === 'subclass'),
+  species: features.filter(f => f.source === 'species'),
+  background: features.filter(f => f.source === 'background'),
+  feat: features.filter(f => f.source === 'feat'),
+  'epic-boon': features.filter(f => f.source === 'epic-boon'),
+  item: features.filter(f => f.source === 'item'),
+};
+
+// Source display names and colors
+const sourceInfo: Record<string, { name: string; colorClass: string }> = {
+  class: { name: className ?? 'Class', colorClass: 'source--class' },
+  subclass: { name: subclass ?? 'Subclass', colorClass: 'source--subclass' },
+  species: { name: 'Species', colorClass: 'source--species' },
+  background: { name: 'Background', colorClass: 'source--background' },
+  feat: { name: 'Feats', colorClass: 'source--feat' },
+  'epic-boon': { name: 'Epic Boons', colorClass: 'source--epic-boon' },
+  item: { name: 'Items', colorClass: 'source--item' },
+};
+
+// Recharge display
+const rechargeLabels: Record<string, string> = {
+  'short-rest': 'Short Rest',
+  'long-rest': 'Long Rest',
+  dawn: 'At Dawn',
+  turn: 'Per Turn',
+  encounter: 'Per Encounter',
+};
+---
+
+<section class="features-section">
+  <h3 class="features-section__title">Features & Traits</h3>
+
+  {Object.entries(grouped).map(([source, feats]) => {
+    if (feats.length === 0) return null;
+    const info = sourceInfo[source];
+
+    return (
+      <div class="feature-group">
+        <h4 class={`feature-group__title ${info.colorClass}`}>{info.name}</h4>
+        <ul class="feature-list">
+          {feats.map((feat) => (
+            <li class="feature-item">
+              <div class="feature-header">
+                <span class="feature-name">{feat.name}</span>
+                {feat.level && (
+                  <span class="feature-level">Lv. {feat.level}</span>
+                )}
+                {feat.uses && (
+                  <div class="feature-uses">
+                    <span class="uses-pips">
+                      {Array.from({ length: feat.uses.max }).map((_, i) => (
+                        <span class={`use-pip ${i < feat.uses!.current ? 'use-pip--available' : 'use-pip--expended'}`}>
+                          ●
+                        </span>
+                      ))}
+                    </span>
+                    <span class="uses-recharge">{rechargeLabels[feat.uses.recharge]}</span>
+                  </div>
+                )}
+              </div>
+              {feat.description && (
+                <p class="feature-description">{feat.description}</p>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  })}
+</section>
+
+<style>
+  .features-section {
+    margin-bottom: var(--space-xl);
+  }
+
+  .features-section__title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .feature-group {
+    margin-bottom: var(--space-lg);
+  }
+
+  .feature-group__title {
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    margin: 0 0 var(--space-sm);
+    font-weight: 600;
+    padding-bottom: var(--space-xs);
+    border-bottom: 2px solid currentColor;
+  }
+
+  .source--class { color: var(--color-accent); }
+  .source--subclass { color: var(--color-warning); }
+  .source--species { color: #8b5cf6; }
+  .source--background { color: #06b6d4; }
+  .source--feat { color: var(--color-success); }
+  .source--epic-boon { color: var(--color-gold); }
+  .source--item { color: #f97316; }
+
+  .feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .feature-item {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .feature-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .feature-name {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .feature-level {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    background: var(--color-bg-tertiary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+  }
+
+  .feature-uses {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-left: auto;
+  }
+
+  .uses-pips {
+    display: flex;
+    gap: 2px;
+  }
+
+  .use-pip {
+    font-size: var(--text-sm);
+    line-height: 1;
+  }
+
+  .use-pip--available {
+    color: var(--color-accent);
+  }
+
+  .use-pip--expended {
+    color: var(--color-text-muted);
+    opacity: 0.4;
+  }
+
+  .uses-recharge {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .feature-description {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: var(--space-xs) 0 0;
+    line-height: 1.5;
+  }
+</style>

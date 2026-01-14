@@ -1,0 +1,211 @@
+---
+/**
+ * SkillsGrid.astro
+ * Displays all 18 D&D 5e skills with proficiency indicators and calculated bonuses.
+ * Uses ◇ (none), ◆ (proficient), ◆◆ (expertise) notation.
+ */
+
+interface Skill {
+  name: string;
+  proficient?: boolean;
+  expertise?: boolean;
+  bonus?: number;
+}
+
+interface Props {
+  skills?: Skill[];
+  abilityScores?: {
+    str?: number;
+    dex?: number;
+    con?: number;
+    int?: number;
+    wis?: number;
+    cha?: number;
+  };
+  proficiencyBonus?: number;
+}
+
+const { skills = [], abilityScores, proficiencyBonus = 2 } = Astro.props;
+
+// Calculate modifier from ability score
+function getModifier(score: number | undefined): number {
+  if (!score) return 0;
+  return Math.floor((score - 10) / 2);
+}
+
+// All 18 D&D 5e skills with their associated ability
+const allSkills: Array<{ name: string; ability: keyof NonNullable<typeof abilityScores> }> = [
+  { name: 'Acrobatics', ability: 'dex' },
+  { name: 'Animal Handling', ability: 'wis' },
+  { name: 'Arcana', ability: 'int' },
+  { name: 'Athletics', ability: 'str' },
+  { name: 'Deception', ability: 'cha' },
+  { name: 'History', ability: 'int' },
+  { name: 'Insight', ability: 'wis' },
+  { name: 'Intimidation', ability: 'cha' },
+  { name: 'Investigation', ability: 'int' },
+  { name: 'Medicine', ability: 'wis' },
+  { name: 'Nature', ability: 'int' },
+  { name: 'Perception', ability: 'wis' },
+  { name: 'Performance', ability: 'cha' },
+  { name: 'Persuasion', ability: 'cha' },
+  { name: 'Religion', ability: 'int' },
+  { name: 'Sleight of Hand', ability: 'dex' },
+  { name: 'Stealth', ability: 'dex' },
+  { name: 'Survival', ability: 'wis' },
+];
+
+// Build skill lookup from character data
+const skillLookup = new Map(skills.map(s => [s.name.toLowerCase(), s]));
+
+// Calculate skill data for display
+function getSkillData(skillName: string, ability: keyof NonNullable<typeof abilityScores>) {
+  const skill = skillLookup.get(skillName.toLowerCase());
+  const abilityMod = getModifier(abilityScores?.[ability]);
+
+  const isProficient = skill?.proficient ?? false;
+  const hasExpertise = skill?.expertise ?? false;
+
+  // Use explicit bonus if provided, otherwise calculate
+  let bonus: number;
+  if (skill?.bonus !== undefined) {
+    bonus = skill.bonus;
+  } else {
+    bonus = abilityMod;
+    if (hasExpertise) {
+      bonus += proficiencyBonus * 2;
+    } else if (isProficient) {
+      bonus += proficiencyBonus;
+    }
+  }
+
+  return { isProficient, hasExpertise, bonus };
+}
+
+// Format bonus with sign
+function formatBonus(bonus: number): string {
+  return bonus >= 0 ? `+${bonus}` : `${bonus}`;
+}
+
+// Ability abbreviation map
+const abilityAbbr: Record<string, string> = {
+  str: 'STR',
+  dex: 'DEX',
+  con: 'CON',
+  int: 'INT',
+  wis: 'WIS',
+  cha: 'CHA',
+};
+---
+
+<section class="skills-section">
+  <h3 class="skills-section__title">Skills</h3>
+
+  <div class="skills-grid">
+    {allSkills.map(({ name, ability }) => {
+      const { isProficient, hasExpertise, bonus } = getSkillData(name, ability);
+
+      return (
+        <div class={`skill-row ${isProficient ? 'skill-row--proficient' : ''} ${hasExpertise ? 'skill-row--expertise' : ''}`}>
+          <span class="skill-proficiency" title={hasExpertise ? 'Expertise' : isProficient ? 'Proficient' : 'Not proficient'}>
+            {hasExpertise ? '◆◆' : isProficient ? '◆' : '◇'}
+          </span>
+          <span class="skill-bonus">{formatBonus(bonus)}</span>
+          <span class="skill-name">{name}</span>
+          <span class="skill-ability">({abilityAbbr[ability]})</span>
+        </div>
+      );
+    })}
+  </div>
+</section>
+
+<style>
+  .skills-section {
+    margin-bottom: var(--space-xl);
+  }
+
+  .skills-section__title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-xs);
+  }
+
+  @media (max-width: 500px) {
+    .skills-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .skill-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    transition: border-color var(--transition-fast);
+  }
+
+  .skill-row:hover {
+    border-color: var(--color-border);
+  }
+
+  .skill-row--proficient {
+    background: color-mix(in srgb, var(--color-success) 10%, var(--color-bg-secondary));
+  }
+
+  .skill-row--expertise {
+    background: color-mix(in srgb, var(--color-gold) 15%, var(--color-bg-secondary));
+  }
+
+  .skill-proficiency {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    width: 1.5em;
+    text-align: center;
+  }
+
+  .skill-row--proficient .skill-proficiency {
+    color: var(--color-success);
+  }
+
+  .skill-row--expertise .skill-proficiency {
+    color: var(--color-gold);
+  }
+
+  .skill-bonus {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    width: 2.5em;
+    text-align: right;
+  }
+
+  .skill-row--proficient .skill-bonus,
+  .skill-row--expertise .skill-bonus {
+    color: var(--color-text);
+  }
+
+  .skill-name {
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    flex: 1;
+  }
+
+  .skill-ability {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+  }
+</style>
