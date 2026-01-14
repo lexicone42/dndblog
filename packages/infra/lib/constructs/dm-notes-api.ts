@@ -168,24 +168,230 @@ exports.handler = async (event) => {
       ],
     }));
 
+    // SSM parameter for feature flag
+    const featureFlagParameterName = '/dndblog/ai-review-enabled';
+
+    // Lambda function for AI review via Bedrock (Claude Sonnet 4)
+    const reviewFunction = new lambda.Function(this, 'ReviewFunction', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(60),
+      memorySize: 512,
+      environment: {
+        TOKEN_PARAMETER_NAME: tokenParameterName,
+        FEATURE_FLAG_PARAMETER: featureFlagParameterName,
+        ALLOWED_ORIGIN: props.allowedOrigin,
+        BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
+      },
+      code: lambda.Code.fromInline(`
+const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
+const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
+
+const bedrockClient = new BedrockRuntimeClient({});
+const ssmClient = new SSMClient({});
+
+let cachedToken = null;
+let tokenExpiry = 0;
+let cachedFeatureFlag = null;
+let featureFlagExpiry = 0;
+
+async function getToken() {
+  const now = Date.now();
+  if (cachedToken && now < tokenExpiry) {
+    return cachedToken;
+  }
+  const result = await ssmClient.send(new GetParameterCommand({
+    Name: process.env.TOKEN_PARAMETER_NAME,
+    WithDecryption: true,
+  }));
+  cachedToken = result.Parameter.Value;
+  tokenExpiry = now + 5 * 60 * 1000;
+  return cachedToken;
+}
+
+async function isFeatureEnabled() {
+  const now = Date.now();
+  if (cachedFeatureFlag !== null && now < featureFlagExpiry) {
+    return cachedFeatureFlag;
+  }
+  try {
+    const result = await ssmClient.send(new GetParameterCommand({
+      Name: process.env.FEATURE_FLAG_PARAMETER,
+    }));
+    cachedFeatureFlag = result.Parameter.Value === 'true';
+  } catch (err) {
+    // If parameter doesn't exist, default to enabled
+    cachedFeatureFlag = true;
+  }
+  featureFlagExpiry = now + 60 * 1000; // Cache for 1 minute
+  return cachedFeatureFlag;
+}
+
+exports.handler = async (event) => {
+  const headers = {
+    'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN,
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+  };
+
+  if (event.requestContext?.http?.method === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  try {
+    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
+    if (!providedToken) {
+      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Missing authentication token' }) };
+    }
+
+    const validToken = await getToken();
+    if (providedToken !== validToken) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'Invalid token' }) };
+    }
+
+    // Check feature flag
+    const enabled = await isFeatureEnabled();
+    if (!enabled) {
+      return {
+        statusCode: 503,
+        headers,
+        body: JSON.stringify({ error: 'AI review is temporarily disabled', disabled: true }),
+      };
+    }
+
+    const body = JSON.parse(event.body || '{}');
+    const content = body.content || '';
+
+    if (!content.trim()) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'No content provided' }) };
+    }
+
+    // Claude Messages API format
+    const bedrockPayload = {
+      anthropic_version: 'bedrock-2023-05-31',
+      max_tokens: 1024,
+      temperature: 0.3,
+      messages: [
+        {
+          role: 'user',
+          content: \`You are a helpful editor reviewing D&D session notes. Review the following notes and provide:
+1. A quality score from 0-100
+2. A list of suggestions for improvement (grammar, clarity, structure)
+3. Whether the notes are ready to publish
+
+Be concise. Format your response as JSON with fields: score (number), suggestions (array of strings), canPublish (boolean), summary (one sentence).
+
+Notes to review:
+\${content.substring(0, 8000)}
+
+Respond with valid JSON only:\`
+        }
+      ]
+    };
+
+    const command = new InvokeModelCommand({
+      modelId: process.env.BEDROCK_MODEL_ID,
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify(bedrockPayload),
+    });
+
+    const response = await bedrockClient.send(command);
+    const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+
+    // Claude returns content as an array of content blocks
+    const outputText = responseBody.content?.[0]?.text || '';
+
+    // Try to parse the AI response as JSON
+    let reviewResult;
+    try {
+      // Find JSON in the response
+      const jsonMatch = outputText.match(/\\{[\\s\\S]*\\}/);
+      if (jsonMatch) {
+        reviewResult = JSON.parse(jsonMatch[0]);
+      } else {
+        reviewResult = { score: 70, suggestions: ['Unable to parse AI response'], canPublish: true, summary: outputText.substring(0, 200) };
+      }
+    } catch {
+      reviewResult = { score: 70, suggestions: ['AI review completed but response was not structured'], canPublish: true, summary: outputText.substring(0, 200) };
+    }
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify(reviewResult),
+    };
+  } catch (error) {
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Review failed: ' + error.message }),
+    };
+  }
+};
+      `),
+    });
+
+    // Grant Bedrock permissions to review function (Claude Sonnet 4)
+    reviewFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['bedrock:InvokeModel'],
+      resources: [
+        'arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0',
+        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-sonnet-4-20250514-v1:0',
+      ],
+    }));
+
+    // Grant SSM parameter read access to review function
+    reviewFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: tokenParameterName.replace(/^\//, ''),
+        }),
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: featureFlagParameterName.replace(/^\//, ''),
+        }),
+      ],
+    }));
+
     // HTTP API Gateway
     this.api = new apigateway.HttpApi(this, 'Api', {
       apiName: 'DmNotesApi',
       corsPreflight: {
         allowOrigins: [props.allowedOrigin],
-        allowMethods: [apigateway.CorsHttpMethod.GET, apigateway.CorsHttpMethod.OPTIONS],
+        allowMethods: [
+          apigateway.CorsHttpMethod.GET,
+          apigateway.CorsHttpMethod.POST,
+          apigateway.CorsHttpMethod.OPTIONS,
+        ],
         allowHeaders: ['Content-Type', 'X-DM-Token'],
         maxAge: cdk.Duration.hours(1),
       },
     });
 
-    // Add route
+    // Add upload-url route
     this.api.addRoutes({
       path: '/upload-url',
       methods: [apigateway.HttpMethod.GET],
       integration: new apigatewayIntegrations.HttpLambdaIntegration(
         'UploadUrlIntegration',
         uploadUrlFunction
+      ),
+    });
+
+    // Add review route
+    this.api.addRoutes({
+      path: '/review',
+      methods: [apigateway.HttpMethod.POST],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'ReviewIntegration',
+        reviewFunction
       ),
     });
 

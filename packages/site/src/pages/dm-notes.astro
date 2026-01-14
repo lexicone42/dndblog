@@ -28,6 +28,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         <h1>DM Session Notes</h1>
         <div class="editor-header__actions">
           <span id="save-status" class="save-status">Ready</span>
+          <button id="review-btn" class="btn btn--secondary">AI Review</button>
           <button id="publish-btn" class="btn btn--primary">Publish to S3</button>
         </div>
       </header>
@@ -41,6 +42,17 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
       <div class="editor-wrapper">
         <textarea id="markdown-editor"></textarea>
+      </div>
+
+      <div id="review-result" class="review-result" style="display: none;">
+        <div class="review-result__header">
+          <span class="review-result__score">
+            Score: <strong id="review-score">--</strong>/100
+          </span>
+          <span id="review-status" class="review-result__status"></span>
+        </div>
+        <div id="review-summary" class="review-result__summary"></div>
+        <ul id="review-suggestions" class="review-result__suggestions"></ul>
       </div>
 
       <div id="publish-result" class="publish-result" style="display: none;"></div>
@@ -295,6 +307,101 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         if (publishBtn) {
           publishBtn.addEventListener('click', publishNotes);
         }
+
+        var reviewBtn = document.getElementById('review-btn');
+        if (reviewBtn) {
+          reviewBtn.addEventListener('click', reviewNotes);
+        }
+      }
+
+      function reviewNotes() {
+        var token = getToken();
+        if (!token || !editor) return;
+
+        var reviewBtn = document.getElementById('review-btn');
+        var reviewResult = document.getElementById('review-result');
+        var content = editor.value();
+
+        if (!content.trim()) {
+          showReviewResult({ score: 0, suggestions: ['Please write some notes before reviewing.'], canPublish: false, summary: 'No content to review.' });
+          return;
+        }
+
+        reviewBtn.disabled = true;
+        reviewBtn.textContent = 'Reviewing...';
+        reviewResult.style.display = 'none';
+
+        var apiUrl = getApiUrl();
+        if (!apiUrl) {
+          showReviewResult({ score: 0, suggestions: ['API URL not configured.'], canPublish: false, summary: 'Configuration error.' });
+          reviewBtn.disabled = false;
+          reviewBtn.textContent = 'AI Review';
+          return;
+        }
+
+        fetch(apiUrl + '/review', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-DM-Token': token
+          },
+          body: JSON.stringify({ content: content })
+        })
+        .then(function(response) {
+          if (!response.ok) {
+            return response.json().then(function(err) {
+              if (err.disabled) {
+                throw new Error('AI Review is temporarily disabled. You can still publish your notes.');
+              }
+              throw new Error(err.error || 'Review failed');
+            });
+          }
+          return response.json();
+        })
+        .then(function(data) {
+          showReviewResult(data);
+        })
+        .catch(function(error) {
+          console.error('Review error:', error);
+          showReviewResult({ score: 0, suggestions: [error.message], canPublish: false, summary: 'Review failed.' });
+        })
+        .finally(function() {
+          reviewBtn.disabled = false;
+          reviewBtn.textContent = 'AI Review';
+        });
+      }
+
+      function showReviewResult(data) {
+        var reviewResult = document.getElementById('review-result');
+        var scoreEl = document.getElementById('review-score');
+        var statusEl = document.getElementById('review-status');
+        var summaryEl = document.getElementById('review-summary');
+        var suggestionsEl = document.getElementById('review-suggestions');
+
+        reviewResult.style.display = 'block';
+        scoreEl.textContent = data.score || '--';
+
+        if (data.canPublish) {
+          statusEl.textContent = 'Ready to publish';
+          statusEl.className = 'review-result__status review-result__status--success';
+        } else {
+          statusEl.textContent = 'Needs revision';
+          statusEl.className = 'review-result__status review-result__status--warning';
+        }
+
+        summaryEl.textContent = data.summary || '';
+
+        // Clear existing suggestions using DOM methods
+        while (suggestionsEl.firstChild) {
+          suggestionsEl.removeChild(suggestionsEl.firstChild);
+        }
+        if (data.suggestions && data.suggestions.length > 0) {
+          data.suggestions.forEach(function(suggestion) {
+            var li = document.createElement('li');
+            li.textContent = suggestion;
+            suggestionsEl.appendChild(li);
+          });
+        }
       }
 
       if (document.readyState === 'loading') {
@@ -388,6 +495,16 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       font-weight: 600;
       cursor: pointer;
       transition: all var(--transition-fast);
+    }
+
+    .btn--secondary {
+      background: transparent;
+      color: var(--color-gold);
+    }
+
+    .btn--secondary:hover:not(:disabled) {
+      background: var(--color-gold);
+      color: var(--color-bg);
     }
 
     .btn--primary {
@@ -496,6 +613,63 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
     .editor-wrapper :global(.editor-toolbar.fullscreen) {
       z-index: 1001;
+    }
+
+    .review-result {
+      margin-top: var(--space-lg);
+      padding: var(--space-md);
+      border-radius: var(--radius-md);
+      background: var(--color-bg-secondary);
+      border: 2px solid var(--color-border);
+    }
+
+    .review-result__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-md);
+    }
+
+    .review-result__score {
+      font-size: var(--text-lg);
+      color: var(--color-text);
+    }
+
+    .review-result__score strong {
+      color: var(--color-gold);
+      font-family: var(--font-display);
+    }
+
+    .review-result__status {
+      font-size: var(--text-sm);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-sm);
+    }
+
+    .review-result__status--success {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--color-success, #22c55e);
+    }
+
+    .review-result__status--warning {
+      background: rgba(234, 179, 8, 0.2);
+      color: #eab308;
+    }
+
+    .review-result__summary {
+      margin-bottom: var(--space-md);
+      color: var(--color-text);
+      font-style: italic;
+    }
+
+    .review-result__suggestions {
+      margin: 0;
+      padding-left: var(--space-lg);
+      color: var(--color-text-muted);
+    }
+
+    .review-result__suggestions li {
+      margin-bottom: var(--space-xs);
     }
 
     .publish-result {
