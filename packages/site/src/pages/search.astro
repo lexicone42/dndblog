@@ -12,7 +12,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
   description="Search across all campaign content including characters, locations, spells, and more."
 >
   <!-- CSP meta tag to allow WebAssembly for Pagefind search -->
-  <meta slot="head" http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'" />
+  <!-- Note: 'wasm-unsafe-eval' is required for Pagefind WASM, 'unsafe-inline' for Astro scripts -->
+  <meta slot="head" http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'" />
   <link slot="head" href="/pagefind/pagefind-ui.css" rel="stylesheet" />
 
   <div class="container">
