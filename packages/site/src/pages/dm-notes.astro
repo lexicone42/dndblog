@@ -357,6 +357,68 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         });
 
         document.getElementById('review-btn').addEventListener('click', requestReview);
+
+        // Template insertion
+        initTemplateSelector();
+      }
+
+      function initTemplateSelector() {
+        var templatesData = document.getElementById('templates-data');
+        var templates = [];
+
+        try {
+          templates = JSON.parse(templatesData.textContent || '[]');
+        } catch (e) {
+          console.warn('Failed to parse templates:', e);
+          return;
+        }
+
+        var selectEl = document.getElementById('template-select');
+        var insertBtn = document.getElementById('insert-template-btn');
+
+        if (!selectEl || !insertBtn) return;
+
+        insertBtn.addEventListener('click', function() {
+          var templateId = selectEl.value;
+          if (!templateId) {
+            alert('Please select a template first');
+            return;
+          }
+
+          var template = templates.find(function(t) { return t.id === templateId; });
+          if (!template) return;
+
+          var currentContent = editor.value();
+          var hasContent = currentContent.trim().length > 0;
+
+          if (hasContent) {
+            var confirmInsert = confirm(
+              'Insert "' + template.name + '" template?\n\n' +
+              'This will add the template at the cursor position.\n' +
+              'Your existing content will be preserved.'
+            );
+            if (!confirmInsert) return;
+
+            // Insert at cursor position
+            var cm = editor.codemirror;
+            var cursor = cm.getCursor();
+            cm.replaceRange('\n\n' + template.content, cursor);
+          } else {
+            // Empty editor - replace with template
+            editor.value(template.content);
+          }
+
+          // Reset selector
+          selectEl.value = '';
+          debounceSave();
+        });
+
+        // Also allow double-click on select to insert
+        selectEl.addEventListener('dblclick', function() {
+          if (selectEl.value) {
+            insertBtn.click();
+          }
+        });
       }
 
       if (document.readyState === 'loading') {
