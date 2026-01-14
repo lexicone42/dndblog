@@ -14,6 +14,9 @@ export default defineConfig({
     format: 'directory',
     // Asset file names with content hash for cache busting
     assets: '_assets',
+    // Inline all CSS to eliminate render-blocking request chain
+    // Total CSS is ~9KB which is acceptable for inlining
+    inlineStylesheets: 'always',
   },
 
   // Markdown configuration
