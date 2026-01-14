@@ -38,3 +38,4 @@ coverage/
 
 # Claude Code
 .claude/
+CLAUDE_SESSION_STATE.md
