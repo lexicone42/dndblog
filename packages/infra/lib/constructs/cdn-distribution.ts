@@ -75,11 +75,12 @@ export class CdnDistribution extends Construct {
 
           // Content Security Policy
           // Note: 'unsafe-inline' is needed for Astro's scoped styles and inline scripts
+          // 'unsafe-eval' and 'wasm-unsafe-eval' are needed for Pagefind search (WebAssembly)
           // External sources are whitelisted for EasyMDE (unpkg.com), Font Awesome, and Google Fonts
           contentSecurityPolicy: {
             contentSecurityPolicy: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net", // Inline scripts + CDNs
+              "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net", // Inline scripts + CDNs + WASM for Pagefind
               "style-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://maxcdn.bootstrapcdn.com https://cdnjs.cloudflare.com", // Styles + Fonts + Font Awesome CDNs
               "img-src 'self' data: https:",
               "font-src 'self' data: https://fonts.gstatic.com https://maxcdn.bootstrapcdn.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://use.fontawesome.com", // Multiple font CDNs
