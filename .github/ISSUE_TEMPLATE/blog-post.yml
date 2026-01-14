@@ -1,0 +1,75 @@
+name: Submit a Blog Post
+description: Submit a new blog post for the campaign chronicles
+title: "[Post]: "
+labels: ["content", "blog-post"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing to Rudiger's Evocation of Events! Fill out the form below to submit your blog post.
+
+  - type: input
+    id: title
+    attributes:
+      label: Post Title
+      description: What should the title of your post be?
+      placeholder: "The Battle of Darkhollow Bridge"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Summary
+      description: A brief 1-2 sentence summary of your post
+      placeholder: "Our heroes face their greatest challenge yet as they defend the bridge from an army of undead."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: post-type
+    attributes:
+      label: Post Type
+      description: What kind of post is this?
+      options:
+        - Session Recap
+        - Character Spotlight
+        - Worldbuilding/Lore
+        - DM Tips
+        - Homebrew Content
+        - Announcement
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: author
+    attributes:
+      label: Author Name
+      description: How should you be credited?
+      placeholder: "Your name or character name"
+    validations:
+      required: false
+
+  - type: textarea
+    id: content
+    attributes:
+      label: Post Content
+      description: Write your post content here. You can use Markdown formatting!
+      placeholder: |
+        Write your post content here...
+
+        ## Subheading
+
+        More content...
+    validations:
+      required: true
+
+  - type: textarea
+    id: tags
+    attributes:
+      label: Tags
+      description: "Suggested tags: session-recap, character, worldbuilding, dm-tips, homebrew, announcement"
+      placeholder: "session-recap, combat"
+    validations:
+      required: false

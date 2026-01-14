@@ -1,0 +1,33 @@
+name: Feature Request
+description: Suggest an idea for the blog
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to make the blog better? We'd love to hear it!
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What's your idea?
+      description: Describe the feature or improvement you'd like to see
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would this be helpful?
+      description: How would this improve the blog experience?
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Have you thought of any other ways to accomplish this?
+    validations:
+      required: false
