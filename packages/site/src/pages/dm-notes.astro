@@ -36,7 +36,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         <div class="editor-header__actions">
           <span id="save-status" class="save-status">Ready</span>
           <button id="review-btn" class="btn btn--secondary">AI Review</button>
-          <button id="publish-btn" class="btn btn--primary">Publish to S3</button>
+          <button id="publish-btn" class="btn btn--primary">Save</button>
         </div>
       </header>
 
@@ -256,12 +256,12 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         var content = editor.value();
 
         if (!content.trim()) {
-          showPublishResult('Please write some notes before publishing.', false);
+          showPublishResult('Please write some notes before saving.', false);
           return;
         }
 
         publishBtn.disabled = true;
-        publishBtn.textContent = 'Publishing...';
+        publishBtn.textContent = 'Saving...';
         resultDiv.style.display = 'none';
 
         var timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -273,7 +273,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         if (!apiUrl) {
           showPublishResult('API URL not configured. Deploy the DmNotesStack first.', false);
           publishBtn.disabled = false;
-          publishBtn.textContent = 'Publish to S3';
+          publishBtn.textContent = 'Save';
           return;
         }
 
@@ -303,17 +303,17 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           });
         })
         .then(function(key) {
-          showPublishResult('Notes published successfully!', true, key);
+          showPublishResult('Notes saved!', true, key);
           localStorage.removeItem(STORAGE_KEY);
           localStorage.removeItem(TITLE_KEY);
         })
         .catch(function(error) {
-          console.error('Publish error:', error);
+          console.error('Save error:', error);
           showPublishResult('Error: ' + error.message, false);
         })
         .finally(function() {
           publishBtn.disabled = false;
-          publishBtn.textContent = 'Publish to S3';
+          publishBtn.textContent = 'Save';
         });
       }
 
@@ -440,7 +440,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           if (!response.ok) {
             return response.json().then(function(err) {
               if (err.disabled) {
-                throw new Error('AI Review is temporarily disabled. You can still publish your notes.');
+                throw new Error('AI Review is temporarily disabled. You can still save your notes.');
               }
               throw new Error(err.error || 'Review failed');
             });
@@ -471,7 +471,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         scoreEl.textContent = data.score || '--';
 
         if (data.canPublish) {
-          statusEl.textContent = 'Ready to publish';
+          statusEl.textContent = 'Ready to save';
           statusEl.className = 'review-result__status review-result__status--success';
         } else {
           statusEl.textContent = 'Needs revision';
