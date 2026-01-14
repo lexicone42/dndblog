@@ -67,31 +67,5 @@ jobs:
           path: packages/site/dist/
           retention-days: 7
 
-  cdk-synth:
-    name: CDK Synth
-    runs-on: ubuntu-latest
-    needs: validate
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: CDK synth
-        working-directory: packages/infra
-        run: |
-          npx cdk synth --quiet \
-            --context domainName=chronicles.mawframe.ninja \
-            --context hostedZoneDomain=mawframe.ninja
-        env:
-          # Use a dummy account for synth validation
-          CDK_DEFAULT_ACCOUNT: '123456789012'
-          CDK_DEFAULT_REGION: us-east-1
-
-      - name: Upload CDK output
-        uses: actions/upload-artifact@v4
-        with:
-          name: cdk-out
-          path: packages/infra/cdk.out/
-          retention-days: 7
+  # Note: CDK synth requires AWS credentials for Route53 lookups
+  # Full CDK validation happens in the Deploy workflow with OIDC credentials
