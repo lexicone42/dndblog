@@ -135,8 +135,14 @@ const abilityAbbr: Record<string, string> = {
 
   .skills-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-xs);
+  }
+
+  @media (max-width: 768px) {
+    .skills-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 
   @media (max-width: 500px) {
@@ -149,11 +155,12 @@ const abilityAbbr: Record<string, string> = {
     display: flex;
     align-items: center;
     gap: var(--space-xs);
-    padding: var(--space-xs) var(--space-sm);
+    padding: 6px var(--space-sm);
     background: var(--color-bg-secondary);
     border-radius: var(--radius-sm);
     border: 1px solid transparent;
     transition: border-color var(--transition-fast);
+    min-height: 32px;
   }
 
   .skill-row:hover {

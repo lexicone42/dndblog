@@ -280,15 +280,9 @@ const proficiencyBonus = character.combat?.proficiencyBonus ??
   }
 
   .character-sheet__stats {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: var(--space-lg);
-  }
-
-  @media (min-width: 768px) {
-    .character-sheet__stats {
-      grid-template-columns: 2fr 3fr;
-    }
   }
 
   .character-sheet__columns {

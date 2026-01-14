@@ -111,19 +111,22 @@ function formatInitiative(init: number | undefined): string {
 
   .combat-stats__grid {
     display: grid;
-    grid-template-columns: auto 1fr auto auto auto;
-    gap: var(--space-md);
-    align-items: start;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-sm);
+    align-items: stretch;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 640px) {
     .combat-stats__grid {
       grid-template-columns: repeat(3, 1fr);
-      gap: var(--space-sm);
     }
 
     .stat-block--hp {
       grid-column: span 3;
+    }
+
+    .stat-block--ac {
+      grid-column: span 1;
     }
   }
 
@@ -141,11 +144,13 @@ function formatInitiative(init: number | undefined): string {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     background: var(--color-bg-secondary);
     border: 2px solid var(--color-border);
     border-radius: var(--radius-md);
-    padding: var(--space-sm);
+    padding: var(--space-md);
     text-align: center;
+    min-height: 90px;
   }
 
   .stat-block--ac {
