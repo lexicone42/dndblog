@@ -18,7 +18,7 @@ relationships:
   - entity: "dain"
     type: "ally"
     note: "Gave Dain Adabra's letter for Riglid"
-firstAppearance: "session-01"
+firstAppearance: "session-01-the-bell-of-shavras"
 visibility: "public"
 ---
 

@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-01-14T04:06:06.578Z",
+  "generatedAt": "2026-01-14T04:49:24.407Z",
   "version": "1.0.0",
   "stats": {
-    "totalEntities": 48,
+    "totalEntities": 51,
     "totalSessions": 11,
     "byType": {
-      "characters": 14,
+      "characters": 16,
       "enemies": 9,
-      "locations": 10,
+      "locations": 11,
       "factions": 7,
       "items": 8
     }
@@ -16,34 +16,23 @@
     "characters": [
       {
         "slug": "accoa",
-        "name": "Accoa",
+        "name": "Accoa Krigsdottir",
         "type": "character",
         "subtype": "pc",
         "status": "active",
         "visibility": "public",
-        "description": "Centaur scout who joined the party after being freed from the Night Hag",
+        "description": "A Protector Aasimar Paladin devoted to the Oath of Ancients, wielding divine light and nature's wrath",
         "tags": [
           "party",
-          "centaur",
-          "scout",
-          "whisperwood-survivor"
+          "aasimar",
+          "paladin",
+          "oath-of-ancients",
+          "the-mawframe"
         ],
         "relationships": [
           {
-            "entity": "rudiger",
-            "type": "ally"
-          },
-          {
-            "entity": "stol",
-            "type": "ally"
-          },
-          {
-            "entity": "kei",
-            "type": "ally"
-          },
-          {
-            "entity": "skid-demon",
-            "type": "ally"
+            "entity": "the-party",
+            "type": "member-of"
           },
           {
             "entity": "night-hag",
@@ -56,7 +45,8 @@
             "note": "Blessed by the Dryad"
           }
         ],
-        "content": "# Accoa\n\nCentaur scout who was taken from Whisperwood Forest by the Night Hag as a child. Freed by the party and now travels with them as a valued companion.\n\n## Origin\n\nAccoa was kidnapped by the Night Hag when young and held captive in Whisperwood Forest for years. The hag drained victims slowly in their sleep, keeping Accoa weak but alive for some unknown purpose.\n\n## Joining the Party\n\nAfter helping defeat the Night Hag, Accoa chose to travel with the party. The Dryad Erinthin blessed her, recognizing her as one of the forest's lost children finally returned and freed.\n\n## Key Moments\n\n### Freedom from the Night Hag\nHelped the party defeat her captor, finally ending years of torment.\n\n### Blessed by Erinthin\nThe Dryad of the Forest Heart recognized Accoa and blessed her with the forest's protection.\n\n### The Sharn Pursuit\nStunned the pickpocket runner in Sharn's streets, proving her worth as a quick and capable party member."
+        "firstAppearance": "session-04-the-dryads-blessing",
+        "content": "# Accoa Krigsdottir\n\nA Female Protector Aasimar Paladin who has sworn the Oath of Ancients. Accoa was taken from Whisperwood Forest by the Night Hag as a child, freed by the party, and now travels with them wielding divine power and nature magic.\n\n## Ability Scores\n\n| STR | DEX | CON | INT | WIS | CHA |\n|-----|-----|-----|-----|-----|-----|\n| 15 (+2) | 11 (+0) | 14 (+2) | 13 (+1) | 15 (+2) | 12 (+1) |\n\n## Combat Statistics\n\n- **Armor Class:** 19\n- **Hit Points:** 57\n- **Speed:** 30 ft.\n- **Initiative:** +0\n- **Proficiency Bonus:** +3\n\n### Saving Throws\n- **STR:** +4 | **DEX:** +2 | **CON:** +4\n- **INT:** +3 | **WIS:** +7 | **CHA:** +6\n\n### Defenses\n- Resistance to Necrotic and Radiant damage\n- Immunity to Disease\n\n## Skills\n\n**Proficient:**\n- Animal Handling +5\n- Athletics +5\n- Persuasion +4\n- Survival +5\n\n## Senses\n\n- **Darkvision:** 60 ft.\n- **Passive Perception:** 12\n- **Passive Investigation:** 11\n- **Passive Insight:** 12\n\n## Proficiencies\n\n**Armor:** Heavy Armor, Medium Armor, Light Armor, Shields\n\n**Weapons:** Martial Weapons, Simple Weapons\n\n**Tools:** Alchemist's Supplies, Vehicles (Land)\n\n**Languages:** Celestial, Common\n\n## Equipment\n\n- **Dragon's Wrath Weapon (Stirring)** — +6 to hit, 1d8+3 (1d10+3 versatile), Martial, Sap\n- **Longbow** — +3 to hit, 1d8 piercing, range 150/600\n- **Unarmed Strike** — +5 to hit, 3 bludgeoning\n\n## Oath of Ancients Features\n\n### Extra Attack\nCan attack twice when taking the Attack action.\n\n### Channel Divinity (1/Short Rest)\n\n**Nature's Wrath:** As an action, cause spectral vines to spring up and reach for a creature within 10 ft. The creature must succeed on a STR or DEX saving throw (DC 12) or be restrained. It can repeat the save at the end of each turn.\n\n**Turn the Faithless:** Channel divine energy to turn fey and fiends.\n\n## Origin\n\nAccoa was kidnapped by the Night Hag when young and held captive in Whisperwood Forest for years. The hag drained victims slowly in their sleep, keeping Accoa weak but alive for some unknown purpose. Her celestial heritage as a Protector Aasimar may have been what the hag sought.\n\n## Key Moments\n\n### Freedom from the Night Hag\nHelped the party defeat her captor, finally ending years of torment.\n\n### Blessed by Erinthin\nThe Dryad of the Forest Heart recognized Accoa and blessed her with the forest's protection, which aligned with her Oath of Ancients.\n\n### The Sharn Pursuit\nStunned the pickpocket runner in Sharn's streets, proving her worth as a capable party member.\n\n## Combat Role\n\nAs a Paladin with the Oath of Ancients, Accoa serves as both a frontline defender and healer. Her Channel Divinity: Nature's Wrath provides battlefield control, while her Aasimar heritage grants resistance to both necrotic and radiant damage—making her particularly effective against undead and celestial threats alike."
       },
       {
         "slug": "aidin",
@@ -146,6 +136,53 @@
           }
         ],
         "content": "# Captain Tallow\n\nCaptain of the Siren's Song, stationed at Muck Bay. Tallow appears to be a simple ship captain, but is secretly a druid of Eberron with significant magical power.\n\n## Secret Identity\n\nBehind the weathered sailor facade, Tallow wields druidic magic:\n- **Banishment**: When a kraken threatened the ship during the pirate attack, Tallow banished it—an incredibly powerful feat\n- **Mist-Parting Ritual**: Performed the ritual that allowed passage through Stonehell Isle's protective enchanted mist\n\n## The Journey to Stonehell\n\nTallow transported the party to Stonehell Isle, navigating the treacherous waters and performing the ancient ritual needed to pierce the island's magical concealment.\n\n## The Circle Mage Encounter\n\nDuring the kraken attack, Tallow noticed the Circle mage observing him. The mage dove into the water and escaped rather than engaging—suggesting even he recognized Tallow's power."
+      },
+      {
+        "slug": "cribben-hayduke",
+        "name": "Cribben Hayduke",
+        "type": "character",
+        "subtype": "pc",
+        "status": "transformed",
+        "visibility": "public",
+        "description": "An Elf Druid who was cursed by the Night Hag and transformed into a toad, disappearing into Whisperwood Forest",
+        "tags": [
+          "party",
+          "druid",
+          "elf",
+          "cursed",
+          "whisperwood-survivor",
+          "the-mawframe"
+        ],
+        "relationships": [
+          {
+            "entity": "the-party",
+            "type": "former-member-of"
+          },
+          {
+            "entity": "night-hag",
+            "type": "enemy",
+            "note": "Cursed him into toad form"
+          },
+          {
+            "entity": "rudiger",
+            "type": "ally"
+          },
+          {
+            "entity": "stol",
+            "type": "ally"
+          },
+          {
+            "entity": "kei",
+            "type": "ally"
+          },
+          {
+            "entity": "skid-demon",
+            "type": "ally"
+          }
+        ],
+        "firstAppearance": "session-01-the-bell-of-shavras",
+        "lastAppearance": "session-04-the-dryads-blessing",
+        "content": "# Cribben Hayduke\n\nAn Elf Druid who was one of the original members of the adventuring party. Cribben's fate took a dark turn when the Night Hag's curse affected him differently than the others, transforming him into a toad. He hopped off into Whisperwood Forest and was never seen again.\n\n## Background\n\nCribben joined the party at the very beginning of their adventure in Phandalin, answering Townmaster Riglid's call to investigate the raids and kidnappings plaguing the town's supply lines.\n\n## Abilities\n\nAs a druid, Cribben demonstrated:\n- **Thorn Whip** — Used to incapacitate enemies and give the party tactical advantages\n- **Wild Shape** — Could transform into animals (ironically, his final transformation was involuntary)\n- **Nature Magic** — Connection to the natural world\n\n## Key Moments\n\n### Session 3 - The Ulfandor Mines\nDuring the battle in the skeletal ossuary, Cribben initially transformed into a rat but then used his Thorn Whip to incapacitate enemies and allow the party to gain the upper hand.\n\n### Session 4 - The Night Hag's Curse\nWhen the Night Hag cursed the party in Whisperwood Forest, the curse affected Cribben differently than the others. While the rest of the party suffered wisdom penalties that the Dryad Erinthin later lifted, Cribben was unwillingly transmuted into a toad and hopped off into the forest, never to be seen again.\n\n## Current Status\n\nCribben's fate remains unknown. Whether he still lives somewhere in Whisperwood as a toad, eventually broke free of the curse, or met some other end is a mystery. The Dryad Erinthin lifted the curse on the remaining party members, but Cribben had already disappeared into the forest by that time.\n\n## Legacy\n\nCribben's sudden disappearance serves as a stark reminder of the Night Hag's cruelty and the dangerous, unpredictable nature of Whisperwood Forest. His empty place at the party's campfire is a wound that has never fully healed."
       },
       {
         "slug": "dryad-erinthin",
@@ -304,22 +341,27 @@
       },
       {
         "slug": "kei",
-        "name": "Kei",
+        "name": "Kei Eaglesnout",
         "type": "character",
         "subtype": "pc",
         "status": "active",
         "visibility": "public",
-        "description": "Party fighter known for combat prowess and strength",
+        "description": "A powerful Human Fighter and Champion of the battlefield, known for his exceptional strength and competitive spirit",
         "tags": [
           "party",
           "fighter",
-          "martial"
+          "champion",
+          "martial",
+          "the-mawframe"
         ],
         "relationships": [
           {
+            "entity": "the-party",
+            "type": "member-of"
+          },
+          {
             "entity": "rudiger",
-            "type": "ally",
-            "note": "Fellow party member"
+            "type": "ally"
           },
           {
             "entity": "stol",
@@ -334,7 +376,36 @@
             "type": "ally"
           }
         ],
-        "content": "# Kei\n\nParty fighter renowned for combat prowess and exceptional strength. A natural leader in battle.\n\n## Key Moments\n\n### Arm-Wrestling Champion\nWon the arm-wrestling competition in Astgrove at The Mason and the Chain tavern, claiming the 400gp prize.\n\n### Vision in the Dhakaani Ruins\nExperienced a haunting vision in the Hall of Warriors - the weight of command and failure, showing the burden carried by ancient Dhakaani generals.\n\n### Cornerstone Tavern Fight\nHelped finish thugs at the Cornerstone Tavern in Sharn when the party's Black Mantle cover was blown."
+        "firstAppearance": "session-01-the-bell-of-shavras",
+        "content": "# Kei Eaglesnout\n\nA Male Human Fighter who has chosen the Champion martial archetype. Kei is renowned for his exceptional strength, combat prowess, and competitive spirit—as demonstrated by his arm-wrestling victory in Astgrove.\n\n## Ability Scores\n\n| STR | DEX | CON | INT | WIS | CHA |\n|-----|-----|-----|-----|-----|-----|\n| 17 (+3) | 16 (+3) | 14 (+2) | 10 (+0) | 10 (+0) | 10 (+0) |\n\n## Combat Statistics\n\n- **Armor Class:** 18\n- **Hit Points:** 64\n- **Speed:** 30 ft.\n- **Initiative:** +3\n- **Proficiency Bonus:** +3\n\n### Saving Throws\n- **STR:** +6 | **DEX:** +3 | **CON:** +5\n- **INT:** +0 | **WIS:** +0 | **CHA:** +0\n\n## Skills\n\n**Proficient:**\n- Acrobatics +6\n- Athletics +6\n- Animal Handling +3\n- Nature +3\n- Survival +3\n\n## Senses\n\n- **Darkvision:** 60 ft.\n- **Passive Perception:** 10\n- **Passive Investigation:** 10\n- **Passive Insight:** 10\n\n## Proficiencies\n\n**Armor:** Heavy Armor, Medium Armor, Light Armor, Shields\n\n**Weapons:** Martial Weapons, Simple Weapons\n\n**Tools:** Carpenter's Tools\n\n**Languages:** Common, Dwarvish, Elvish\n\n## Equipment\n\n- **Handaxe +1** — +7 to hit, 1d6+4 slashing, range 20/60, Light, Thrown, Vex\n- **Shortsword +1** — +7 to hit, 1d6+4 piercing, Finesse, Light, Vex\n- **Battleaxe** — Topple mastery (CON save or Prone)\n- **Unarmed Strike** — +6 to hit, 4 bludgeoning\n\n## Champion Features\n\n### Extra Attack\nCan attack twice when taking the Attack action.\n\n### Improved Critical\nWeapon attacks score a critical hit on a roll of 19 or 20.\n\n### Topple (Battleaxe Mastery)\nWhen hitting a creature with the Battleaxe, can force a CON saving throw (DC 14). On a failed save, the creature is knocked Prone.\n\n## Key Moments\n\n### Session 1 - Party Formation\nJoined the party in Phandalin, answering Townmaster Riglid's call to investigate the raids.\n\n### Session 4 - Releasing the Souls\nAfter defeating the Night Hag, Kei released the trapped souls from her Soul Bag, freeing the tormented spirits she had collected.\n\n### Session 6 - Arm-Wrestling Champion\nWon the arm-wrestling competition at The Mason and the Chain tavern in Astgrove, defeating 3 of 4 competitors and claiming the 400gp prize.\n\n### Session 8 - Cornerstone Tavern\nStayed behind with Stol to finish off the thugs at the Cornerstone Tavern in Sharn when the party's Black Mantle cover was blown.\n\n### Session 9 - Vision in the Dhakaani Ruins\nExperienced a haunting vision in the Hall of Warriors—the weight of command and failure, echoing the burden carried by ancient Dhakaani generals. This psychic experience showed Kei the consequences of leadership in war.\n\n## Combat Role\n\nAs the party's frontline damage dealer and tank, Kei excels at sustained melee combat. With Extra Attack and high Strength, he can reliably put out consistent damage every turn. The Champion's Improved Critical gives him a 10% chance of devastating critical hits, and his Topple mastery allows battlefield control by knocking enemies Prone for the party to capitalize on."
+      },
+      {
+        "slug": "malum",
+        "name": "Malum Munus Exemplar",
+        "type": "character",
+        "subtype": "pc",
+        "status": "active",
+        "visibility": "public",
+        "description": "A cunning Half-Elf assassin with expertise in stealth, intimidation, and social manipulation",
+        "tags": [
+          "party",
+          "assassin",
+          "stealth",
+          "the-mawframe"
+        ],
+        "relationships": [
+          {
+            "entity": "the-party",
+            "type": "member-of"
+          },
+          {
+            "entity": "dain",
+            "type": "ally",
+            "note": "Gave Dain Adabra's letter for Riglid"
+          }
+        ],
+        "firstAppearance": "session-01-the-bell-of-shavras",
+        "content": "# Malum Munus Exemplar\n\nKnown simply as \"Mal\" to companions, Malum is a Male Half-Elf Rogue who has honed his skills as a deadly shadow operative. With expertise in stealth, intimidation, and persuasion, Mal serves as both the party's scout and its silver tongue.\n\n## Ability Scores\n\n| STR | DEX | CON | INT | WIS | CHA |\n|-----|-----|-----|-----|-----|-----|\n| 8 (-1) | 17 (+3) | 13 (+1) | 15 (+2) | 10 (+0) | 13 (+1) |\n\n## Combat Statistics\n\n- **Armor Class:** 17\n- **Hit Points:** 44\n- **Speed:** 30 ft.\n- **Initiative:** +6\n- **Proficiency Bonus:** +3\n\n### Saving Throws\n- **STR:** -1 | **DEX:** +6 | **CON:** +1\n- **INT:** +5 | **WIS:** +0 | **CHA:** +1\n- Advantage against being charmed; magic can't put Mal to sleep\n\n### Defenses\n- Resistance to Bludgeoning, Piercing, and Slashing from Nonmagical Attacks\n\n## Skills\n\n**Expertise (double proficiency):**\n- Stealth +9\n- Intimidation +7\n- Persuasion +7\n- Insight +6\n\n**Proficient:**\n- Acrobatics +6\n- Sleight of Hand +6\n- Deception +4\n- Athletics +2\n\n## Senses\n\n- **Darkvision:** 60 ft.\n- **Passive Perception:** 10\n- **Passive Investigation:** 12\n- **Passive Insight:** 16\n\n## Proficiencies\n\n**Armor:** Light Armor\n\n**Weapons:** Hand Crossbow, Rapier, Scimitar, Shortsword, Simple Weapons, Whip\n\n**Tools:** Darts, Disguise Kit, Poisoner's Kit, Thieves' Tools\n\n**Languages:** Common, Elvish, Goblin, Thieves' Cant, Undercommon\n\n## Equipment\n\n- **Light Crossbow** — +6 to hit, 1d8+3 piercing, range 80/320\n- **Daggers (2)** — +6 to hit, 1d4+3 piercing, range 20/60 (Nick mastery)\n- **Scimitar** — +6 to hit, 1d6+3 slashing (Nick)\n- **Shortbow** — +6 to hit, 1d6+3 piercing, range 80/320 (Vex)\n- **Shortsword** — +6 to hit, 1d6+3 piercing (Vex)\n\n## Notable Actions\n\n### The Ulfandor Mines\nWhen Dain was left behind after having his tongue torn out by the Fallen Priest, Mal gave him the letter from Adabra Gwynn to deliver to Riglid, the Townmaster of Phandalin.\n\n### The Whisperwood\nWhile making camp in the haunted forest, Mal's keen eyes discovered a torn piece of fabric from a dress—a vital clue that led Greeve to have a vision of Aidin in danger.\n\n## Combat Role\n\nAs a Rogue with expertise in Stealth (+9), Mal excels at reconnaissance and delivering devastating Sneak Attacks from the shadows. The combination of high Intimidation and Persuasion makes Mal equally dangerous in social encounters, able to extract information or cow enemies into submission."
       },
       {
         "slug": "master-molrik",
@@ -417,19 +488,24 @@
         "subtype": "pc",
         "status": "active",
         "visibility": "public",
-        "description": "Party wizard with internal conflict, master of fire and lightning magic",
+        "description": "A Human Wizard of the Evoker school, master of fire and lightning magic with a noted internal conflict",
         "tags": [
           "party",
-          "magic-user",
           "wizard",
+          "evoker",
           "fire-magic",
-          "lightning-magic"
+          "lightning-magic",
+          "the-mawframe"
         ],
         "relationships": [
           {
+            "entity": "the-party",
+            "type": "member-of"
+          },
+          {
             "entity": "stol",
             "type": "ally",
-            "note": "Fellow party member"
+            "note": "Restored Stol after falling to the Fallen Priest"
           },
           {
             "entity": "kei",
@@ -453,7 +529,8 @@
             "type": "ally"
           }
         ],
-        "content": "# Rudiger\n\nParty wizard whose internal conflict has been noted by Rook Targrave of the Emerald Enclave.\n\n## Notable Abilities\n\n- **Fireball**: Particularly effective on the Lightning Rail encounter\n- **Lightning Magic**: Area of expertise\n\n## Key Moments\n\n### Session 5 - Internal Conflict\nRook Targrave noticed Rudiger's internal conflict and gave him a Scroll of Lightning Resistance.\n\n### Session 6 - Lightning Rail Battle\nRudiger's Fireball proved particularly effective during the combat aboard the Lightning Rail.\n\n### Nythraxil's Lair\nSuccessfully secured the ley stone from Nythraxil's lair, a critical victory for the party."
+        "firstAppearance": "session-01-the-bell-of-shavras",
+        "content": "# Rudiger\n\nA Human Wizard of the Evoker school whose internal conflict has been noted by Rook Targrave of the Emerald Enclave. Rudiger specializes in devastating area-effect spells, particularly fire and lightning magic.\n\n## Ability Scores\n\n| STR | DEX | CON | INT | WIS | CHA |\n|-----|-----|-----|-----|-----|-----|\n| 8 (-1) | 14 (+2) | 12 (+1) | 18 (+4) | 10 (+0) | 15 (+2) |\n\n## Combat Statistics\n\n- **Armor Class:** 12\n- **Hit Points:** 49\n- **Speed:** 30 ft.\n- **Initiative:** +2\n- **Proficiency Bonus:** +3\n\n### Saving Throws\n- **STR:** -1 | **DEX:** +2 | **CON:** +1\n- **INT:** +7 | **WIS:** +3 | **CHA:** +2\n\n## Skills\n\n**Proficient:**\n- Arcana +10 (Expertise)\n- History +7\n- Investigation +7\n- Acrobatics +5\n- Insight +3\n- Perception +3\n\n## Senses\n\n- **Passive Perception:** 13\n- **Passive Investigation:** 17\n- **Passive Insight:** 13\n\n## Proficiencies\n\n**Armor:** None\n\n**Weapons:** Simple Weapons\n\n**Tools:** Calligrapher's Supplies\n\n**Languages:** Common, Draconic, Elvish\n\n## Equipment\n\n- **Dagger** — +5 to hit, 1d4+2 piercing, range 20/60, Finesse, Light, Thrown, Nick\n- **Quarterstaff** — +2 to hit, 1d6-1 (1d8-1 versatile) bludgeoning, Topple\n- **Ray of Frost** — Cantrip, +7 to hit, 2d8 cold, range 60 ft.\n- **Melf's Acid Arrow** — 2nd Level, +7 to hit, 4d4 acid, range 90 ft.\n\n## Evocation Savant Features\n\nAs an Evoker, Rudiger has learned to shape his spells to protect allies while maximizing damage to enemies. His Evocation Savant feature allows him to cast evocation spells more efficiently.\n\n### Known Spells (Notable)\n- **Fireball** — Signature spell, devastating area damage\n- **Lightning Bolt** — Line damage, matches his internal storm\n- **Ray of Frost** — Reliable cantrip damage\n- **Melf's Acid Arrow** — Persistent acid damage\n\n## Key Moments\n\n### Session 1 - Party Formation\nJoined the party in Phandalin as a Human Rogue (later multiclassed to Wizard).\n\n### Session 5 - Internal Conflict\nRook Targrave sensed an internal conflict in Rudiger and took him aside to his study. Rook demonstrated his own magical power and gave Rudiger a Scroll of Lightning Resistance, saying: \"The storm within us can manifest out if we are not careful.\"\n\n### Session 7 - Nythraxil's Lair\nSuccessfully secured the ley stone from Nythraxil's lair after the ancient rose quartz dragon's death, a critical victory for the party.\n\n### Session 8 - Lightning Rail Battle\nRudiger's Fireball proved particularly devastating during the combat aboard the Lightning Rail, igniting the sleeping Circle agents' car and eliminating all but one.\n\n### Session 8 - Sharn Chase\nAttempted to stop the fleeing pickpocket with Ray of Frost but missed.\n\n## Combat Role\n\nAs the party's primary arcane damage dealer, Rudiger excels at eliminating groups of enemies with area-effect spells. His Evoker specialization allows him to position Fireballs without endangering allies. The high Intelligence (+4) gives him exceptional Arcana and Investigation skills, making him valuable for identifying magical threats and solving puzzles."
       },
       {
         "slug": "skid-demon",
@@ -462,14 +539,20 @@
         "subtype": "pc",
         "status": "active",
         "visibility": "public",
-        "description": "Party member with unique connection to ley energy, carries the Dryad's bow",
+        "description": "A Half-Elf Gloom Stalker Ranger with a unique connection to ley energy, wielder of the Dryad's Blessing Longbow",
         "tags": [
           "party",
+          "ranger",
+          "gloom-stalker",
           "ley-touched",
           "stone-born",
-          "prophecy"
+          "the-mawframe"
         ],
         "relationships": [
+          {
+            "entity": "the-party",
+            "type": "member-of"
+          },
           {
             "entity": "rudiger",
             "type": "ally"
@@ -489,15 +572,21 @@
           {
             "entity": "dryad-erinthin",
             "type": "ally",
-            "note": "Gifted him the Dryad's bow"
+            "note": "Gifted him the Dryad's Blessing Longbow"
           },
           {
             "entity": "heart-stone",
             "type": "connected",
             "note": "Linked via ley mark"
+          },
+          {
+            "entity": "harlix-darkleaf",
+            "type": "ally",
+            "note": "Fellow ranger, initially questioned his Dryad's bow"
           }
         ],
-        "content": "# Skid Demon\n\nParty member with a unique and growing connection to the world's ley energy. Carries the Dryad's bow gifted by Erinthin.\n\n## The Ley Mark\n\nAfter falling through a ley gate crack and seeing \"rivers of light leading to a heart of stone,\" Skid developed a ley mark that glows faintly. This mark grants him abilities:\n\n- Can sense nearby ley currents\n- Heartbeat syncs with ley pulses\n- Acts as a \"living compass\" to ley energy\n\nThe dwarven explorer Glun recognized this mark and called Skid \"Stone-born\" - a rare individual touched by the deep magic of the world.\n\n## Key Moments\n\n### The Ley Gate Vision\nFell through a crack in a ley gate, witnessing rivers of light leading to a heart of stone - a prophetic vision of what awaited in Eberron.\n\n### Recognition by the Dwarves\nThe Molrik clan's Glun immediately recognized Skid as \"Stone-born,\" treating him with a respect usually reserved for ancient beings.\n\n### Prophetic Visions\nHad visions of world destruction if the ley anchors break - fire, decay, and the rise of something ancient and hungry.\n\n### The Heart Stone Chamber\nHis ley connection intensified after the vision in the Heart Stone Chamber, where his presence helped stabilize the Eberron anchor."
+        "firstAppearance": "session-01-the-bell-of-shavras",
+        "content": "# Skid Demon\n\nA Half-Elf Ranger of the Gloom Stalker conclave with a unique and growing connection to the world's ley energy. Carries the Dryad's Blessing Longbow gifted by Erinthin and has been marked as \"Stone-born\" by the Molrik clan dwarves.\n\n## Ability Scores\n\n| STR | DEX | CON | INT | WIS | CHA |\n|-----|-----|-----|-----|-----|-----|\n| 13 (+1) | 16 (+3) | 12 (+1) | 11 (+0) | 16 (+3) | 9 (-1) |\n\n## Combat Statistics\n\n- **Armor Class:** 17\n- **Hit Points:** 51\n- **Speed:** 40 ft.\n- **Initiative:** +6\n- **Proficiency Bonus:** +3\n\n### Saving Throws\n- **STR:** +4 | **DEX:** +6 | **CON:** +1\n- **INT:** +0 | **WIS:** +3 | **CHA:** -1\n- Advantage against being charmed; magic can't put Skid to sleep\n- Advantage on saves against being knocked prone\n\n### Defenses\n- Immunity to Magical Sleep (Half-Elf heritage)\n\n## Skills\n\n**Expertise:**\n- Perception +9\n\n**Proficient:**\n- Insight +6\n- Sleight of Hand +6\n- Stealth +6\n- Survival +6\n- Nature +3\n\n## Senses\n\n- **Darkvision:** 120 ft. (enhanced by Gloom Stalker)\n- **Passive Perception:** 19\n- **Passive Investigation:** 10\n- **Passive Insight:** 16\n\n## Proficiencies\n\n**Armor:** Light Armor, Medium Armor, Shields\n\n**Weapons:** Martial Weapons, Simple Weapons\n\n**Tools:** Thieves' Tools\n\n**Languages:** Common, Draconic, Elvish, Goblin, Orc\n\n## Equipment\n\n- **Dryad's Blessing Longbow +1** — +9 to hit, 1d8+4 piercing, range 150/600, Slow mastery (reduces target Speed by 10 ft.)\n- **Scimitar** — +6 to hit, 1d6+3 slashing, Finesse, Light, Nick\n- **Shortsword** — +6 to hit, 1d6+3 piercing, Finesse, Light, Vex\n- **Unarmed Strike** — +4 to hit, 2 bludgeoning\n\n## Gloom Stalker Features\n\n### Extra Attack\nCan attack twice when taking the Attack action.\n\n### Dreadful Strike (3/Long Rest)\nOnce per turn, when hitting a creature with a weapon attack, can deal an extra 2d6 Psychic damage.\n\n### Umbral Sight\nDarkvision extended to 120 ft. While in darkness, invisible to creatures relying on darkvision.\n\n### Slow (Longbow Mastery)\nWhen hitting a creature with the Dryad's Blessing Longbow, can reduce its Speed by 10 ft. until the start of next turn.\n\n## The Ley Mark\n\nAfter falling through a ley gate crack and seeing \"rivers of light leading to a heart of stone,\" Skid developed a ley mark that glows faintly. This mark grants him abilities:\n\n- Can sense nearby ley currents\n- Heartbeat syncs with ley pulses\n- Acts as a \"living compass\" to ley energy\n\nThe dwarven explorer Glun recognized this mark and called Skid \"Stone-born\"—a rare individual touched by the deep magic of the world.\n\n## Key Moments\n\n### Session 1 - Party Formation\nJoined the party in Phandalin, answering Townmaster Riglid's call.\n\n### Session 4 - Gift from Erinthin\nThe Dryad Erinthin of the Moonwoods gifted Skid the Dryad's Blessing Longbow +1 with special thorn-bloom arrows after the party helped defeat the cultists.\n\n### Session 6 - Questioned by Harlix\nHarlix Darkleaf of The Knock noticed Skid's Dryad bow and questioned how he came to possess it—a tense moment that turned to admiration after learning of their encounter with Erinthin.\n\n### Session 9 - The Ley Gate Vision\nFell through a crack in a ley gate, witnessing rivers of light leading to a heart of stone—a prophetic vision of what awaited in Eberron.\n\n### Session 9 - Recognition by the Dwarves\nThe Molrik clan's Glun immediately recognized Skid as \"Stone-born,\" treating him with respect usually reserved for ancient beings. Ley energy arced from Skid to Molrik's lantern.\n\n### Session 9 - Prophetic Visions\nIn the Hall of Warriors, Skid saw a storm tearing through the ley—the same pulse that marked him. Later, in the Heart Stone Chamber, had visions of world destruction if the ley anchors break.\n\n### Session 9 - The Heart Stone Chamber\nHis ley connection intensified during the vision in the Heart Stone Chamber. His presence helped stabilize the Eberron anchor, and he gained permanent ability to sense nearby ley currents.\n\n## Combat Role\n\nAs a Gloom Stalker Ranger, Skid excels at scouting, ambush tactics, and sustained ranged damage. With 120 ft. Darkvision and invisibility to creatures using darkvision while in darkness, he's the perfect reconnaissance specialist. The +9 Perception (Passive 19) means almost nothing escapes his notice. His Dreadful Strike adds burst damage, while the Slow mastery on his bow provides battlefield control."
       },
       {
         "slug": "stol",
@@ -506,13 +595,18 @@
         "subtype": "pc",
         "status": "active",
         "visibility": "public",
-        "description": "Party cleric with powerful Turn Undead ability",
+        "description": "A steadfast Human Cleric devoted to healing and protecting his allies, wielder of the Mace of Disruption",
         "tags": [
           "party",
           "cleric",
-          "healer"
+          "healer",
+          "the-mawframe"
         ],
         "relationships": [
+          {
+            "entity": "the-party",
+            "type": "member-of"
+          },
           {
             "entity": "rudiger",
             "type": "ally",
@@ -524,7 +618,8 @@
             "note": "Fell in battle against him"
           }
         ],
-        "content": "# Stol\n\nParty cleric whose Turn Undead ability has proven invaluable against undead threats.\n\n## Key Moments\n\n### Battle with the Fallen Priest\nFell during the climactic battle with the Fallen Priest, but was restored by Rudiger.\n\n### Dhakaani Ruins\nTurn Undead was crucial in defeating the Dhakaani Wraith-Tacticians in the ancient ruins beneath Sharn."
+        "firstAppearance": "session-01-the-bell-of-shavras",
+        "content": "# Stol\n\nA Human Cleric whose Turn Undead ability and healing magic have proven invaluable against the undead threats the party has faced. Stol serves as the party's primary healer and spiritual anchor.\n\n## Ability Scores\n\n| STR | DEX | CON | INT | WIS | CHA |\n|-----|-----|-----|-----|-----|-----|\n| 12 (+1) | 12 (+1) | 13 (+1) | 9 (-1) | 16 (+3) | 15 (+2) |\n\n## Combat Statistics\n\n- **Armor Class:** 17\n- **Hit Points:** 44\n- **Speed:** 30 ft.\n- **Initiative:** +1\n- **Proficiency Bonus:** +3\n\n### Saving Throws\n- **STR:** +1 | **DEX:** +1 | **CON:** +1\n- **INT:** -1 | **WIS:** +6 | **CHA:** +5\n\n## Skills\n\n**Proficient:**\n- Insight +6\n- Medicine +6\n- Survival +6\n- History +2\n- Religion +2\n\n## Senses\n\n- **Passive Perception:** 13\n- **Passive Investigation:** 9\n- **Passive Insight:** 16\n\n## Proficiencies\n\n**Armor:** Heavy Armor, Medium Armor, Light Armor, Shields\n\n**Weapons:** Martial Weapons, Simple Weapons\n\n**Tools:** Calligrapher's Supplies\n\n**Languages:** Common, Dwarvish, Elvish\n\n## Equipment\n\n- **Devotee's Censer** — +4 to hit, 1d8+1 bludgeoning +1d8 radiant, Martial, Sap\n- **Mace of Disruption** — +4 to hit, 1d6+1 bludgeoning +2d6 radiant vs undead, Simple, Sap\n- **Guiding Bolt** — +6 to hit, 4d6 radiant, range 120 ft.\n\n## Class Features\n\n### Channel Divinity (3/Long Rest)\nCan channel divine energy to fuel magical effects. Regains one use on Short Rest.\n\n**Sear Undead:** Deals 1d8 radiant damage to undead creatures.\n\n**Turn Undead:** Forces undead to flee, crucial against Dhakaani Wraith-Tacticians.\n\n### Battle Medic\nAs a Utilize action, can expend one use of a Healer's Kit to heal a creature within 5 feet. The creature regains HP equal to one of its Hit Dice +3.\n\n## Key Moments\n\n### Session 1 - Party Formation\nJoined the party in Phandalin, answering Townmaster Riglid's call to investigate the raids.\n\n### Session 3 - Whisperwood Ossuary\nUsed Turn Undead to repel skeletal warriors and zombies in the haunted ossuary.\n\n### Battle with the Fallen Priest\nFell during the climactic battle with the Fallen Priest at the Shrine of Shavras, but was restored by Rudiger.\n\n### Session 5 - The Vault of Shavras\nTurn Undead proved crucial in defeating the undead priests guarding the vault.\n\n### Dhakaani Ruins\nTurn Undead was instrumental in defeating the Dhakaani Wraith-Tacticians in the ancient ruins beneath Sharn. Also cast Moonbeam (via Accoa) to break the wraiths' fear spell.\n\n## Combat Role\n\nAs the party's primary healer and undead specialist, Stol provides crucial support in battle. His Channel Divinity abilities make him especially effective against the undead threats the party frequently encounters. The Mace of Disruption deals devastating bonus damage to undead, making Stol both a healer and a formidable combatant against unholy foes."
       }
     ],
     "enemies": [
@@ -1008,6 +1103,49 @@
           }
         ],
         "content": "# Shavras Vault\n\nAn ancient sealed dungeon beneath the Shavras Shrine, containing secrets of sacred bloodlines and treasures from ages past.\n\n## Access\n\nThe vault opened after the Fallen Priest's body liquified into the earth following his defeat. It has since been sealed by Greeve's sacrifice.\n\n## Notable Features\n\n### Shadow Memories\nThe walls display shadow memories of ancient priests, replaying scenes from the distant past.\n\n### Bloodline Murals\nMurals depicting sacred bloodlines line the chambers. Greeve recognized his own family crest among them, revealing his unknown royal heritage.\n\n### Heart Chamber\nThe deepest chamber contains:\n- Purple light emanating from unknown sources\n- A floating box containing a heart\n- The source of the vault's power\n\n## Enemies Encountered\n\nDuring the party's exploration:\n- Goblins\n- Skeletal warriors\n- An ogre\n- Giant spiders\n\n## Treasures Found\n\nBefore the vault was sealed:\n- Ring of Protection\n- Battering Shield\n- Bag of Holding\n- Pipes of Haunting\n\n## Current Status\n\n**SEALED** - Greeve serves as the eternal guardian. The vault will remain sealed until someone tracks down all of Greeve's ancestors."
+      },
+      {
+        "slug": "shavras",
+        "name": "Shavras",
+        "type": "location",
+        "subtype": "ruins",
+        "status": "destroyed",
+        "visibility": "public",
+        "description": "Ancient temple complex and the origin of the Bell of Shavras, now in ruins with a sealed vault beneath",
+        "tags": [
+          "ancient",
+          "temple",
+          "ruins",
+          "dungeon",
+          "bloodline"
+        ],
+        "relationships": [
+          {
+            "entity": "shavras-vault",
+            "type": "contains"
+          },
+          {
+            "entity": "the-fallen-priest",
+            "type": "controlled-by",
+            "note": "Attempted to use Aidin's blood to open the portal"
+          },
+          {
+            "entity": "aidin",
+            "type": "connected",
+            "note": "Last descendant of Shavras founders"
+          },
+          {
+            "entity": "greeve",
+            "type": "connected",
+            "note": "Royal bloodline connection to Shavras"
+          },
+          {
+            "entity": "bell-of-shavras",
+            "type": "origin"
+          }
+        ],
+        "firstAppearance": "session-01-the-bell-of-shavras",
+        "content": "# Shavras\n\nAn ancient temple complex that once stood as a prosperous village before being repeatedly sacked by barbarians. The villagers famously melted all their gold into a bell and covered it with copper to hide its value—creating the legendary Bell of Shavras.\n\n## History\n\n### The Ancient Temple\nIn ancient times, Shavras was a thriving religious community. The temple served as a place of worship and housed a sacred bloodline that would later become the target of dark forces.\n\n### The Barbarian Raids\nAfter years of devastating barbarian attacks, the villagers devised a desperate plan. They melted all their gold, cast it into a bell, and covered it with copper to disguise its true value. The bell still sat atop the ruined shrine when the party arrived.\n\n### The Fall\nThe temple eventually fell into ruin. The Fallen Priest and his cult discovered the ancient secrets buried beneath and began working to open a portal to the Undergods using the blood of the last descendants.\n\n## The Bloodline of Shavras\n\nTwo important figures carry the bloodline of Shavras:\n- **Aidin Trynn** — The last known descendant of the temple founders. Her sacrifice was needed to open the portal.\n- **Greeve** — Unknowingly carried royal blood connected to Shavras. His death sealed the vault.\n\n## Current State\n\nThe surface ruins of Shavras are now largely collapsed. After the defeat of the Fallen Priest and Greeve's sacrifice, an entrance to the vault beneath opened briefly before being sealed by Greeve's transformation into a wraith guardian.\n\n## The Bell of Shavras\n\nThe legendary bell, worth 5,000gp in gold beneath its copper shell, was recovered by the party. Its ancient word \"Shavras\" in worn, raised lettering served as a key to unlock the hidden door in the Ulfandor mines.\n\n## Key Events\n\n### Session 4 - The Battle at Shavras\nThe party arrived to find a battle between Dain's dwarf clan and goblins/orcs. The Fallen Priest stood over Aidin on a stone slab, attempting the portal ritual. Greeve transformed into a Slaad and charged the shrine.\n\n### Session 5 - The Vault Opens\nAfter defeating the Fallen Priest, his body liquified and seeped into the earth, causing the ruins to shake and reveal an entrance to the vault beneath."
       },
       {
         "slug": "stonehell-isle",
@@ -1759,15 +1897,17 @@
   },
   "indexes": {
     "byName": {
-      "Accoa": "accoa",
+      "Accoa Krigsdottir": "accoa",
       "Aidin": "aidin",
       "Alkanar": "alkanar",
       "Captain Tallow": "captain-tallow",
+      "Cribben Hayduke": "cribben-hayduke",
       "Dryad Erinthin": "dryad-erinthin",
       "Elder Elarion Mossbark": "elder-elarion-mossbark",
       "Greeve": "greeve",
       "Harlix Darkleaf": "harlix-darkleaf",
-      "Kei": "kei",
+      "Kei Eaglesnout": "kei",
+      "Malum Munus Exemplar": "malum",
       "Master Molrik": "master-molrik",
       "Rook Targrave": "rook-targrave",
       "Rudiger": "rudiger",
@@ -1788,6 +1928,7 @@
       "Sharn, The City of Towers": "sharn",
       "Shrine of Shavras": "shavras-shrine",
       "Shavras Vault": "shavras-vault",
+      "Shavras": "shavras",
       "Stonehell Isle": "stonehell-isle",
       "The Astralglades": "the-astralglades",
       "Umbrage Hill": "umbrage-hill",
@@ -1812,19 +1953,30 @@
     "byTag": {
       "party": [
         "accoa",
+        "cribben-hayduke",
         "kei",
+        "malum",
         "rudiger",
         "skid-demon",
         "stol"
       ],
-      "centaur": [
+      "aasimar": [
         "accoa"
       ],
-      "scout": [
+      "paladin": [
         "accoa"
       ],
-      "whisperwood-survivor": [
+      "oath-of-ancients": [
         "accoa"
+      ],
+      "the-mawframe": [
+        "accoa",
+        "cribben-hayduke",
+        "kei",
+        "malum",
+        "rudiger",
+        "skid-demon",
+        "stol"
       ],
       "npc": [
         "aidin",
@@ -1868,10 +2020,21 @@
         "captain-tallow"
       ],
       "druid": [
-        "captain-tallow"
+        "captain-tallow",
+        "cribben-hayduke"
       ],
       "secret-identity": [
         "captain-tallow"
+      ],
+      "elf": [
+        "cribben-hayduke"
+      ],
+      "cursed": [
+        "cribben-hayduke",
+        "whisperwood-forest"
+      ],
+      "whisperwood-survivor": [
+        "cribben-hayduke"
       ],
       "forest-guardian": [
         "dryad-erinthin"
@@ -1913,8 +2076,17 @@
       "fighter": [
         "kei"
       ],
+      "champion": [
+        "kei"
+      ],
       "martial": [
         "kei"
+      ],
+      "assassin": [
+        "malum"
+      ],
+      "stealth": [
+        "malum"
       ],
       "dwarf": [
         "master-molrik"
@@ -1925,12 +2097,12 @@
       "high-council": [
         "rook-targrave"
       ],
-      "magic-user": [
-        "rudiger"
-      ],
       "wizard": [
         "rudiger",
         "the-circle-mage"
+      ],
+      "evoker": [
+        "rudiger"
       ],
       "fire-magic": [
         "rudiger"
@@ -1938,15 +2110,18 @@
       "lightning-magic": [
         "rudiger"
       ],
+      "ranger": [
+        "skid-demon",
+        "the-knock"
+      ],
+      "gloom-stalker": [
+        "skid-demon"
+      ],
       "ley-touched": [
         "skid-demon"
       ],
       "stone-born": [
         "skid-demon"
-      ],
-      "prophecy": [
-        "skid-demon",
-        "nythraxil"
       ],
       "healer": [
         "stol"
@@ -2006,6 +2181,7 @@
         "nythraxil",
         "dhakaani-ruins",
         "shavras-vault",
+        "shavras",
         "stonehell-isle",
         "dhakaani-empire"
       ],
@@ -2013,6 +2189,9 @@
         "nythraxil"
       ],
       "neutral": [
+        "nythraxil"
+      ],
+      "prophecy": [
         "nythraxil"
       ],
       "slanted-circle": [
@@ -2051,7 +2230,8 @@
       "dungeon": [
         "dhakaani-ruins",
         "shavras-shrine",
-        "shavras-vault"
+        "shavras-vault",
+        "shavras"
       ],
       "ley-anchor": [
         "dhakaani-ruins",
@@ -2083,6 +2263,7 @@
       ],
       "ruins": [
         "shavras-shrine",
+        "shavras",
         "umbrage-hill"
       ],
       "fallen-priest": [
@@ -2095,7 +2276,11 @@
         "shavras-vault"
       ],
       "bloodline": [
-        "shavras-vault"
+        "shavras-vault",
+        "shavras"
+      ],
+      "temple": [
+        "shavras"
       ],
       "island": [
         "stonehell-isle"
@@ -2122,9 +2307,6 @@
       ],
       "ambush-site": [
         "umbrage-hill"
-      ],
-      "cursed": [
-        "whisperwood-forest"
       ],
       "dryad": [
         "whisperwood-forest",
@@ -2178,9 +2360,6 @@
       ],
       "main-threat": [
         "slanted-circle"
-      ],
-      "ranger": [
-        "the-knock"
       ],
       "astgrove": [
         "the-knock"
@@ -2248,85 +2427,65 @@
         "ring-of-protection"
       ]
     },
-    "bySession": {},
+    "bySession": {
+      "session-04-the-dryads-blessing": [
+        "accoa"
+      ],
+      "session-01-the-bell-of-shavras": [
+        "cribben-hayduke",
+        "kei",
+        "malum",
+        "rudiger",
+        "skid-demon",
+        "stol",
+        "shavras"
+      ]
+    },
     "byRelationship": {
-      "ally": {
+      "member-of": {
         "accoa": [
-          "rudiger",
-          "stol",
-          "kei",
-          "skid-demon",
-          "dryad-erinthin"
-        ],
-        "aidin": [
           "the-party"
         ],
         "alkanar": [
-          "the-party"
-        ],
-        "captain-tallow": [
-          "the-party",
           "emerald-enclave"
-        ],
-        "dryad-erinthin": [
-          "the-party",
-          "skid-demon",
-          "accoa",
-          "emerald-enclave"
-        ],
-        "elder-elarion-mossbark": [
-          "the-party"
-        ],
-        "greeve": [
-          "the-party"
         ],
         "harlix-darkleaf": [
-          "the-circle-mage",
-          "veyra"
+          "slanted-circle"
         ],
         "kei": [
-          "rudiger",
-          "stol",
-          "skid-demon",
-          "accoa"
+          "the-party"
         ],
-        "master-molrik": [
-          "the-party",
-          "skid-demon"
-        ],
-        "rook-targrave": [
-          "the-party",
-          "rudiger"
+        "malum": [
+          "the-party"
         ],
         "rudiger": [
-          "stol",
-          "kei",
-          "skid-demon",
-          "accoa",
-          "emerald-enclave"
+          "the-party"
         ],
         "skid-demon": [
+          "the-party"
+        ],
+        "stol": [
+          "the-party"
+        ],
+        "the-circle-mage": [
+          "slanted-circle"
+        ],
+        "veyra": [
+          "slanted-circle"
+        ],
+        "slanted-circle": [
+          "harlix-darkleaf",
+          "the-circle-mage"
+        ],
+        "the-knock": [
+          "emerald-enclave"
+        ],
+        "the-party": [
           "rudiger",
           "stol",
           "kei",
-          "accoa",
-          "dryad-erinthin"
-        ],
-        "stol": [
-          "rudiger"
-        ],
-        "the-circle-mage": [
-          "harlix-darkleaf"
-        ],
-        "veyra": [
-          "harlix-darkleaf"
-        ],
-        "molrik-clan": [
-          "the-party",
-          "skid-demon"
-        ],
-        "the-party": [
-          "emerald-enclave"
+          "skid-demon",
+          "accoa"
         ]
       },
       "enemy": {
@@ -2335,6 +2494,9 @@
         ],
         "aidin": [
           "the-fallen-priest"
+        ],
+        "cribben-hayduke": [
+          "night-hag"
         ],
         "dryad-erinthin": [
           "night-hag"
@@ -2396,37 +2558,102 @@
           "slanted-circle"
         ]
       },
+      "ally": {
+        "accoa": [
+          "dryad-erinthin"
+        ],
+        "aidin": [
+          "the-party"
+        ],
+        "alkanar": [
+          "the-party"
+        ],
+        "captain-tallow": [
+          "the-party",
+          "emerald-enclave"
+        ],
+        "cribben-hayduke": [
+          "rudiger",
+          "stol",
+          "kei",
+          "skid-demon"
+        ],
+        "dryad-erinthin": [
+          "the-party",
+          "skid-demon",
+          "accoa",
+          "emerald-enclave"
+        ],
+        "elder-elarion-mossbark": [
+          "the-party"
+        ],
+        "greeve": [
+          "the-party"
+        ],
+        "harlix-darkleaf": [
+          "the-circle-mage",
+          "veyra"
+        ],
+        "kei": [
+          "rudiger",
+          "stol",
+          "skid-demon",
+          "accoa"
+        ],
+        "malum": [
+          "dain"
+        ],
+        "master-molrik": [
+          "the-party",
+          "skid-demon"
+        ],
+        "rook-targrave": [
+          "the-party",
+          "rudiger"
+        ],
+        "rudiger": [
+          "stol",
+          "kei",
+          "skid-demon",
+          "accoa",
+          "emerald-enclave"
+        ],
+        "skid-demon": [
+          "rudiger",
+          "stol",
+          "kei",
+          "accoa",
+          "dryad-erinthin",
+          "harlix-darkleaf"
+        ],
+        "stol": [
+          "rudiger"
+        ],
+        "the-circle-mage": [
+          "harlix-darkleaf"
+        ],
+        "veyra": [
+          "harlix-darkleaf"
+        ],
+        "molrik-clan": [
+          "the-party",
+          "skid-demon"
+        ],
+        "the-party": [
+          "emerald-enclave"
+        ]
+      },
       "lover": {
         "aidin": [
           "greeve"
         ]
       },
-      "member-of": {
-        "alkanar": [
-          "emerald-enclave"
+      "former-member-of": {
+        "cribben-hayduke": [
+          "the-party"
         ],
         "harlix-darkleaf": [
-          "slanted-circle"
-        ],
-        "the-circle-mage": [
-          "slanted-circle"
-        ],
-        "veyra": [
-          "slanted-circle"
-        ],
-        "slanted-circle": [
-          "harlix-darkleaf",
-          "the-circle-mage"
-        ],
-        "the-knock": [
           "emerald-enclave"
-        ],
-        "the-party": [
-          "rudiger",
-          "stol",
-          "kei",
-          "skid-demon",
-          "accoa"
         ]
       },
       "leader-of": {
@@ -2463,11 +2690,6 @@
           "general-varkuun"
         ]
       },
-      "former-member-of": {
-        "harlix-darkleaf": [
-          "emerald-enclave"
-        ]
-      },
       "mentor": {
         "rudiger": [
           "rook-targrave"
@@ -2496,6 +2718,10 @@
         "shavras-shrine": [
           "shavras-vault",
           "ulfandor"
+        ],
+        "shavras": [
+          "aidin",
+          "greeve"
         ],
         "stonehell-isle": [
           "captain-tallow"
@@ -2628,12 +2854,25 @@
           "the-fallen-priest"
         ]
       },
+      "contains": {
+        "shavras": [
+          "shavras-vault"
+        ]
+      },
       "controlled-by": {
+        "shavras": [
+          "the-fallen-priest"
+        ],
         "the-astralglades": [
           "slanted-circle"
         ],
         "whisperwood-forest": [
           "dryad-erinthin"
+        ]
+      },
+      "origin": {
+        "shavras": [
+          "bell-of-shavras"
         ]
       },
       "formerly-controlled-by": {
@@ -2695,11 +2934,13 @@
         "aidin",
         "alkanar",
         "captain-tallow",
+        "cribben-hayduke",
         "dryad-erinthin",
         "elder-elarion-mossbark",
         "greeve",
         "harlix-darkleaf",
         "kei",
+        "malum",
         "master-molrik",
         "rook-targrave",
         "rudiger",
@@ -2724,6 +2965,7 @@
         "sharn",
         "shavras-shrine",
         "shavras-vault",
+        "shavras",
         "stonehell-isle",
         "the-astralglades",
         "umbrage-hill",
