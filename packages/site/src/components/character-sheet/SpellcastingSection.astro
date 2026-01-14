@@ -82,6 +82,22 @@ const spellListLabel = preparedSpells.length > 0 ? 'Prepared Spells' :
 
 // Check if we have meaningful spellcasting data
 const hasSpellcasting = ability || spellSlots.length > 0 || pactSlots || cantrips.length > 0 || spellList.length > 0;
+
+// Get color based on slot usage percentage
+function getSlotColor(available: number, total: number): string {
+  if (total === 0) return 'var(--color-text-muted)';
+  const percent = (available / total) * 100;
+  if (percent > 75) return 'var(--color-success)'; // Green - plenty left
+  if (percent > 25) return 'var(--color-warning)'; // Yellow/Orange - getting low
+  return 'var(--color-error)'; // Red - nearly depleted
+}
+
+// Format slot level as ordinal
+function formatOrdinal(n: number): string {
+  const suffixes = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]);
+}
 ---
 
 {hasSpellcasting && (
@@ -122,40 +138,53 @@ const hasSpellcasting = ability || spellSlots.length > 0 || pactSlots || cantrip
       <div class="spell-slots">
         <h4 class="spell-subtitle">Spell Slots</h4>
         <div class="slots-grid">
-          {spellSlots.map(({ level, total, expended = 0 }) => (
-            <div class="slot-level">
-              <span class="slot-level__label">{level === 1 ? '1st' : level === 2 ? '2nd' : level === 3 ? '3rd' : `${level}th`}</span>
-              <div class="slot-pips">
-                {Array.from({ length: total }).map((_, i) => (
-                  <span class={`slot-pip ${i < (total - expended) ? 'slot-pip--available' : 'slot-pip--expended'}`}>
-                    ●
-                  </span>
-                ))}
+          {spellSlots.map(({ level, total, expended = 0 }) => {
+            const available = total - expended;
+            const slotColor = getSlotColor(available, total);
+            return (
+              <div class="slot-level" style={`--slot-color: ${slotColor}`}>
+                <span class="slot-level__badge">{level}</span>
+                <span class="slot-level__label">{formatOrdinal(level)} Level</span>
+                <div class="slot-pips">
+                  {Array.from({ length: total }).map((_, i) => (
+                    <span class={`slot-pip ${i < available ? 'slot-pip--available' : 'slot-pip--expended'}`}>
+                      {i < available ? '●' : '○'}
+                    </span>
+                  ))}
+                </div>
+                <span class="slot-count">{available}/{total}</span>
               </div>
-              <span class="slot-count">{total - expended}/{total}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     )}
 
     <!-- Pact Slots (Warlock) -->
-    {pactSlots && (
-      <div class="pact-slots">
-        <h4 class="spell-subtitle">Pact Slots</h4>
-        <div class="pact-info">
-          <span class="pact-level">{pactSlots.level === 1 ? '1st' : pactSlots.level === 2 ? '2nd' : pactSlots.level === 3 ? '3rd' : `${pactSlots.level}th`} Level</span>
-          <div class="slot-pips">
-            {Array.from({ length: pactSlots.total }).map((_, i) => (
-              <span class={`slot-pip slot-pip--pact ${i < (pactSlots.total - (pactSlots.expended ?? 0)) ? 'slot-pip--available' : 'slot-pip--expended'}`}>
-                ●
-              </span>
-            ))}
+    {pactSlots && (() => {
+      const pactAvailable = pactSlots.total - (pactSlots.expended ?? 0);
+      const pactColor = getSlotColor(pactAvailable, pactSlots.total);
+      return (
+        <div class="pact-slots" style={`--slot-color: ${pactColor}`}>
+          <h4 class="spell-subtitle">
+            <span class="pact-magic-label">Pact Magic</span>
+          </h4>
+          <div class="pact-info">
+            <span class="pact-level-badge">{pactSlots.level}</span>
+            <span class="pact-level">{formatOrdinal(pactSlots.level)} Level</span>
+            <div class="slot-pips slot-pips--pact">
+              {Array.from({ length: pactSlots.total }).map((_, i) => (
+                <span class={`slot-pip slot-pip--pact ${i < pactAvailable ? 'slot-pip--available' : 'slot-pip--expended'}`}>
+                  {i < pactAvailable ? '●' : '○'}
+                </span>
+              ))}
+            </div>
+            <span class="slot-count">{pactAvailable}/{pactSlots.total}</span>
+            <span class="pact-recharge">Recovers on Short Rest</span>
           </div>
-          <span class="pact-recharge">(Short Rest)</span>
         </div>
-      </div>
-    )}
+      );
+    })()}
 
     <!-- Cantrips -->
     {cantrips.length > 0 && (
@@ -302,6 +331,22 @@ const hasSpellcasting = ability || spellSlots.length > 0 || pactSlots || cantrip
     background: var(--color-bg);
     padding: var(--space-sm);
     border-radius: var(--radius-sm);
+    border: 2px solid var(--slot-color, var(--color-border));
+    transition: border-color var(--transition-fast);
+  }
+
+  .slot-level__badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--slot-color, var(--color-accent));
+    color: white;
+    font-weight: 700;
+    font-size: var(--text-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-xs);
   }
 
   .slot-level__label {
@@ -323,7 +368,7 @@ const hasSpellcasting = ability || spellSlots.length > 0 || pactSlots || cantrip
   }
 
   .slot-pip--available {
-    color: var(--color-accent);
+    color: var(--slot-color, var(--color-accent));
   }
 
   .slot-pip--expended {
@@ -331,32 +376,60 @@ const hasSpellcasting = ability || spellSlots.length > 0 || pactSlots || cantrip
     opacity: 0.4;
   }
 
-  .slot-pip--pact.slot-pip--available {
-    color: var(--color-warning);
+  .slot-pips--pact .slot-pip--available {
+    color: var(--slot-color, var(--color-warning));
   }
 
   .slot-count {
     font-size: var(--text-xs);
     color: var(--color-text-muted);
+    font-weight: 600;
+  }
+
+  .pact-slots {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, transparent 100%);
+    padding: var(--space-sm);
+    border-radius: var(--radius-md);
+    border: 2px solid var(--slot-color, var(--color-warning));
+  }
+
+  .pact-magic-label {
+    color: var(--color-warning);
+    font-weight: 700;
   }
 
   .pact-info {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-md);
+    gap: var(--space-sm);
     background: var(--color-bg);
     padding: var(--space-sm) var(--space-md);
     border-radius: var(--radius-sm);
   }
 
+  .pact-level-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--slot-color, var(--color-warning));
+    color: white;
+    font-weight: 700;
+    font-size: var(--text-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .pact-level {
     font-weight: 600;
-    color: var(--color-warning);
+    color: var(--color-text);
   }
 
   .pact-recharge {
     font-size: var(--text-xs);
     color: var(--color-text-muted);
+    font-style: italic;
   }
 
   .spells {

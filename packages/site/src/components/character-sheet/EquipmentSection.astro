@@ -86,6 +86,17 @@ const masteryNames: Record<string, string> = {
 // Check if we have any equipment data
 const hasEquipment = equipped.length > 0 || mundane.length > 0 || currency;
 
+// Calculate attunement count
+const attunedCount = equipped.filter(e => e.attuned).length;
+const maxAttunement = 3; // D&D 5e standard limit
+
+// Calculate total weight from mundane items
+const totalWeight = mundane.reduce((sum, item) => {
+  const weight = item.weight ?? 0;
+  const qty = item.quantity ?? 1;
+  return sum + (weight * qty);
+}, 0);
+
 // Calculate total gold value
 function getTotalGold(): number {
   if (!currency) return 0;
@@ -95,17 +106,45 @@ function getTotalGold(): number {
     (currency.sp ?? 0) * 0.1 +
     (currency.cp ?? 0) * 0.01;
 }
+
+// Group equipped items by category
+const weaponSlots = ['main-hand', 'off-hand', 'two-hand'];
+const armorSlots = ['armor', 'shield'];
+const accessorySlots = ['head', 'cloak', 'neck', 'ring-1', 'ring-2', 'gloves', 'boots', 'belt', 'other'];
+
+const weapons = equipped.filter(e => weaponSlots.includes(e.slot));
+const armor = equipped.filter(e => armorSlots.includes(e.slot));
+const accessories = equipped.filter(e => accessorySlots.includes(e.slot));
 ---
 
 {hasEquipment && (
   <section class="equipment-section">
     <h3 class="equipment-section__title">Equipment</h3>
 
+    {/* Equipment Summary Bar */}
     {equipped.length > 0 && (
-      <div class="equipment-equipped">
-        <h4 class="equipment-subtitle">Equipped</h4>
+      <div class="equipment-summary">
+        {attunedCount > 0 && (
+          <div class={`summary-stat ${attunedCount >= maxAttunement ? 'summary-stat--max' : ''}`}>
+            <span class="summary-label">Attunement</span>
+            <span class="summary-value">{attunedCount}/{maxAttunement}</span>
+          </div>
+        )}
+        {totalWeight > 0 && (
+          <div class="summary-stat">
+            <span class="summary-label">Carry Weight</span>
+            <span class="summary-value">{totalWeight.toFixed(1)} lb</span>
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* Weapons */}
+    {weapons.length > 0 && (
+      <div class="equipment-group">
+        <h4 class="equipment-subtitle">⚔ Weapons</h4>
         <ul class="equipped-list">
-          {equipped.map((equip) => {
+          {weapons.map((equip) => {
             const itemData = itemLookup[equip.item];
             const rarity = itemData?.rarity;
             const rarityClass = rarity ? rarityColors[rarity] : '';
@@ -135,22 +174,94 @@ function getTotalGold(): number {
       </div>
     )}
 
+    {/* Armor & Shield */}
+    {armor.length > 0 && (
+      <div class="equipment-group">
+        <h4 class="equipment-subtitle">🛡 Armor</h4>
+        <ul class="equipped-list">
+          {armor.map((equip) => {
+            const itemData = itemLookup[equip.item];
+            const rarity = itemData?.rarity;
+            const rarityClass = rarity ? rarityColors[rarity] : '';
+
+            return (
+              <li class="equipped-item">
+                <span class="equipped-slot">{slotNames[equip.slot] ?? equip.slot}</span>
+                {itemData ? (
+                  <a href={itemData.path} class={`equipped-name ${rarityClass}`}>
+                    {itemData.name}
+                  </a>
+                ) : (
+                  <span class="equipped-name equipped-name--plain">{equip.item}</span>
+                )}
+                {equip.attuned && (
+                  <span class="equipped-attuned" title="Attuned">✦</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    )}
+
+    {/* Accessories */}
+    {accessories.length > 0 && (
+      <div class="equipment-group">
+        <h4 class="equipment-subtitle">💍 Accessories</h4>
+        <ul class="equipped-list">
+          {accessories.map((equip) => {
+            const itemData = itemLookup[equip.item];
+            const rarity = itemData?.rarity;
+            const rarityClass = rarity ? rarityColors[rarity] : '';
+
+            return (
+              <li class="equipped-item">
+                <span class="equipped-slot">{slotNames[equip.slot] ?? equip.slot}</span>
+                {itemData ? (
+                  <a href={itemData.path} class={`equipped-name ${rarityClass}`}>
+                    {itemData.name}
+                  </a>
+                ) : (
+                  <span class="equipped-name equipped-name--plain">{equip.item}</span>
+                )}
+                {equip.attuned && (
+                  <span class="equipped-attuned" title="Attuned">✦</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    )}
+
     {mundane.length > 0 && (
       <div class="equipment-mundane">
-        <h4 class="equipment-subtitle">Gear</h4>
+        <h4 class="equipment-subtitle">🎒 Gear</h4>
         <ul class="mundane-list">
-          {mundane.map((item) => (
-            <li class="mundane-item">
-              <span class="mundane-name">{item.name}</span>
-              {item.quantity && item.quantity > 1 && (
-                <span class="mundane-qty">×{item.quantity}</span>
-              )}
-              {item.notes && (
-                <span class="mundane-notes">({item.notes})</span>
-              )}
-            </li>
-          ))}
+          {mundane.map((item) => {
+            const qty = item.quantity ?? 1;
+            const itemWeight = item.weight ? item.weight * qty : null;
+            return (
+              <li class="mundane-item">
+                <span class="mundane-name">{item.name}</span>
+                {qty > 1 && (
+                  <span class="mundane-qty">×{qty}</span>
+                )}
+                {item.notes && (
+                  <span class="mundane-notes">({item.notes})</span>
+                )}
+                {itemWeight !== null && (
+                  <span class="mundane-weight">{itemWeight.toFixed(1)} lb</span>
+                )}
+              </li>
+            );
+          })}
         </ul>
+        {totalWeight > 0 && (
+          <div class="mundane-total">
+            Total: {totalWeight.toFixed(1)} lb
+          </div>
+        )}
       </div>
     )}
 
@@ -202,7 +313,48 @@ function getTotalGold(): number {
     font-weight: 600;
   }
 
-  .equipment-equipped,
+  .equipment-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-gold);
+    border-radius: var(--radius-md);
+  }
+
+  .summary-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-xs) var(--space-md);
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .summary-stat--max {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid var(--color-warning);
+  }
+
+  .summary-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+  }
+
+  .summary-value {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--color-gold);
+  }
+
+  .summary-stat--max .summary-value {
+    color: var(--color-warning);
+  }
+
+  .equipment-group,
   .equipment-mundane,
   .equipment-currency {
     background: var(--color-bg-secondary);
@@ -302,6 +454,23 @@ function getTotalGold(): number {
     font-size: var(--text-sm);
     color: var(--color-text-muted);
     font-style: italic;
+  }
+
+  .mundane-weight {
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    margin-left: auto;
+    padding-left: var(--space-sm);
+  }
+
+  .mundane-total {
+    margin-top: var(--space-sm);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-gold);
+    text-align: right;
   }
 
   .currency-grid {

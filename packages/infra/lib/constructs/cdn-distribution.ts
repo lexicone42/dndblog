@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
@@ -194,5 +195,37 @@ function handler(event) {
 
     // Grant CloudFront read access to the bucket via OAC
     // Note: S3BucketOrigin.withOriginAccessControl handles this automatically
+
+    // ==========================================================================
+    // CloudWatch Alarms for Monitoring
+    // ==========================================================================
+
+    // Alarm: 5xx error rate > 1% (origin/server errors)
+    new cloudwatch.Alarm(this, 'CloudFront5xxAlarm', {
+      alarmName: `${cdk.Names.uniqueId(this)}-cloudfront-5xx-errors`,
+      alarmDescription: 'CloudFront 5xx errors exceeded 1% - indicates origin/server problems',
+      metric: this.distribution.metric('5xxErrorRate', {
+        statistic: 'Average',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 1, // 1% error rate
+      evaluationPeriods: 3, // 3 consecutive periods (15 minutes)
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    // Alarm: 4xx error rate > 5% (client errors - higher threshold is normal)
+    new cloudwatch.Alarm(this, 'CloudFront4xxAlarm', {
+      alarmName: `${cdk.Names.uniqueId(this)}-cloudfront-4xx-errors`,
+      alarmDescription: 'CloudFront 4xx errors exceeded 5% - may indicate broken links or attacks',
+      metric: this.distribution.metric('4xxErrorRate', {
+        statistic: 'Average',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 5, // 5% error rate
+      evaluationPeriods: 3,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
   }
 }

@@ -1,4 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigatewayv2';
 import * as apigatewayIntegrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
@@ -408,5 +409,66 @@ Respond with valid JSON only:\`
     });
 
     this.apiUrl = this.api.apiEndpoint;
+
+    // ==========================================================================
+    // CloudWatch Alarms for Lambda Monitoring
+    // ==========================================================================
+
+    // Upload URL Function Alarms
+    new cloudwatch.Alarm(this, 'UploadFunctionErrors', {
+      alarmName: `${cdk.Names.uniqueId(this)}-upload-function-errors`,
+      alarmDescription: 'DM Notes upload-url function errors',
+      metric: uploadUrlFunction.metricErrors({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    // Review Function Alarms (more sensitive - uses Bedrock which can be slow/expensive)
+    new cloudwatch.Alarm(this, 'ReviewFunctionErrors', {
+      alarmName: `${cdk.Names.uniqueId(this)}-review-function-errors`,
+      alarmDescription: 'DM Notes AI review function errors',
+      metric: reviewFunction.metricErrors({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    // Review Function Duration Alarm (approaching timeout)
+    // Function timeout is 60s, alarm at 45s to catch slow responses
+    new cloudwatch.Alarm(this, 'ReviewFunctionDuration', {
+      alarmName: `${cdk.Names.uniqueId(this)}-review-function-duration`,
+      alarmDescription: 'DM Notes review function taking too long (approaching timeout)',
+      metric: reviewFunction.metricDuration({
+        statistic: 'Maximum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 45000, // 45 seconds (75% of 60s timeout)
+      evaluationPeriods: 2,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    // Review Function Throttles Alarm (hitting reserved concurrency limit)
+    new cloudwatch.Alarm(this, 'ReviewFunctionThrottles', {
+      alarmName: `${cdk.Names.uniqueId(this)}-review-function-throttles`,
+      alarmDescription: 'DM Notes review function being throttled (high demand)',
+      metric: reviewFunction.metricThrottles({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 3,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
   }
 }

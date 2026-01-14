@@ -172,6 +172,19 @@ const defensesSchema = z.object({
   conditionImmunities: z.array(z.string()).default([]),
 }).optional();
 
+/**
+ * Active condition schema for tracking current status effects.
+ * Separate from conditionImmunities (which is static character data).
+ */
+const activeConditionSchema = z.object({
+  name: z.string(), // "Poisoned", "Prone", "Concentrating", "Blessed"
+  source: z.string().optional(), // "Giant Spider bite", "Moonbeam spell"
+  duration: z.string().optional(), // "1 minute", "Until end of next turn"
+  concentration: z.boolean().default(false), // Requires concentration to maintain
+  beneficial: z.boolean().default(false), // True for buffs, false for debuffs
+  notes: z.string().optional(), // Additional context
+});
+
 // ============================================================================
 // D&D 5e 2024 (SRD 5.2) Schemas
 // ============================================================================
@@ -329,6 +342,7 @@ const characterCollection = defineCollection({
     skills: z.array(skillSchema).default([]),
     senses: sensesSchema,
     defenses: defensesSchema,
+    activeConditions: z.array(activeConditionSchema).default([]),
     languages: z.array(z.string()).default([]),
     toolProficiencies: z.array(z.string()).default([]),
     weaponProficiencies: z.array(z.string()).default([]),

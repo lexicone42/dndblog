@@ -1,0 +1,245 @@
+---
+/**
+ * ConditionsPanel.astro
+ * Displays active conditions affecting the character.
+ * Separates buffs (beneficial) from debuffs with visual distinction.
+ */
+
+import RuleTerm from '../RuleTerm.astro';
+
+interface GlossaryEntry {
+  name: string;
+  slug: string;
+  description: string;
+  category?: string;
+}
+
+interface ActiveCondition {
+  name: string;
+  source?: string;
+  duration?: string;
+  concentration?: boolean;
+  beneficial?: boolean;
+  notes?: string;
+}
+
+interface Props {
+  conditions: ActiveCondition[];
+  glossaryLookup?: Record<string, GlossaryEntry>;
+}
+
+const { conditions, glossaryLookup = {} } = Astro.props;
+
+// Separate conditions into buffs and debuffs
+const buffs = conditions.filter(c => c.beneficial);
+const debuffs = conditions.filter(c => !c.beneficial);
+
+// Check if condition is in glossary (for linking)
+function isInGlossary(conditionName: string): boolean {
+  const slug = conditionName.toLowerCase().replace(/\s+/g, '-');
+  return slug in glossaryLookup;
+}
+---
+
+{conditions.length > 0 && (
+  <section class="conditions-panel">
+    <h3 class="conditions-panel__title">Active Conditions</h3>
+
+    {debuffs.length > 0 && (
+      <div class="conditions-group conditions-group--debuff">
+        <span class="conditions-group__label">Debuffs</span>
+        <ul class="conditions-list">
+          {debuffs.map(condition => (
+            <li class="condition condition--debuff">
+              <div class="condition__header">
+                {condition.concentration && (
+                  <span class="condition__concentration" title="Requires concentration">🎯</span>
+                )}
+                <span class="condition__name">
+                  {isInGlossary(condition.name) ? (
+                    <RuleTerm term={condition.name} lookup={glossaryLookup}>
+                      {condition.name}
+                    </RuleTerm>
+                  ) : (
+                    condition.name
+                  )}
+                </span>
+              </div>
+              {(condition.source || condition.duration) && (
+                <div class="condition__details">
+                  {condition.source && (
+                    <span class="condition__source">{condition.source}</span>
+                  )}
+                  {condition.duration && (
+                    <span class="condition__duration">{condition.duration}</span>
+                  )}
+                </div>
+              )}
+              {condition.notes && (
+                <p class="condition__notes">{condition.notes}</p>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {buffs.length > 0 && (
+      <div class="conditions-group conditions-group--buff">
+        <span class="conditions-group__label">Buffs</span>
+        <ul class="conditions-list">
+          {buffs.map(condition => (
+            <li class="condition condition--buff">
+              <div class="condition__header">
+                {condition.concentration && (
+                  <span class="condition__concentration" title="Requires concentration">🎯</span>
+                )}
+                <span class="condition__name">
+                  {isInGlossary(condition.name) ? (
+                    <RuleTerm term={condition.name} lookup={glossaryLookup}>
+                      {condition.name}
+                    </RuleTerm>
+                  ) : (
+                    condition.name
+                  )}
+                </span>
+              </div>
+              {(condition.source || condition.duration) && (
+                <div class="condition__details">
+                  {condition.source && (
+                    <span class="condition__source">{condition.source}</span>
+                  )}
+                  {condition.duration && (
+                    <span class="condition__duration">{condition.duration}</span>
+                  )}
+                </div>
+              )}
+              {condition.notes && (
+                <p class="condition__notes">{condition.notes}</p>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </section>
+)}
+
+<style>
+  .conditions-panel {
+    margin-bottom: var(--space-lg);
+  }
+
+  .conditions-panel__title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .conditions-group {
+    margin-bottom: var(--space-md);
+    padding: var(--space-sm);
+    border-radius: var(--radius-md);
+    border: 2px solid;
+  }
+
+  .conditions-group--debuff {
+    background: rgba(220, 53, 69, 0.1);
+    border-color: var(--color-error);
+  }
+
+  .conditions-group--buff {
+    background: rgba(40, 167, 69, 0.1);
+    border-color: var(--color-success);
+  }
+
+  .conditions-group__label {
+    display: block;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: var(--space-sm);
+  }
+
+  .conditions-group--debuff .conditions-group__label {
+    color: var(--color-error);
+  }
+
+  .conditions-group--buff .conditions-group__label {
+    color: var(--color-success);
+  }
+
+  .conditions-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .condition {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-secondary);
+    min-width: 120px;
+  }
+
+  .condition--debuff {
+    border-left: 3px solid var(--color-error);
+  }
+
+  .condition--buff {
+    border-left: 3px solid var(--color-success);
+  }
+
+  .condition__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .condition__concentration {
+    font-size: var(--text-sm);
+    cursor: help;
+  }
+
+  .condition__name {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .condition__details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-top: 2px;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .condition__source {
+    font-style: italic;
+  }
+
+  .condition__duration {
+    color: var(--color-text-secondary);
+  }
+
+  .condition__duration::before {
+    content: '⏱ ';
+  }
+
+  .condition__notes {
+    margin: var(--space-xs) 0 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    line-height: 1.4;
+  }
+</style>

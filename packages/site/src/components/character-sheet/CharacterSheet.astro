@@ -7,6 +7,7 @@
 
 import AbilityScoresBlock from './AbilityScoresBlock.astro';
 import CombatStatsPanel from './CombatStatsPanel.astro';
+import ConditionsPanel from './ConditionsPanel.astro';
 import SkillsGrid from './SkillsGrid.astro';
 import EquipmentSection from './EquipmentSection.astro';
 import SpellcastingSection from './SpellcastingSection.astro';
@@ -63,6 +64,16 @@ interface Props {
       proficient?: boolean;
       expertise?: boolean;
       bonus?: number;
+    }>;
+
+    // Active conditions
+    activeConditions?: Array<{
+      name: string;
+      source?: string;
+      duration?: string;
+      concentration?: boolean;
+      beneficial?: boolean;
+      notes?: string;
     }>;
 
     // Equipment
@@ -133,8 +144,9 @@ const hasEquipment = character.equipment && (
 );
 const hasSpellcasting = character.spellcasting && Object.keys(character.spellcasting).length > 0;
 const hasFeatures = character.features && character.features.length > 0;
+const hasActiveConditions = character.activeConditions && character.activeConditions.length > 0;
 
-const hasCharacterSheetData = hasAbilityScores || hasCombatStats || hasSkills || hasEquipment || hasSpellcasting || hasFeatures;
+const hasCharacterSheetData = hasAbilityScores || hasCombatStats || hasSkills || hasEquipment || hasSpellcasting || hasFeatures || hasActiveConditions;
 
 // Get species display (prefer 5e 2024 origin.species, fallback to legacy race)
 const speciesDisplay = character.origin?.species ?? character.race;
@@ -187,6 +199,13 @@ const proficiencyBonus = character.combat?.proficiencyBonus ??
       />
 
       <CombatStatsPanel combat={character.combat} glossaryLookup={glossaryLookup} />
+
+      {hasActiveConditions && character.activeConditions && (
+        <ConditionsPanel
+          conditions={character.activeConditions}
+          glossaryLookup={glossaryLookup}
+        />
+      )}
     </div>
 
     <!-- Skills Section -->
