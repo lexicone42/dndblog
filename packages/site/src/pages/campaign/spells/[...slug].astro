@@ -1,0 +1,359 @@
+---
+/**
+ * Spell page template
+ * Displays spell details in a standardized D&D spell card format.
+ */
+
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('spells');
+
+  return entries.map(entry => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+// School colors for styling
+const schoolColors: Record<string, string> = {
+  abjuration: 'school--abjuration',
+  conjuration: 'school--conjuration',
+  divination: 'school--divination',
+  enchantment: 'school--enchantment',
+  evocation: 'school--evocation',
+  illusion: 'school--illusion',
+  necromancy: 'school--necromancy',
+  transmutation: 'school--transmutation',
+};
+
+// Format level display
+function formatLevel(level: number): string {
+  if (level === 0) return 'Cantrip';
+  if (level === 1) return '1st Level';
+  if (level === 2) return '2nd Level';
+  if (level === 3) return '3rd Level';
+  return `${level}th Level`;
+}
+
+// Format components display
+function formatComponents(components: string[], material?: string): string {
+  const parts = components.join(', ');
+  if (material && components.includes('M')) {
+    return `${parts} (${material})`;
+  }
+  return parts;
+}
+
+const spell = entry.data;
+---
+
+<BaseLayout
+  title={`${spell.name} - Spell Reference`}
+  description={spell.description?.slice(0, 160) || `${spell.name} spell details`}
+>
+  <article class="spell-page">
+    <header class="spell-header">
+      <nav class="breadcrumb">
+        <a href="/reference">Reference</a>
+        <span class="breadcrumb__sep">/</span>
+        <a href="/reference#spells">Spells</a>
+        <span class="breadcrumb__sep">/</span>
+        <span>{spell.name}</span>
+      </nav>
+    </header>
+
+    <div class={`spell-card ${schoolColors[spell.school] || ''}`}>
+      <div class="spell-card__header">
+        <h1 class="spell-name">{spell.name}</h1>
+        <div class="spell-level-school">
+          <span class="spell-level">{formatLevel(spell.level)}</span>
+          <span class="spell-school">{spell.school}</span>
+          {spell.ritual && <span class="spell-ritual">Ritual</span>}
+        </div>
+      </div>
+
+      <div class="spell-card__stats">
+        <div class="spell-stat">
+          <span class="spell-stat__label">Casting Time</span>
+          <span class="spell-stat__value">{spell.castingTime}</span>
+        </div>
+        <div class="spell-stat">
+          <span class="spell-stat__label">Range</span>
+          <span class="spell-stat__value">{spell.range}</span>
+        </div>
+        <div class="spell-stat">
+          <span class="spell-stat__label">Components</span>
+          <span class="spell-stat__value">{formatComponents(spell.components, spell.material)}</span>
+        </div>
+        <div class="spell-stat">
+          <span class="spell-stat__label">Duration</span>
+          <span class="spell-stat__value">
+            {spell.concentration && <span class="concentration-badge">C</span>}
+            {spell.duration}
+          </span>
+        </div>
+      </div>
+
+      <div class="spell-card__body">
+        <div class="spell-description">
+          <Content />
+        </div>
+      </div>
+
+      <div class="spell-card__footer">
+        {spell.classes && spell.classes.length > 0 && (
+          <div class="spell-classes">
+            <span class="spell-classes__label">Classes:</span>
+            <span class="spell-classes__list">{spell.classes.join(', ')}</span>
+          </div>
+        )}
+        {spell.source && (
+          <div class="spell-source">
+            <span class="spell-source__label">Source:</span>
+            <span class="spell-source__value">{spell.source}</span>
+          </div>
+        )}
+      </div>
+    </div>
+
+    <footer class="spell-footer">
+      <a href="/reference" class="back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Back to Reference
+      </a>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style>
+  .spell-page {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-lg);
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-accent);
+  }
+
+  .breadcrumb__sep {
+    color: var(--color-border);
+  }
+
+  /* Spell Card */
+  .spell-card {
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-accent);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .spell-card__header {
+    background: var(--color-accent);
+    padding: var(--space-md) var(--space-lg);
+    color: white;
+  }
+
+  .spell-name {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    margin: 0 0 var(--space-xs);
+  }
+
+  .spell-level-school {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--text-sm);
+    opacity: 0.9;
+  }
+
+  .spell-level {
+    font-weight: 600;
+  }
+
+  .spell-school {
+    text-transform: capitalize;
+  }
+
+  .spell-ritual {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .spell-card__stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .spell-stat {
+    background: var(--color-bg-secondary);
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .spell-stat__label {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .spell-stat__value {
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .concentration-badge {
+    background: var(--color-warning);
+    color: var(--color-bg);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-xs);
+    font-weight: 700;
+  }
+
+  .spell-card__body {
+    padding: var(--space-lg);
+  }
+
+  .spell-description {
+    line-height: 1.7;
+    color: var(--color-text);
+  }
+
+  .spell-description :global(h1) {
+    display: none;
+  }
+
+  .spell-description :global(p) {
+    margin-bottom: var(--space-md);
+  }
+
+  .spell-description :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .spell-description :global(strong) {
+    color: var(--color-accent);
+  }
+
+  .spell-card__footer {
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-bg);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    font-size: var(--text-sm);
+  }
+
+  .spell-classes,
+  .spell-source {
+    display: flex;
+    gap: var(--space-xs);
+  }
+
+  .spell-classes__label,
+  .spell-source__label {
+    color: var(--color-text-muted);
+  }
+
+  .spell-classes__list,
+  .spell-source__value {
+    color: var(--color-text-secondary);
+  }
+
+  /* School-specific header colors */
+  .school--abjuration .spell-card__header {
+    background: #3b82f6;
+  }
+
+  .school--conjuration .spell-card__header {
+    background: #f59e0b;
+  }
+
+  .school--divination .spell-card__header {
+    background: #8b5cf6;
+  }
+
+  .school--enchantment .spell-card__header {
+    background: #ec4899;
+  }
+
+  .school--evocation .spell-card__header {
+    background: #ef4444;
+  }
+
+  .school--illusion .spell-card__header {
+    background: #6366f1;
+  }
+
+  .school--necromancy .spell-card__header {
+    background: #1f2937;
+  }
+
+  .school--transmutation .spell-card__header {
+    background: #10b981;
+  }
+
+  .spell-footer {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+  }
+
+  .back-link:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text);
+  }
+</style>

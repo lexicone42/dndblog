@@ -458,6 +458,43 @@ const itemCollection = defineCollection({
   }),
 });
 
+/**
+ * Spell entity schema for D&D 5e spells.
+ * Based on SRD 5.1 spell data structure.
+ */
+const spellCollection = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/campaign/spells' }),
+  schema: z.object({
+    name: z.string(),
+    level: z.number().int().min(0).max(9), // 0 = cantrip
+    school: z.enum([
+      'abjuration',
+      'conjuration',
+      'divination',
+      'enchantment',
+      'evocation',
+      'illusion',
+      'necromancy',
+      'transmutation',
+    ]),
+    castingTime: z.string(),
+    range: z.string(),
+    components: z.array(z.enum(['V', 'S', 'M'])),
+    material: z.string().optional(),
+    duration: z.string(),
+    concentration: z.boolean().default(false),
+    ritual: z.boolean().default(false),
+    description: z.string(),
+    atHigherLevels: z.string().optional(),
+    classes: z.array(z.string()).default([]),
+    source: z.string().default('SRD 5.1'),
+    // Campaign-specific additions
+    tags: z.array(z.string()).default([]),
+    homebrew: z.boolean().default(false),
+    notes: z.string().optional(),
+  }),
+});
+
 export const collections = {
   blog: blogCollection,
   characters: characterCollection,
@@ -465,4 +502,5 @@ export const collections = {
   locations: locationCollection,
   factions: factionCollection,
   items: itemCollection,
+  spells: spellCollection,
 };

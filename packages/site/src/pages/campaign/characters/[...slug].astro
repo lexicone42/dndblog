@@ -5,13 +5,14 @@ import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
   // Fetch all collections in parallel
-  const [entries, characters, enemies, locations, factions, items] = await Promise.all([
+  const [entries, characters, enemies, locations, factions, items, spells] = await Promise.all([
     getCollection('characters'),
     getCollection('characters'),
     getCollection('enemies'),
     getCollection('locations'),
     getCollection('factions'),
     getCollection('items'),
+    getCollection('spells'),
   ]);
 
   // Build entity lookup map for linking relationships
@@ -30,13 +31,23 @@ export async function getStaticPaths() {
     rarity: e.data.rarity,
   });
 
+  // Build spell lookup for character sheet spellcasting section
+  // Map by spell name (display name) for easy lookup from character data
+  const spellLookup: Record<string, { name: string; path: string; level: number; school: string }> = {};
+  spells.forEach(s => spellLookup[s.data.name] = {
+    name: s.data.name,
+    path: `/campaign/spells/${s.id}`,
+    level: s.data.level,
+    school: s.data.school,
+  });
+
   return entries.map(entry => ({
     params: { slug: entry.id },
-    props: { entry, entityLookup, itemLookup },
+    props: { entry, entityLookup, itemLookup, spellLookup },
   }));
 }
 
-const { entry, entityLookup, itemLookup } = Astro.props;
+const { entry, entityLookup, itemLookup, spellLookup } = Astro.props;
 const { Content } = await render(entry);
 
 const statusColors: Record<string, string> = {
@@ -110,6 +121,7 @@ const statusColors: Record<string, string> = {
       <CharacterSheet
         character={entry.data}
         itemLookup={itemLookup}
+        spellLookup={spellLookup}
       />
     )}
 
