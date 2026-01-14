@@ -19,6 +19,13 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 
+// Build lookup map for see also links
+const allEntries = await getCollection('glossary');
+const glossaryLookup: Record<string, string> = {};
+for (const e of allEntries) {
+  glossaryLookup[e.data.name.toLowerCase()] = e.data.slug;
+}
+
 // Category colors
 const categoryColors: Record<string, string> = {
   condition: '#dc2626',
@@ -62,9 +69,14 @@ const categoryColors: Record<string, string> = {
       <aside class="term-see-also">
         <h2>See Also</h2>
         <ul class="see-also-list">
-          {entry.data.seeAlso.map((ref: string) => (
-            <li>{ref}</li>
-          ))}
+          {entry.data.seeAlso.map((ref: string) => {
+            const slug = glossaryLookup[ref.toLowerCase()];
+            return slug ? (
+              <li><a href={`/glossary/${slug}`}>{ref}</a></li>
+            ) : (
+              <li>{ref}</li>
+            );
+          })}
         </ul>
       </aside>
     )}
@@ -187,6 +199,17 @@ const categoryColors: Record<string, string> = {
     border-radius: var(--radius-sm);
     font-size: var(--text-sm);
     color: var(--color-text-secondary);
+  }
+
+  .see-also-list a {
+    color: var(--color-accent);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  .see-also-list a:hover {
+    color: var(--color-link-hover);
+    text-decoration: underline;
   }
 
   .term-footer {
