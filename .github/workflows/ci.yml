@@ -9,6 +9,11 @@ on:
       - '**.md'
       - 'docs/**'
 
+# Restrict permissions for security
+# https://docs.github.com/en/actions/security-guides/automatic-token-authentication
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true

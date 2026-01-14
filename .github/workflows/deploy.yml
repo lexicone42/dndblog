@@ -19,6 +19,8 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     environment: production
+    # Only run on the main repository, never on forks
+    if: github.repository == 'bryanegan/dndblog'
 
     steps:
       - name: Checkout

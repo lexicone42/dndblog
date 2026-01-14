@@ -8,6 +8,7 @@ dist/
 # CDK
 cdk.out/
 cdk.context.json
+cdk-outputs.json
 
 # Environment files
 .env
