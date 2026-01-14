@@ -43,6 +43,215 @@ const blogCollection = defineCollection({
   }),
 });
 
+// ============================================================================
+// Campaign Entity Schemas
+// ============================================================================
+
+/**
+ * Shared relationship schema for cross-referencing entities.
+ * Follows library cataloging principles for authority control.
+ */
+const relationshipSchema = z.object({
+  entity: z.string(),
+  type: z.string(),
+  note: z.string().optional(),
+  since: z.string().optional(),
+});
+
+/**
+ * Provenance tracking for audit trails.
+ */
+const provenanceSchema = z.object({
+  createdAt: z.string(),
+  createdBy: z.string().default('dm'),
+  lastModified: z.string().optional(),
+  sources: z.array(z.object({
+    type: z.enum(['session-notes', 'dm-notes', 'player-backstory', 'worldbuilding']),
+    ref: z.string().optional(),
+    date: z.string().optional(),
+    excerpt: z.string().optional(),
+    note: z.string().optional(),
+  })).default([]),
+}).optional();
+
+/**
+ * Authority control for name variants (MARC 400 equivalent).
+ */
+const authoritySchema = z.object({
+  variants: z.array(z.string()).default([]),
+  broaderTerm: z.string().optional(),
+  narrowerTerms: z.array(z.string()).default([]),
+  seeAlso: z.array(z.string()).default([]),
+}).optional();
+
+/**
+ * Base fields shared by all campaign entities.
+ */
+const baseEntityFields = {
+  name: z.string(),
+  slug: z.string().optional(),
+  status: z.enum(['active', 'inactive', 'dead', 'destroyed', 'unknown', 'missing', 'transformed', 'dormant']).default('active'),
+  visibility: z.enum(['public', 'dm-only']).default('public'),
+  firstAppearance: z.string().optional(),
+  lastAppearance: z.string().optional(),
+  tags: z.array(z.string()).default([]),
+  relationships: z.array(relationshipSchema).default([]),
+  authority: authoritySchema,
+  _provenance: provenanceSchema,
+  description: z.string().optional(),
+};
+
+/**
+ * Character entity schema (PCs, NPCs, deities).
+ * Links to D&D 5e API for race, class, and spell data.
+ */
+const characterCollection = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/campaign/characters' }),
+  schema: z.object({
+    ...baseEntityFields,
+    type: z.literal('character').default('character'),
+    subtype: z.enum(['pc', 'npc', 'deity', 'historical']),
+    player: z.string().optional(),
+    race: z.string().optional(),
+    class: z.string().optional(),
+    subclass: z.string().optional(),
+    level: z.number().int().min(1).max(20).optional(),
+    background: z.string().optional(),
+    faction: z.string().optional(),
+    secondaryFactions: z.array(z.string()).default([]),
+    location: z.string().optional(),
+    homeLocation: z.string().optional(),
+    knownSpells: z.array(z.string()).default([]),
+    abilities: z.array(z.string()).default([]),
+    items: z.array(z.string()).default([]),
+    notableEquipment: z.array(z.string()).default([]),
+    alignment: z.string().optional(),
+    ideals: z.array(z.string()).default([]),
+    bonds: z.array(z.string()).default([]),
+    flaws: z.array(z.string()).default([]),
+  }),
+});
+
+/**
+ * Enemy entity schema (monsters, villains, bosses).
+ * Links to D&D 5e API for monster stat blocks.
+ */
+const enemyCollection = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/campaign/enemies' }),
+  schema: z.object({
+    ...baseEntityFields,
+    type: z.literal('enemy').default('enemy'),
+    subtype: z.enum(['boss', 'lieutenant', 'minion', 'creature', 'swarm', 'trap']),
+    baseMonster: z.string().optional(),
+    cr: z.string().optional(),
+    creatureType: z.string().optional(),
+    customizations: z.array(z.string()).default([]),
+    legendaryActions: z.array(z.string()).default([]),
+    lairActions: z.array(z.string()).default([]),
+    faction: z.string().optional(),
+    master: z.string().optional(),
+    minions: z.array(z.string()).default([]),
+    encounters: z.array(z.string()).default([]),
+    defeats: z.array(z.object({
+      session: z.string(),
+      method: z.string(),
+      defeatedBy: z.array(z.string()).default([]),
+    })).default([]),
+    lair: z.string().optional(),
+    territory: z.array(z.string()).default([]),
+  }),
+});
+
+/**
+ * Location entity schema (places, dungeons, regions).
+ * Supports hierarchical organization.
+ */
+const locationCollection = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/campaign/locations' }),
+  schema: z.object({
+    ...baseEntityFields,
+    type: z.literal('location').default('location'),
+    subtype: z.enum(['plane', 'continent', 'region', 'city', 'town', 'village', 'dungeon', 'wilderness', 'building', 'room', 'landmark']),
+    parentLocation: z.string().optional(),
+    childLocations: z.array(z.string()).default([]),
+    climate: z.string().optional(),
+    terrain: z.string().optional(),
+    population: z.string().optional(),
+    controlledBy: z.string().optional(),
+    formerControllers: z.array(z.string()).default([]),
+    pointsOfInterest: z.array(z.string()).default([]),
+    dungeonLevel: z.number().int().optional(),
+    notableEvents: z.array(z.string()).default([]),
+    secrets: z.array(z.string()).default([]),
+  }),
+});
+
+/**
+ * Faction entity schema (organizations, cults, groups).
+ */
+const factionCollection = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/campaign/factions' }),
+  schema: z.object({
+    ...baseEntityFields,
+    type: z.literal('faction').default('faction'),
+    subtype: z.enum(['cult', 'guild', 'government', 'military', 'religious', 'criminal', 'merchant', 'noble-house', 'adventuring-party', 'secret-society']),
+    leader: z.string().optional(),
+    formerLeaders: z.array(z.string()).default([]),
+    notableMembers: z.array(z.string()).default([]),
+    headquarters: z.string().optional(),
+    territory: z.array(z.string()).default([]),
+    influence: z.array(z.string()).default([]),
+    allies: z.array(z.string()).default([]),
+    enemies: z.array(z.string()).default([]),
+    parentOrganization: z.string().optional(),
+    subsidiaries: z.array(z.string()).default([]),
+    goals: z.array(z.string()).default([]),
+    methods: z.array(z.string()).default([]),
+    resources: z.array(z.string()).default([]),
+    secrets: z.array(z.string()).default([]),
+    symbol: z.string().optional(),
+    motto: z.string().optional(),
+  }),
+});
+
+/**
+ * Item entity schema (weapons, artifacts, quest items).
+ * Links to D&D 5e API for equipment and magic item data.
+ */
+const itemCollection = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/campaign/items' }),
+  schema: z.object({
+    ...baseEntityFields,
+    type: z.literal('item').default('item'),
+    subtype: z.enum(['weapon', 'armor', 'artifact', 'consumable', 'quest', 'treasure', 'tool', 'wondrous', 'vehicle', 'property']),
+    baseItem: z.string().optional(),
+    magicItem: z.string().optional(),
+    rarity: z.enum(['common', 'uncommon', 'rare', 'very-rare', 'legendary', 'artifact', 'unique']).optional(),
+    attunement: z.boolean().default(false),
+    attunementRequirements: z.string().optional(),
+    currentOwner: z.string().optional(),
+    ownershipHistory: z.array(z.object({
+      owner: z.string(),
+      acquiredIn: z.string().optional(),
+      lostIn: z.string().optional(),
+      method: z.string().optional(),
+    })).default([]),
+    location: z.string().optional(),
+    properties: z.array(z.string()).default([]),
+    charges: z.number().int().optional(),
+    maxCharges: z.number().int().optional(),
+    creator: z.string().optional(),
+    creationDate: z.string().optional(),
+    significance: z.string().optional(),
+    secrets: z.array(z.string()).default([]),
+  }),
+});
+
 export const collections = {
   blog: blogCollection,
+  characters: characterCollection,
+  enemies: enemyCollection,
+  locations: locationCollection,
+  factions: factionCollection,
+  items: itemCollection,
 };
