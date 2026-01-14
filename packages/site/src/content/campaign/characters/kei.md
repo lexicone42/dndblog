@@ -8,6 +8,133 @@ race: "Human"
 class: "Fighter"
 subclass: "Champion"
 level: 6
+
+# D&D 5e 2024 Origin
+origin:
+  species: "Human"
+  background: "Soldier"
+  originFeat: "Savage Attacker"
+
+# Ability Scores
+abilityScores:
+  str: 17
+  dex: 16
+  con: 14
+  int: 10
+  wis: 10
+  cha: 10
+
+# Combat Stats
+combat:
+  ac: 18
+  hp: 64
+  maxHp: 64
+  speed: 30
+  initiative: 3
+  proficiencyBonus: 3
+  hitDice: "6d10"
+
+# Saving Throws (STR and CON proficient for Fighter)
+savingThrows:
+  str: true
+  dex: false
+  con: true
+  int: false
+  wis: false
+  cha: false
+
+# Skills
+skills:
+  - name: "Acrobatics"
+    proficient: true
+    bonus: 6
+  - name: "Athletics"
+    proficient: true
+    bonus: 6
+  - name: "Animal Handling"
+    proficient: true
+    bonus: 3
+  - name: "Nature"
+    proficient: true
+    bonus: 3
+  - name: "Survival"
+    proficient: true
+    bonus: 3
+
+# Senses
+senses:
+  darkvision: 60
+  passivePerception: 10
+  passiveInvestigation: 10
+  passiveInsight: 10
+
+# Equipment
+equipment:
+  equipped:
+    - slot: "main-hand"
+      item: "handaxe-plus-1"
+      mastery: "vex"
+    - slot: "off-hand"
+      item: "shortsword-plus-1"
+      mastery: "vex"
+    - slot: "armor"
+      item: "chain-mail"
+    - slot: "shield"
+      item: "shield"
+  mundane:
+    - name: "Battleaxe"
+      quantity: 1
+      notes: "Topple mastery"
+    - name: "Carpenter's Tools"
+      quantity: 1
+
+# Class Features
+features:
+  - name: "Fighting Style: Two-Weapon Fighting"
+    source: "class"
+    level: 1
+    description: "Add ability modifier to damage of off-hand attack"
+  - name: "Second Wind"
+    source: "class"
+    level: 1
+    description: "Regain 1d10+6 HP as bonus action"
+    uses:
+      current: 1
+      max: 1
+      recharge: "short-rest"
+  - name: "Action Surge"
+    source: "class"
+    level: 2
+    description: "Take an additional action on your turn"
+    uses:
+      current: 1
+      max: 1
+      recharge: "short-rest"
+  - name: "Improved Critical"
+    source: "subclass"
+    level: 3
+    description: "Weapon attacks score a critical hit on a roll of 19 or 20"
+  - name: "Extra Attack"
+    source: "class"
+    level: 5
+    description: "Attack twice when taking the Attack action"
+
+# Proficiencies
+languages:
+  - "Common"
+  - "Dwarvish"
+  - "Elvish"
+armorProficiencies:
+  - "Heavy Armor"
+  - "Medium Armor"
+  - "Light Armor"
+  - "Shields"
+weaponProficiencies:
+  - "Martial Weapons"
+  - "Simple Weapons"
+toolProficiencies:
+  - "Carpenter's Tools"
+
 tags:
   - party
   - fighter
@@ -32,68 +159,6 @@ visibility: "public"
 # Kei Eaglesnout
 
 A Male Human Fighter who has chosen the Champion martial archetype. Kei is renowned for his exceptional strength, combat prowess, and competitive spirit—as demonstrated by his arm-wrestling victory in Astgrove.
-
-## Ability Scores
-
-| STR | DEX | CON | INT | WIS | CHA |
-|-----|-----|-----|-----|-----|-----|
-| 17 (+3) | 16 (+3) | 14 (+2) | 10 (+0) | 10 (+0) | 10 (+0) |
-
-## Combat Statistics
-
-- **Armor Class:** 18
-- **Hit Points:** 64
-- **Speed:** 30 ft.
-- **Initiative:** +3
-- **Proficiency Bonus:** +3
-
-### Saving Throws
-- **STR:** +6 | **DEX:** +3 | **CON:** +5
-- **INT:** +0 | **WIS:** +0 | **CHA:** +0
-
-## Skills
-
-**Proficient:**
-- Acrobatics +6
-- Athletics +6
-- Animal Handling +3
-- Nature +3
-- Survival +3
-
-## Senses
-
-- **Darkvision:** 60 ft.
-- **Passive Perception:** 10
-- **Passive Investigation:** 10
-- **Passive Insight:** 10
-
-## Proficiencies
-
-**Armor:** Heavy Armor, Medium Armor, Light Armor, Shields
-
-**Weapons:** Martial Weapons, Simple Weapons
-
-**Tools:** Carpenter's Tools
-
-**Languages:** Common, Dwarvish, Elvish
-
-## Equipment
-
-- **Handaxe +1** — +7 to hit, 1d6+4 slashing, range 20/60, Light, Thrown, Vex
-- **Shortsword +1** — +7 to hit, 1d6+4 piercing, Finesse, Light, Vex
-- **Battleaxe** — Topple mastery (CON save or Prone)
-- **Unarmed Strike** — +6 to hit, 4 bludgeoning
-
-## Champion Features
-
-### Extra Attack
-Can attack twice when taking the Attack action.
-
-### Improved Critical
-Weapon attacks score a critical hit on a roll of 19 or 20.
-
-### Topple (Battleaxe Mastery)
-When hitting a creature with the Battleaxe, can force a CON saving throw (DC 14). On a failed save, the creature is knocked Prone.
 
 ## Key Moments
 

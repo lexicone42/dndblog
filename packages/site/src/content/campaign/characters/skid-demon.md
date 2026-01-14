@@ -8,6 +8,163 @@ race: "Half-Elf"
 class: "Ranger"
 subclass: "Gloom Stalker"
 level: 6
+
+# D&D 5e 2024 Origin
+origin:
+  species: "Half-Elf"
+  background: "Outlander"
+  originFeat: "Observant"
+
+# Ability Scores
+abilityScores:
+  str: 13
+  dex: 16
+  con: 12
+  int: 11
+  wis: 16
+  cha: 9
+
+# Combat Stats
+combat:
+  ac: 17
+  hp: 51
+  maxHp: 51
+  speed: 40
+  initiative: 6
+  proficiencyBonus: 3
+  hitDice: "6d10"
+
+# Saving Throws (STR and DEX proficient for Ranger)
+savingThrows:
+  str: true
+  dex: true
+  con: false
+  int: false
+  wis: false
+  cha: false
+
+# Skills
+skills:
+  - name: "Perception"
+    proficient: true
+    expertise: true
+    bonus: 9
+  - name: "Insight"
+    proficient: true
+    bonus: 6
+  - name: "Sleight of Hand"
+    proficient: true
+    bonus: 6
+  - name: "Stealth"
+    proficient: true
+    bonus: 6
+  - name: "Survival"
+    proficient: true
+    bonus: 6
+  - name: "Nature"
+    proficient: true
+    bonus: 3
+
+# Senses
+senses:
+  darkvision: 120
+  passivePerception: 19
+  passiveInvestigation: 10
+  passiveInsight: 16
+
+# Defenses
+defenses:
+  conditionImmunities:
+    - "Magical Sleep"
+
+# Spellcasting
+spellcasting:
+  ability: "wis"
+  spellSaveDC: 14
+  spellAttackBonus: 6
+  spellSlots:
+    - { level: 1, total: 4, expended: 0 }
+    - { level: 2, total: 2, expended: 0 }
+  knownSpells:
+    - "Hunter's Mark"
+    - "Ensnaring Strike"
+    - "Disguise Self"
+    - "Pass without Trace"
+    - "Rope Trick"
+
+# Equipment
+equipment:
+  equipped:
+    - slot: "two-hand"
+      item: "dryads-blessing-longbow"
+      mastery: "slow"
+    - slot: "armor"
+      item: "studded-leather"
+  mundane:
+    - name: "Scimitar"
+      quantity: 1
+      notes: "Nick mastery"
+    - name: "Shortsword"
+      quantity: 1
+      notes: "Vex mastery"
+    - name: "Thieves' Tools"
+      quantity: 1
+
+# Class Features
+features:
+  - name: "Favored Enemy"
+    source: "class"
+    level: 1
+    description: "Expertise in tracking and hunting chosen foes"
+  - name: "Natural Explorer"
+    source: "class"
+    level: 1
+    description: "Expertise in navigating wilderness terrain"
+  - name: "Fighting Style: Archery"
+    source: "class"
+    level: 2
+    description: "+2 bonus to attack rolls with ranged weapons"
+  - name: "Extra Attack"
+    source: "class"
+    level: 5
+    description: "Attack twice when taking the Attack action"
+  - name: "Dread Ambusher"
+    source: "subclass"
+    level: 3
+    description: "+3 to Initiative; extra attack on first turn dealing +1d8 damage"
+  - name: "Umbral Sight"
+    source: "subclass"
+    level: 3
+    description: "120 ft Darkvision; invisible to creatures relying on darkvision while in darkness"
+  - name: "Dreadful Strike"
+    source: "subclass"
+    level: 3
+    description: "Deal extra 2d6 Psychic damage once per turn"
+    uses:
+      current: 3
+      max: 3
+      recharge: "long-rest"
+  - name: "Ley Mark"
+    source: "item"
+    description: "Can sense nearby ley currents; heartbeat syncs with ley pulses; acts as living compass to ley energy"
+
+# Proficiencies
+languages:
+  - "Common"
+  - "Draconic"
+  - "Elvish"
+  - "Goblin"
+  - "Orc"
+armorProficiencies:
+  - "Light Armor"
+  - "Medium Armor"
+  - "Shields"
+weaponProficiencies:
+  - "Martial Weapons"
+  - "Simple Weapons"
+toolProficiencies:
+  - "Thieves' Tools"
+
 tags:
   - party
   - ranger
@@ -42,79 +199,6 @@ visibility: "public"
 # Skid Demon
 
 A Half-Elf Ranger of the Gloom Stalker conclave with a unique and growing connection to the world's ley energy. Carries the Dryad's Blessing Longbow gifted by Erinthin and has been marked as "Stone-born" by the Molrik clan dwarves.
-
-## Ability Scores
-
-| STR | DEX | CON | INT | WIS | CHA |
-|-----|-----|-----|-----|-----|-----|
-| 13 (+1) | 16 (+3) | 12 (+1) | 11 (+0) | 16 (+3) | 9 (-1) |
-
-## Combat Statistics
-
-- **Armor Class:** 17
-- **Hit Points:** 51
-- **Speed:** 40 ft.
-- **Initiative:** +6
-- **Proficiency Bonus:** +3
-
-### Saving Throws
-- **STR:** +4 | **DEX:** +6 | **CON:** +1
-- **INT:** +0 | **WIS:** +3 | **CHA:** -1
-- Advantage against being charmed; magic can't put Skid to sleep
-- Advantage on saves against being knocked prone
-
-### Defenses
-- Immunity to Magical Sleep (Half-Elf heritage)
-
-## Skills
-
-**Expertise:**
-- Perception +9
-
-**Proficient:**
-- Insight +6
-- Sleight of Hand +6
-- Stealth +6
-- Survival +6
-- Nature +3
-
-## Senses
-
-- **Darkvision:** 120 ft. (enhanced by Gloom Stalker)
-- **Passive Perception:** 19
-- **Passive Investigation:** 10
-- **Passive Insight:** 16
-
-## Proficiencies
-
-**Armor:** Light Armor, Medium Armor, Shields
-
-**Weapons:** Martial Weapons, Simple Weapons
-
-**Tools:** Thieves' Tools
-
-**Languages:** Common, Draconic, Elvish, Goblin, Orc
-
-## Equipment
-
-- **Dryad's Blessing Longbow +1** — +9 to hit, 1d8+4 piercing, range 150/600, Slow mastery (reduces target Speed by 10 ft.)
-- **Scimitar** — +6 to hit, 1d6+3 slashing, Finesse, Light, Nick
-- **Shortsword** — +6 to hit, 1d6+3 piercing, Finesse, Light, Vex
-- **Unarmed Strike** — +4 to hit, 2 bludgeoning
-
-## Gloom Stalker Features
-
-### Extra Attack
-Can attack twice when taking the Attack action.
-
-### Dreadful Strike (3/Long Rest)
-Once per turn, when hitting a creature with a weapon attack, can deal an extra 2d6 Psychic damage.
-
-### Umbral Sight
-Darkvision extended to 120 ft. While in darkness, invisible to creatures relying on darkvision.
-
-### Slow (Longbow Mastery)
-When hitting a creature with the Dryad's Blessing Longbow, can reduce its Speed by 10 ft. until the start of next turn.
 
 ## The Ley Mark
 
