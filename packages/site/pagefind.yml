@@ -1,0 +1,19 @@
+# Pagefind configuration
+# See https://pagefind.app/docs/config-sources/
+
+# Exclude navigation and footer from search
+exclude_selectors:
+  - ".header"
+  - ".footer"
+  - ".skip-link"
+  - "script"
+  - "style"
+  - ".search-tips"
+  - ".filters"
+  - ".filter-options"
+
+# Only index the main content
+root_selector: "main"
+
+# Keep URLs clean
+keep_index_url: false

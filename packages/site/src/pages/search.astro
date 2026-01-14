@@ -1,0 +1,180 @@
+---
+/**
+ * Search Page
+ * Global search across all campaign content using Pagefind.
+ */
+
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Search - Campaign Reference"
+  description="Search across all campaign content including characters, locations, spells, and more."
+>
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-title">Search</h1>
+      <p class="page-description">
+        Search across characters, locations, spells, items, enemies, factions, and rules
+      </p>
+    </header>
+
+    <div class="search-container">
+      <div id="search"></div>
+    </div>
+
+    <div class="search-tips">
+      <h2>Search Tips</h2>
+      <ul>
+        <li><strong>Character names:</strong> "Rudiger", "Kei", "Stol"</li>
+        <li><strong>Locations:</strong> "Sharn", "Whisperwood", "Umbrage Hill"</li>
+        <li><strong>Spells:</strong> "Fireball", "Cure Wounds", "Counterspell"</li>
+        <li><strong>Rules:</strong> "Advantage", "Concentration", "Prone"</li>
+        <li><strong>Factions:</strong> "Emerald Enclave", "Slanted Circle"</li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>
+
+<link href="/pagefind/pagefind-ui.css" rel="stylesheet" />
+<script src="/pagefind/pagefind-ui.js" is:inline></script>
+
+<script is:inline>
+  window.addEventListener('DOMContentLoaded', () => {
+    new PagefindUI({
+      element: '#search',
+      showSubResults: true,
+      showImages: false,
+      excerptLength: 20,
+      translations: {
+        placeholder: 'Search the campaign...',
+        zero_results: 'No results found for "[SEARCH_TERM]"',
+      },
+    });
+  });
+</script>
+
+<style>
+  .page-header {
+    text-align: center;
+    padding: var(--space-xl) 0 var(--space-lg);
+  }
+
+  .page-title {
+    font-size: var(--text-3xl);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .page-description {
+    color: var(--color-text-secondary);
+    font-size: var(--text-lg);
+    margin: 0;
+  }
+
+  .search-container {
+    max-width: 800px;
+    margin: 0 auto var(--space-2xl);
+  }
+
+  /* Pagefind UI Customization */
+  :global(.pagefind-ui) {
+    --pagefind-ui-scale: 1;
+    --pagefind-ui-primary: var(--color-accent);
+    --pagefind-ui-text: var(--color-text);
+    --pagefind-ui-background: var(--color-bg);
+    --pagefind-ui-border: var(--color-border);
+    --pagefind-ui-tag: var(--color-bg-secondary);
+    --pagefind-ui-border-width: 2px;
+    --pagefind-ui-border-radius: var(--radius-md);
+    --pagefind-ui-font: var(--font-sans);
+  }
+
+  :global(.pagefind-ui__search-input) {
+    font-size: var(--text-lg) !important;
+    padding: var(--space-md) var(--space-lg) !important;
+    background: var(--color-bg-secondary) !important;
+  }
+
+  :global(.pagefind-ui__search-input:focus) {
+    border-color: var(--color-accent) !important;
+    outline: none !important;
+  }
+
+  :global(.pagefind-ui__result) {
+    padding: var(--space-lg) !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: var(--radius-lg) !important;
+    background: var(--color-bg-secondary) !important;
+    margin-bottom: var(--space-md) !important;
+  }
+
+  :global(.pagefind-ui__result:hover) {
+    border-color: var(--color-accent) !important;
+  }
+
+  :global(.pagefind-ui__result-link) {
+    color: var(--color-accent) !important;
+    font-family: var(--font-display) !important;
+    font-size: var(--text-lg) !important;
+    text-decoration: none !important;
+  }
+
+  :global(.pagefind-ui__result-link:hover) {
+    text-decoration: underline !important;
+  }
+
+  :global(.pagefind-ui__result-excerpt) {
+    color: var(--color-text-secondary) !important;
+    font-size: var(--text-sm) !important;
+  }
+
+  :global(.pagefind-ui__result-title) {
+    margin-bottom: var(--space-xs) !important;
+  }
+
+  :global(.pagefind-ui__button) {
+    background: var(--color-accent) !important;
+    border-radius: var(--radius-sm) !important;
+  }
+
+  :global(.pagefind-ui__button:hover) {
+    background: var(--color-accent-hover) !important;
+  }
+
+  :global(.pagefind-ui__message) {
+    color: var(--color-text-secondary) !important;
+    font-size: var(--text-sm) !important;
+    padding: var(--space-lg) !important;
+  }
+
+  .search-tips {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+  }
+
+  .search-tips h2 {
+    font-size: var(--text-lg);
+    margin: 0 0 var(--space-md);
+    color: var(--color-gold);
+  }
+
+  .search-tips ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .search-tips li {
+    padding: var(--space-xs) 0;
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .search-tips strong {
+    color: var(--color-text);
+  }
+</style>
