@@ -299,6 +299,11 @@ Some coincidences are carefully crafted. And somewhere out there, a hooded rogue
     color: var(--color-gold);
   }
 
+  /* Override prose max-width for full-width story content */
+  .story-content.prose {
+    max-width: none;
+  }
+
   /* Wider layout for desktop to reduce word breaks */
   @media (min-width: 1024px) {
     .story-page {
