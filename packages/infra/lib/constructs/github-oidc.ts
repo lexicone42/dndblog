@@ -46,10 +46,11 @@ export class GithubOidc extends Construct {
       (branch) => `repo:${githubRepo}:ref:refs/heads/${branch}`
     );
 
-    // Also allow access for pull request events (for CDK diff in CI)
+    // Build subject claims for all supported GitHub Actions contexts
     const subjectClaims = [
       ...branchConditions,
       `repo:${githubRepo}:pull_request`, // Allow PR workflows for CI
+      `repo:${githubRepo}:environment:production`, // Allow production environment deploys
     ];
 
     // Create the deploy role that GitHub Actions will assume
