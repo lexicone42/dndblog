@@ -41,6 +41,10 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
 <script is:inline>
   window.addEventListener('DOMContentLoaded', () => {
+    // Get query parameter from URL (from header search box)
+    const urlParams = new URLSearchParams(window.location.search);
+    const query = urlParams.get('q');
+
     new PagefindUI({
       element: '#search',
       showSubResults: true,
@@ -51,6 +55,15 @@ import BaseLayout from '@layouts/BaseLayout.astro';
         zero_results: 'No results found for "[SEARCH_TERM]"',
       },
     });
+
+    // If there's a query parameter, populate and trigger search
+    if (query) {
+      const searchInput = document.querySelector('.pagefind-ui__search-input');
+      if (searchInput) {
+        searchInput.value = query;
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
   });
 </script>
 
@@ -92,7 +105,17 @@ import BaseLayout from '@layouts/BaseLayout.astro';
   :global(.pagefind-ui__search-input) {
     font-size: var(--text-lg) !important;
     padding: var(--space-md) var(--space-lg) !important;
+    padding-left: var(--space-lg) !important;
     background: var(--color-bg-secondary) !important;
+  }
+
+  /* Hide the default magnifying glass icon that overlaps text */
+  :global(.pagefind-ui__search-clear) {
+    right: var(--space-md) !important;
+  }
+
+  :global(.pagefind-ui__form::before) {
+    display: none !important;
   }
 
   :global(.pagefind-ui__search-input:focus) {
