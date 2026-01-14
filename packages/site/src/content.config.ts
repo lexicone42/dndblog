@@ -102,6 +102,77 @@ const baseEntityFields = {
 };
 
 /**
+ * Ability score schema for D&D 5e characters.
+ */
+const abilityScoresSchema = z.object({
+  str: z.number().int().min(1).max(30).optional(),
+  dex: z.number().int().min(1).max(30).optional(),
+  con: z.number().int().min(1).max(30).optional(),
+  int: z.number().int().min(1).max(30).optional(),
+  wis: z.number().int().min(1).max(30).optional(),
+  cha: z.number().int().min(1).max(30).optional(),
+}).optional();
+
+/**
+ * Combat statistics schema for D&D 5e characters.
+ */
+const combatStatsSchema = z.object({
+  ac: z.number().int().optional(),
+  hp: z.number().int().optional(),
+  maxHp: z.number().int().optional(),
+  tempHp: z.number().int().optional(),
+  speed: z.number().int().optional(),
+  initiative: z.number().int().optional(),
+  proficiencyBonus: z.number().int().optional(),
+  hitDice: z.string().optional(),
+}).optional();
+
+/**
+ * Saving throw proficiencies schema.
+ */
+const savingThrowsSchema = z.object({
+  str: z.boolean().default(false),
+  dex: z.boolean().default(false),
+  con: z.boolean().default(false),
+  int: z.boolean().default(false),
+  wis: z.boolean().default(false),
+  cha: z.boolean().default(false),
+}).optional();
+
+/**
+ * Skill proficiency schema with expertise support.
+ */
+const skillSchema = z.object({
+  name: z.string(),
+  proficient: z.boolean().default(false),
+  expertise: z.boolean().default(false),
+  bonus: z.number().int().optional(),
+});
+
+/**
+ * Senses schema for perception and vision.
+ */
+const sensesSchema = z.object({
+  darkvision: z.number().int().optional(),
+  blindsight: z.number().int().optional(),
+  tremorsense: z.number().int().optional(),
+  truesight: z.number().int().optional(),
+  passivePerception: z.number().int().optional(),
+  passiveInvestigation: z.number().int().optional(),
+  passiveInsight: z.number().int().optional(),
+}).optional();
+
+/**
+ * Defenses schema for resistances, immunities, and vulnerabilities.
+ */
+const defensesSchema = z.object({
+  resistances: z.array(z.string()).default([]),
+  immunities: z.array(z.string()).default([]),
+  vulnerabilities: z.array(z.string()).default([]),
+  conditionImmunities: z.array(z.string()).default([]),
+}).optional();
+
+/**
  * Character entity schema (PCs, NPCs, deities).
  * Links to D&D 5e API for race, class, and spell data.
  */
@@ -129,6 +200,18 @@ const characterCollection = defineCollection({
     ideals: z.array(z.string()).default([]),
     bonds: z.array(z.string()).default([]),
     flaws: z.array(z.string()).default([]),
+
+    // D&D 5e mechanical stats (optional - for deep character sheet integration)
+    abilityScores: abilityScoresSchema,
+    combat: combatStatsSchema,
+    savingThrows: savingThrowsSchema,
+    skills: z.array(skillSchema).default([]),
+    senses: sensesSchema,
+    defenses: defensesSchema,
+    languages: z.array(z.string()).default([]),
+    toolProficiencies: z.array(z.string()).default([]),
+    weaponProficiencies: z.array(z.string()).default([]),
+    armorProficiencies: z.array(z.string()).default([]),
   }),
 });
 

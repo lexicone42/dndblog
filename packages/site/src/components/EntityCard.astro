@@ -1,0 +1,117 @@
+---
+import StatusBadge from './StatusBadge.astro';
+import MetaTag from './MetaTag.astro';
+
+interface Props {
+  name: string;
+  href: string;
+  description?: string;
+  status?: string;
+  subtype?: string;
+  metaTags?: string[];  // Additional tags like class, race
+  entityType?: 'character' | 'enemy' | 'location' | 'faction' | 'item';
+}
+
+const {
+  name,
+  href,
+  description,
+  status = 'active',
+  subtype,
+  metaTags = [],
+  entityType = 'character'
+} = Astro.props;
+
+// Determine variant for subtype badge based on entity type
+function getSubtypeVariant(type: string, subtype?: string): 'default' | 'pc' | 'npc' | 'enemy' | 'boss' {
+  if (type === 'enemy') {
+    return subtype === 'boss' ? 'boss' : 'enemy';
+  }
+  if (type === 'character') {
+    return subtype === 'pc' ? 'pc' : subtype === 'npc' ? 'npc' : 'default';
+  }
+  return 'default';
+}
+---
+
+<article class="entity-card">
+  <a href={href} class="entity-card__link">
+    <div class="entity-card__header">
+      <h3 class="entity-card__name">{name}</h3>
+      {status !== 'active' && (
+        <StatusBadge status={status} size="sm" />
+      )}
+    </div>
+
+    <div class="entity-card__meta">
+      {subtype && (
+        <MetaTag label={subtype} variant={getSubtypeVariant(entityType, subtype)} />
+      )}
+      {metaTags.map((tag) => (
+        <MetaTag label={tag} />
+      ))}
+    </div>
+
+    {description && (
+      <p class="entity-card__description">{description}</p>
+    )}
+  </a>
+</article>
+
+<style>
+  .entity-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+  }
+
+  .entity-card:hover {
+    border-color: var(--color-gold);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .entity-card__link {
+    display: block;
+    padding: var(--space-md);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .entity-card__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+  }
+
+  .entity-card__name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-text);
+    margin: 0;
+    transition: color var(--transition-fast);
+  }
+
+  .entity-card:hover .entity-card__name {
+    color: var(--color-gold);
+  }
+
+  .entity-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-sm);
+  }
+
+  .entity-card__description {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
