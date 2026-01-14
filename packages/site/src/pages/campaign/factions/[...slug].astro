@@ -3,14 +3,31 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
-  const entries = await getCollection('factions');
+  // Fetch all collections in parallel for entity linking
+  const [entries, characters, enemies, locations, factions, items] = await Promise.all([
+    getCollection('factions'),
+    getCollection('characters'),
+    getCollection('enemies'),
+    getCollection('locations'),
+    getCollection('factions'),
+    getCollection('items'),
+  ]);
+
+  // Build entity lookup map for linking relationships
+  const entityLookup: Record<string, { name: string; path: string }> = {};
+  characters.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/characters/${e.id}` });
+  enemies.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/enemies/${e.id}` });
+  locations.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/locations/${e.id}` });
+  factions.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/factions/${e.id}` });
+  items.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/items/${e.id}` });
+
   return entries.map(entry => ({
     params: { slug: entry.id },
-    props: { entry },
+    props: { entry, entityLookup },
   }));
 }
 
-const { entry } = Astro.props;
+const { entry, entityLookup } = Astro.props;
 const { Content } = await render(entry);
 
 const statusColors: Record<string, string> = {
@@ -92,9 +109,14 @@ const statusColors: Record<string, string> = {
             <div class="allegiance-group allegiance-group--allies">
               <h3>Allies</h3>
               <ul>
-                {entry.data.allies.map((ally: string) => (
-                  <li>{ally}</li>
-                ))}
+                {entry.data.allies.map((ally: string) => {
+                  const linked = entityLookup[ally];
+                  return linked ? (
+                    <li><a href={linked.path} class="allegiance-link">{linked.name}</a></li>
+                  ) : (
+                    <li>{ally}</li>
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -102,9 +124,14 @@ const statusColors: Record<string, string> = {
             <div class="allegiance-group allegiance-group--enemies">
               <h3>Enemies</h3>
               <ul>
-                {entry.data.enemies.map((enemy: string) => (
-                  <li>{enemy}</li>
-                ))}
+                {entry.data.enemies.map((enemy: string) => {
+                  const linked = entityLookup[enemy];
+                  return linked ? (
+                    <li><a href={linked.path} class="allegiance-link">{linked.name}</a></li>
+                  ) : (
+                    <li>{enemy}</li>
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -116,13 +143,22 @@ const statusColors: Record<string, string> = {
       <aside class="entity-relationships">
         <h2>Relationships</h2>
         <ul class="relationship-list">
-          {entry.data.relationships.map((rel: { entity: string; type: string; note?: string }) => (
-            <li class="relationship-item">
-              <span class="relationship-type">{rel.type}</span>
-              <span class="relationship-entity">{rel.entity}</span>
-              {rel.note && <span class="relationship-note">{rel.note}</span>}
-            </li>
-          ))}
+          {entry.data.relationships.map((rel: { entity: string; type: string; note?: string }) => {
+            const linked = entityLookup[rel.entity];
+            return (
+              <li class="relationship-item">
+                <span class="relationship-type">{rel.type}</span>
+                {linked ? (
+                  <a href={linked.path} class="relationship-entity relationship-entity--link">
+                    {linked.name}
+                  </a>
+                ) : (
+                  <span class="relationship-entity">{rel.entity}</span>
+                )}
+                {rel.note && <span class="relationship-note">{rel.note}</span>}
+              </li>
+            );
+          })}
         </ul>
       </aside>
     )}
@@ -351,6 +387,18 @@ const statusColors: Record<string, string> = {
     color: var(--color-text);
   }
 
+  .allegiance-link {
+    color: var(--color-text);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color var(--transition-fast);
+  }
+
+  .allegiance-link:hover {
+    color: var(--color-gold);
+    text-decoration: underline;
+  }
+
   .entity-relationships {
     background: var(--color-bg-secondary);
     padding: var(--space-lg);
@@ -398,6 +446,16 @@ const statusColors: Record<string, string> = {
   .relationship-entity {
     font-weight: 600;
     color: var(--color-text);
+  }
+
+  .relationship-entity--link {
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  .relationship-entity--link:hover {
+    color: var(--color-accent);
+    text-decoration: underline;
   }
 
   .relationship-note {
