@@ -168,16 +168,16 @@ exports.handler = async (event) => {
       ],
     }));
 
-    // Lambda function for AI review via Bedrock
+    // Lambda function for AI review via Bedrock (Claude Sonnet 4)
     const reviewFunction = new lambda.Function(this, 'ReviewFunction', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
-      timeout: cdk.Duration.seconds(30),
+      timeout: cdk.Duration.seconds(60),
       memorySize: 512,
       environment: {
         TOKEN_PARAMETER_NAME: tokenParameterName,
         ALLOWED_ORIGIN: props.allowedOrigin,
-        BEDROCK_MODEL_ID: 'amazon.titan-text-lite-v1',
+        BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
       },
       code: lambda.Code.fromInline(`
 const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
@@ -233,7 +233,15 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'No content provided' }) };
     }
 
-    const prompt = \`You are a helpful editor reviewing D&D session notes. Review the following notes and provide:
+    // Claude Messages API format
+    const bedrockPayload = {
+      anthropic_version: 'bedrock-2023-05-31',
+      max_tokens: 1024,
+      temperature: 0.3,
+      messages: [
+        {
+          role: 'user',
+          content: \`You are a helpful editor reviewing D&D session notes. Review the following notes and provide:
 1. A quality score from 0-100
 2. A list of suggestions for improvement (grammar, clarity, structure)
 3. Whether the notes are ready to publish
@@ -243,15 +251,9 @@ Be concise. Format your response as JSON with fields: score (number), suggestion
 Notes to review:
 \${content.substring(0, 8000)}
 
-Respond with valid JSON only:\`;
-
-    const bedrockPayload = {
-      inputText: prompt,
-      textGenerationConfig: {
-        maxTokenCount: 512,
-        temperature: 0.3,
-        topP: 0.9,
-      },
+Respond with valid JSON only:\`
+        }
+      ]
     };
 
     const command = new InvokeModelCommand({
@@ -263,7 +265,9 @@ Respond with valid JSON only:\`;
 
     const response = await bedrockClient.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-    const outputText = responseBody.results?.[0]?.outputText || '';
+
+    // Claude returns content as an array of content blocks
+    const outputText = responseBody.content?.[0]?.text || '';
 
     // Try to parse the AI response as JSON
     let reviewResult;
@@ -296,10 +300,13 @@ Respond with valid JSON only:\`;
       `),
     });
 
-    // Grant Bedrock permissions to review function
+    // Grant Bedrock permissions to review function (Claude Sonnet 4)
     reviewFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel'],
-      resources: ['arn:aws:bedrock:*::foundation-model/amazon.titan-text-lite-v1'],
+      resources: [
+        'arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0',
+        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-sonnet-4-20250514-v1:0',
+      ],
     }));
 
     // Grant SSM parameter read access to review function
