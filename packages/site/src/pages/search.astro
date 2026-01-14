@@ -49,9 +49,9 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
       new PagefindUI({
         element: '#search',
-        showSubResults: true,
+        showSubResults: false,
         showImages: false,
-        excerptLength: 20,
+        excerptLength: 25,
         translations: {
           placeholder: 'Search the campaign...',
           zero_results: 'No results found for "[SEARCH_TERM]"',
@@ -105,16 +105,51 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     --pagefind-ui-font: var(--font-sans);
   }
 
+  :global(.pagefind-ui__form) {
+    position: relative !important;
+  }
+
   :global(.pagefind-ui__search-input) {
     font-size: var(--text-lg) !important;
     padding: var(--space-md) var(--space-lg) !important;
     padding-left: var(--space-lg) !important;
+    padding-right: 70px !important;
     background: var(--color-bg-secondary) !important;
   }
 
   /* Hide the default magnifying glass icon that overlaps text */
   :global(.pagefind-ui__form::before) {
     display: none !important;
+  }
+
+  /* Style the clear button - align with input text */
+  :global(.pagefind-ui__search-clear) {
+    background: none !important;
+    border: none !important;
+    color: var(--color-text-muted) !important;
+    font-size: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    padding: var(--space-md) var(--space-lg) !important;
+    top: 0 !important;
+    right: 0 !important;
+    cursor: pointer !important;
+    transition: color var(--transition-fast) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0 !important;
+  }
+
+  :global(.pagefind-ui__search-clear::after) {
+    content: '✕' !important;
+    font-size: var(--text-lg) !important;
+    font-weight: 400 !important;
+    line-height: 1.6 !important;
+  }
+
+  :global(.pagefind-ui__search-clear:hover) {
+    color: var(--color-text) !important;
   }
 
   :global(.pagefind-ui__search-input:focus) {
