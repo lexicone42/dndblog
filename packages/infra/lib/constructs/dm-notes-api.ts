@@ -777,7 +777,8 @@ exports.handler = async (event) => {
       environment: {
         TOKEN_PARAMETER_NAME: tokenParameterName,
         ALLOWED_ORIGIN: props.allowedOrigin,
-        BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
+        // Using Claude 3.5 Sonnet v2 (same as review function's fallback)
+        BEDROCK_MODEL_ID: 'us.anthropic.claude-3-5-sonnet-20241022-v2:0',
       },
       code: lambda.Code.fromInline(`
 const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
@@ -1066,12 +1067,12 @@ IMPORTANT:
       `),
     });
 
-    // Grant Bedrock permissions to generate entity function (Claude Sonnet 4)
+    // Grant Bedrock permissions to generate entity function (Claude 3.5 Sonnet v2)
     generateEntityFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel'],
       resources: [
-        'arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0',
-        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-sonnet-4-20250514-v1:0',
+        'arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0',
+        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-3-5-sonnet-20241022-v2:0',
       ],
     }));
 
