@@ -1,0 +1,52 @@
+---
+/**
+ * Access Denied Component
+ * Shown when no valid token is provided.
+ */
+---
+
+<div id="access-denied" class="access-denied">
+  <div class="access-denied__content">
+    <h1>Access Denied</h1>
+    <p>This page requires a valid access token.</p>
+    <p class="access-denied__hint">Add <code>?token=your-token</code> to the URL</p>
+  </div>
+</div>
+
+<style>
+  .access-denied {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+  }
+
+  .access-denied__content {
+    padding: var(--space-2xl);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--color-error);
+  }
+
+  .access-denied h1 {
+    color: var(--color-error);
+    margin: 0 0 var(--space-md);
+  }
+
+  .access-denied p {
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .access-denied__hint {
+    font-size: var(--text-sm);
+  }
+
+  .access-denied code {
+    background: var(--color-bg-tertiary);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    color: var(--color-accent);
+  }
+</style>

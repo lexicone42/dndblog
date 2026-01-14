@@ -1,0 +1,208 @@
+---
+/**
+ * DM Notes Editor Component
+ * Markdown editor with EasyMDE, auto-save, and AI review functionality.
+ */
+---
+
+<div id="editor-container" class="editor-container" role="tabpanel" aria-labelledby="tab-editor" style="display: none;">
+  <header class="editor-header">
+    <h1>DM Session Notes</h1>
+    <div class="editor-header__actions">
+      <span id="save-status" class="save-status">Ready</span>
+      <button id="review-btn" class="btn btn--secondary">AI Review</button>
+      <button id="publish-btn" class="btn btn--primary">Save</button>
+    </div>
+  </header>
+
+  <div class="editor-meta">
+    <label>
+      Session Title:
+      <input type="text" id="session-title" placeholder="Session 10: The Next Adventure" />
+    </label>
+  </div>
+
+  <div class="editor-wrapper">
+    <textarea id="markdown-editor"></textarea>
+  </div>
+
+  <div id="review-result" class="review-result" style="display: none;">
+    <div class="review-result__header">
+      <span class="review-result__score">
+        Score: <strong id="review-score">--</strong>/100
+      </span>
+      <span id="review-status" class="review-result__status"></span>
+    </div>
+    <div id="review-summary" class="review-result__summary"></div>
+    <ul id="review-suggestions" class="review-result__suggestions"></ul>
+  </div>
+
+  <div id="publish-result" class="publish-result" style="display: none;"></div>
+</div>
+
+<style>
+  .editor-container {
+    padding: var(--space-lg);
+  }
+
+  .editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-lg);
+    flex-wrap: wrap;
+    gap: var(--space-md);
+  }
+
+  .editor-header h1 {
+    font-size: var(--text-2xl);
+    color: var(--color-gold);
+    margin: 0;
+  }
+
+  .editor-header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .save-status {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-tertiary);
+  }
+
+  .save-status--success {
+    color: var(--color-success);
+    background: rgba(34, 197, 94, 0.1);
+  }
+
+  .save-status--error {
+    color: var(--color-error);
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .editor-meta {
+    margin-bottom: var(--space-md);
+  }
+
+  .editor-meta label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .editor-meta input {
+    flex: 1;
+    max-width: 400px;
+    padding: var(--space-sm);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    font-size: var(--text-base);
+  }
+
+  .editor-meta input:focus {
+    outline: none;
+    border-color: var(--color-gold);
+  }
+
+  .editor-wrapper {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+  }
+
+  /* Review result styling */
+  .review-result {
+    margin-top: var(--space-lg);
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+  }
+
+  .review-result__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .review-result__score {
+    font-size: var(--text-lg);
+    color: var(--color-text);
+  }
+
+  .review-result__score strong {
+    color: var(--color-gold);
+    font-size: var(--text-xl);
+  }
+
+  .review-result__status {
+    padding: 4px 12px;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .review-result__status.can-publish {
+    background: var(--color-success);
+    color: white;
+  }
+
+  .review-result__status.needs-work {
+    background: var(--color-warning);
+    color: var(--color-bg);
+  }
+
+  .review-result__summary {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-md);
+    line-height: 1.6;
+  }
+
+  .review-result__suggestions {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .review-result__suggestions li {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    border-left: 3px solid var(--color-accent);
+  }
+
+  .publish-result {
+    margin-top: var(--space-lg);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    text-align: center;
+  }
+
+  .publish-result.success {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--color-success);
+    border: 1px solid var(--color-success);
+  }
+
+  .publish-result.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
+  }
+</style>

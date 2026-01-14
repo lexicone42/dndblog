@@ -1,0 +1,270 @@
+---
+/**
+ * DM Notes Browser Component
+ * Grid view of saved notes with search, sort, and offline support.
+ */
+---
+
+<div id="browser-container" class="browser-container" role="tabpanel" aria-labelledby="tab-browser" style="display: none;">
+  <header class="browser-header">
+    <h1>Session Notes Browser</h1>
+    <div class="browser-header__controls">
+      <label for="notes-search" class="visually-hidden">Search notes</label>
+      <input type="search" id="notes-search" class="notes-search" placeholder="Search notes..." aria-describedby="search-hint" />
+      <span id="search-hint" class="visually-hidden">Search by note title</span>
+      <label for="notes-sort" class="visually-hidden">Sort notes</label>
+      <select id="notes-sort" class="notes-sort" aria-label="Sort order">
+        <option value="date-desc">Newest First</option>
+        <option value="date-asc">Oldest First</option>
+        <option value="title-asc">Title A-Z</option>
+        <option value="title-desc">Title Z-A</option>
+      </select>
+    </div>
+  </header>
+
+  <div id="offline-indicator" class="offline-indicator" role="status" aria-live="polite" style="display: none;">
+    <span class="offline-icon" aria-hidden="true">📡</span>
+    <span>Viewing cached notes (offline mode)</span>
+  </div>
+
+  <div id="notes-loading" class="notes-loading" role="status" aria-live="polite">
+    <span class="loading-spinner" aria-hidden="true"></span>
+    <span>Loading notes...</span>
+  </div>
+
+  <div id="notes-error" class="notes-error" role="alert" aria-live="assertive" style="display: none;"></div>
+
+  <div id="notes-empty" class="notes-empty" role="status" style="display: none;">
+    <p>No session notes found.</p>
+    <p class="notes-empty__hint">Switch to the Editor tab to create your first note!</p>
+  </div>
+
+  <div id="notes-grid" class="notes-grid" role="list" aria-label="Session notes"></div>
+</div>
+
+<style>
+  .browser-container {
+    padding: var(--space-lg);
+  }
+
+  .browser-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-lg);
+    flex-wrap: wrap;
+    gap: var(--space-md);
+  }
+
+  .browser-header h1 {
+    font-size: var(--text-2xl);
+    color: var(--color-gold);
+    margin: 0;
+  }
+
+  .browser-header__controls {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+  }
+
+  .notes-search {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    min-width: 200px;
+  }
+
+  .notes-search:focus {
+    outline: none;
+    border-color: var(--color-gold);
+  }
+
+  .notes-sort {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  .notes-sort:focus {
+    outline: none;
+    border-color: var(--color-gold);
+  }
+
+  .offline-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(234, 179, 8, 0.1);
+    border: 1px solid var(--color-warning);
+    border-radius: var(--radius-md);
+    color: var(--color-warning);
+    margin-bottom: var(--space-lg);
+    font-size: var(--text-sm);
+  }
+
+  .notes-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    padding: var(--space-2xl);
+    color: var(--color-text-muted);
+  }
+
+  .loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-gold);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .notes-error {
+    padding: var(--space-lg);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-md);
+    color: var(--color-error);
+    text-align: center;
+  }
+
+  .notes-empty {
+    text-align: center;
+    padding: var(--space-2xl);
+    color: var(--color-text-muted);
+  }
+
+  .notes-empty__hint {
+    font-size: var(--text-sm);
+    margin-top: var(--space-sm);
+  }
+
+  .notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  /* Note card styles (generated via JS) */
+  .notes-grid :global(.note-card) {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .notes-grid :global(.note-card:hover) {
+    border-color: var(--color-gold);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .notes-grid :global(.note-card:focus) {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+
+  .notes-grid :global(.note-card__title) {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 var(--space-sm);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .notes-grid :global(.note-card__meta) {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    flex-wrap: wrap;
+  }
+
+  .notes-grid :global(.note-card__date) {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .notes-grid :global(.note-card__status) {
+    font-size: var(--text-xs);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .notes-grid :global(.note-card__status--draft) {
+    background: var(--color-warning);
+    color: var(--color-bg);
+  }
+
+  .notes-grid :global(.note-card__status--published) {
+    background: var(--color-success);
+    color: white;
+  }
+
+  .notes-grid :global(.note-card__size) {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .notes-grid :global(.note-card__actions) {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .notes-grid :global(.note-card__btn) {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-sm);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .notes-grid :global(.note-card__btn:hover) {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .notes-grid :global(.note-card__btn--danger:hover) {
+    border-color: var(--color-error);
+    color: var(--color-error);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>

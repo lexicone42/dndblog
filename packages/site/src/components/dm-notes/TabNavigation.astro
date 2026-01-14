@@ -1,0 +1,59 @@
+---
+/**
+ * Tab Navigation Component
+ * Switches between Editor and Browser views.
+ */
+---
+
+<nav id="tab-navigation" class="tab-navigation" style="display: none;" role="tablist" aria-label="DM Notes sections">
+  <button class="tab-btn tab-btn--active" data-tab="editor" role="tab" aria-selected="true" aria-controls="editor-container" id="tab-editor">Editor</button>
+  <button class="tab-btn" data-tab="browser" role="tab" aria-selected="false" aria-controls="browser-container" id="tab-browser">Browser</button>
+</nav>
+
+<style>
+  .tab-navigation {
+    display: flex;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-lg);
+    background: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .tab-btn {
+    padding: var(--space-sm) var(--space-lg);
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    font-size: var(--text-base);
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    transition: all var(--transition-fast);
+    position: relative;
+  }
+
+  .tab-btn:hover {
+    color: var(--color-text);
+    background: var(--color-bg-tertiary);
+  }
+
+  .tab-btn--active {
+    color: var(--color-gold);
+    background: var(--color-bg);
+  }
+
+  .tab-btn--active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--color-gold);
+  }
+
+  .tab-btn:focus {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+</style>
