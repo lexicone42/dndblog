@@ -89,7 +89,13 @@ export class GithubOidc extends Construct {
       })
     );
 
-    // CloudFormation permissions for CDK deploy
+    // CloudFormation permissions for CDK deploy - scoped to project stacks
+    const stackPatterns = [
+      `arn:aws:cloudformation:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:stack/StaticSiteStack/*`,
+      `arn:aws:cloudformation:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:stack/DmNotesStack/*`,
+      `arn:aws:cloudformation:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:stack/GithubOidcStack/*`,
+      `arn:aws:cloudformation:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:stack/CDKToolkit/*`,
+    ];
     this.deployRole.addToPolicy(
       new iam.PolicyStatement({
         sid: 'CloudFormationAccess',
@@ -109,7 +115,17 @@ export class GithubOidc extends Construct {
           'cloudformation:DeleteChangeSet',
           'cloudformation:GetTemplateSummary',
         ],
-        resources: ['*'], // CDK creates stacks with generated names
+        resources: stackPatterns,
+      })
+    );
+
+    // Allow DescribeStacks on all (needed for CDK to check if stack exists)
+    this.deployRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'CloudFormationDescribeAll',
+        effect: iam.Effect.ALLOW,
+        actions: ['cloudformation:DescribeStacks', 'cloudformation:GetTemplateSummary'],
+        resources: ['*'],
       })
     );
 
@@ -262,13 +278,12 @@ export class GithubOidc extends Construct {
       })
     );
 
-    // Permissions needed to create/manage the infrastructure
+    // S3 bucket management - scoped to project bucket patterns
     this.deployRole.addToPolicy(
       new iam.PolicyStatement({
-        sid: 'InfrastructureManagement',
+        sid: 'S3BucketManagement',
         effect: iam.Effect.ALLOW,
         actions: [
-          // S3 bucket management
           's3:CreateBucket',
           's3:DeleteBucket',
           's3:PutBucketPolicy',
@@ -278,7 +293,20 @@ export class GithubOidc extends Construct {
           's3:PutEncryptionConfiguration',
           's3:PutLifecycleConfiguration',
           's3:PutBucketOwnershipControls',
-          // CloudFront management
+        ],
+        resources: [
+          'arn:aws:s3:::staticsitestack-*',
+          'arn:aws:s3:::dmnotesstack-*',
+        ],
+      })
+    );
+
+    // CloudFront management - scoped to this account
+    this.deployRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'CloudFrontManagement',
+        effect: iam.Effect.ALLOW,
+        actions: [
           'cloudfront:CreateDistribution',
           'cloudfront:UpdateDistribution',
           'cloudfront:DeleteDistribution',
@@ -293,14 +321,33 @@ export class GithubOidc extends Construct {
           'cloudfront:DeleteCachePolicy',
           'cloudfront:TagResource',
           'cloudfront:UntagResource',
-          // Route53 management
-          'route53:ChangeResourceRecordSets',
-          // ACM for SSL certificates
+        ],
+        resources: [`arn:aws:cloudfront::${cdk.Stack.of(this).account}:distribution/*`],
+      })
+    );
+
+    // Route53 management - limited to ChangeResourceRecordSets
+    // Note: Route53 ARNs are global, not regional
+    this.deployRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'Route53Management',
+        effect: iam.Effect.ALLOW,
+        actions: ['route53:ChangeResourceRecordSets'],
+        resources: ['arn:aws:route53:::hostedzone/*'],
+      })
+    );
+
+    // ACM certificate management - scoped to this account/region
+    this.deployRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'ACMManagement',
+        effect: iam.Effect.ALLOW,
+        actions: [
           'acm:RequestCertificate',
           'acm:DeleteCertificate',
           'acm:AddTagsToCertificate',
         ],
-        resources: ['*'],
+        resources: [`arn:aws:acm:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:certificate/*`],
       })
     );
   }
