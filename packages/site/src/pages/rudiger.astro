@@ -299,6 +299,24 @@ Some coincidences are carefully crafted. And somewhere out there, a hooded rogue
     color: var(--color-gold);
   }
 
+  /* Wider layout for desktop to reduce word breaks */
+  @media (min-width: 1024px) {
+    .story-page {
+      max-width: 900px;
+    }
+
+    .story-content :global(p) {
+      text-align: left;
+      hyphens: none;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .story-page {
+      max-width: 1000px;
+    }
+  }
+
   @media (max-width: 768px) {
     .story-page {
       padding: var(--space-md);
