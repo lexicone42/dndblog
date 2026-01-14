@@ -4,34 +4,38 @@ type: "enemy"
 subtype: "minion"
 status: "unknown"
 visibility: "public"
-description: "Former party companion who betrayed them to the Fallen Priest"
+description: "Former party companion coerced into betraying them through blackmail"
 
 tags:
-  - traitor
+  - blackmail-victim
   - former-ally
-  - fallen-priest-agent
+  - fallen-priest-pawn
 
 relationships:
   - entity: "the-fallen-priest"
-    type: "serves"
-    note: "Worked for the Fallen Priest"
+    type: "coerced-by"
+    note: "Blackmailed into service"
   - entity: "the-party"
-    type: "enemy"
-    note: "Led them into ambush"
+    type: "former-ally"
+    note: "Forced to betray them"
 ---
 
 # Dain
 
-A former companion of the party who revealed his true allegiance when he led them into a deadly ambush at Umbrage Hill.
+A former companion of the party who was coerced into leading them into an ambush at Umbrage Hill. Though his actions appeared to be betrayal, Dain was a victim of blackmail by the forces of the Fallen Priest.
 
-## The Betrayal
+## The Ambush
 
-At Umbrage Hill, Dain triggered a hidden door that sprang a trap on the party. The ambush was their first encounter with the forces of the Fallen Priest—and the revelation that one of their own had been working against them.
+At Umbrage Hill, Dain triggered a hidden door that sprang a trap on the party. The ambush was their first encounter with the forces of the Fallen Priest. What seemed like treachery was later revealed to be the desperate act of a man with no other choice.
 
-## Fate Unknown
+## A Pawn, Not a Traitor
 
-Dain escaped during the chaos of the ambush. His current whereabouts and fate are unknown, but his betrayal remains a bitter memory for the party.
+Evidence uncovered suggests Dain was being blackmailed—forced to cooperate with the Fallen Priest's agents under threat of harm to himself or others he cared about. His "betrayal" was not born of malice but of coercion.
 
 ## The Price of Silence
 
-Dain's actions may not have been entirely his own—evidence suggests he was being blackmailed. His tongue was [taken by his captors](/tongue), silencing whatever secrets he might have revealed.
+His tongue was [taken by his captors](/tongue), silencing whatever secrets he might have revealed about his handlers or their plans.
+
+## Fate Unknown
+
+Dain's current whereabouts are unknown. Whether he escaped, was disposed of by his blackmailers, or remains a prisoner somewhere, the party may never know. But the truth of his circumstances has tempered their anger with sympathy.
