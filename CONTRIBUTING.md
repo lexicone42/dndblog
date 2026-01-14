@@ -10,7 +10,7 @@ The easiest way to contribute is by writing blog posts. You don't need to know h
 
 #### Option 1: Submit via GitHub Issue
 
-1. Go to [Issues](https://github.com/bryanegan/dndblog/issues/new)
+1. Go to [Issues](https://github.com/lexicone42/dndblog/issues/new)
 2. Select the "New Blog Post" template
 3. Fill in your post content
 4. We'll format and publish it for you!
@@ -47,7 +47,7 @@ More content...
 
 ```bash
 # Clone the repository
-git clone https://github.com/bryanegan/dndblog.git
+git clone https://github.com/lexicone42/dndblog.git
 cd dndblog
 
 # Install dependencies (requires pnpm)
@@ -132,7 +132,7 @@ Multi-line code
 
 ## Questions?
 
-- Open an [issue](https://github.com/bryanegan/dndblog/issues)
+- Open an [issue](https://github.com/lexicone42/dndblog/issues)
 - Check existing issues for answers
 
 Thank you for contributing to our adventuring chronicle!

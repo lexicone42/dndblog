@@ -1,7 +1,7 @@
 # Rudiger's Evocation of Events
 
-[![CI](https://github.com/bryanegan/dndblog/actions/workflows/ci.yml/badge.svg)](https://github.com/bryanegan/dndblog/actions/workflows/ci.yml)
-[![Deploy](https://github.com/bryanegan/dndblog/actions/workflows/deploy.yml/badge.svg)](https://github.com/bryanegan/dndblog/actions/workflows/deploy.yml)
+[![CI](https://github.com/lexicone42/dndblog/actions/workflows/ci.yml/badge.svg)](https://github.com/lexicone42/dndblog/actions/workflows/ci.yml)
+[![Deploy](https://github.com/lexicone42/dndblog/actions/workflows/deploy.yml/badge.svg)](https://github.com/lexicone42/dndblog/actions/workflows/deploy.yml)
 
 A modular static blog platform built with Astro and deployed to AWS, designed for future extension into a private RPG campaign note-tracking system.
 

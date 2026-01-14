@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     # Only run on the main repository, never on forks
-    if: github.repository == 'bryanegan/dndblog'
+    if: github.repository == 'lexicone42/dndblog'
 
     steps:
       - name: Checkout
