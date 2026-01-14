@@ -160,34 +160,37 @@ function isActive(href: string): boolean {
     background-color: var(--color-bg-secondary);
   }
 
-  /* Show/hide icons based on color scheme */
-  .header__theme-icon--dark {
+  /* Show/hide icons based on theme
+     Icons show what will happen on click:
+     - Moon visible in light mode (click to go dark)
+     - Sun visible in dark mode (click to go light) */
+  .header__theme-icon--light {
     display: none;
   }
 
   @media (prefers-color-scheme: dark) {
     .header__theme-icon--light {
-      display: none;
-    }
-    .header__theme-icon--dark {
       display: block;
     }
+    .header__theme-icon--dark {
+      display: none;
+    }
   }
 
-  /* When manually set to dark */
+  /* When manually set to dark - show sun (click to go light) */
   :global([data-theme='dark']) .header__theme-icon--light {
-    display: none;
+    display: block;
   }
   :global([data-theme='dark']) .header__theme-icon--dark {
-    display: block;
+    display: none;
   }
 
-  /* When manually set to light */
+  /* When manually set to light - show moon (click to go dark) */
   :global([data-theme='light']) .header__theme-icon--light {
-    display: block;
+    display: none;
   }
   :global([data-theme='light']) .header__theme-icon--dark {
-    display: none;
+    display: block;
   }
 
   @media (max-width: 640px) {
