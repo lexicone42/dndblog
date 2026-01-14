@@ -1,0 +1,2753 @@
+{
+  "generatedAt": "2026-01-14T04:06:06.578Z",
+  "version": "1.0.0",
+  "stats": {
+    "totalEntities": 48,
+    "totalSessions": 11,
+    "byType": {
+      "characters": 14,
+      "enemies": 9,
+      "locations": 10,
+      "factions": 7,
+      "items": 8
+    }
+  },
+  "entities": {
+    "characters": [
+      {
+        "slug": "accoa",
+        "name": "Accoa",
+        "type": "character",
+        "subtype": "pc",
+        "status": "active",
+        "visibility": "public",
+        "description": "Centaur scout who joined the party after being freed from the Night Hag",
+        "tags": [
+          "party",
+          "centaur",
+          "scout",
+          "whisperwood-survivor"
+        ],
+        "relationships": [
+          {
+            "entity": "rudiger",
+            "type": "ally"
+          },
+          {
+            "entity": "stol",
+            "type": "ally"
+          },
+          {
+            "entity": "kei",
+            "type": "ally"
+          },
+          {
+            "entity": "skid-demon",
+            "type": "ally"
+          },
+          {
+            "entity": "night-hag",
+            "type": "enemy",
+            "note": "Kidnapped by her as a child"
+          },
+          {
+            "entity": "dryad-erinthin",
+            "type": "ally",
+            "note": "Blessed by the Dryad"
+          }
+        ],
+        "content": "# Accoa\n\nCentaur scout who was taken from Whisperwood Forest by the Night Hag as a child. Freed by the party and now travels with them as a valued companion.\n\n## Origin\n\nAccoa was kidnapped by the Night Hag when young and held captive in Whisperwood Forest for years. The hag drained victims slowly in their sleep, keeping Accoa weak but alive for some unknown purpose.\n\n## Joining the Party\n\nAfter helping defeat the Night Hag, Accoa chose to travel with the party. The Dryad Erinthin blessed her, recognizing her as one of the forest's lost children finally returned and freed.\n\n## Key Moments\n\n### Freedom from the Night Hag\nHelped the party defeat her captor, finally ending years of torment.\n\n### Blessed by Erinthin\nThe Dryad of the Forest Heart recognized Accoa and blessed her with the forest's protection.\n\n### The Sharn Pursuit\nStunned the pickpocket runner in Sharn's streets, proving her worth as a quick and capable party member."
+      },
+      {
+        "slug": "aidin",
+        "name": "Aidin",
+        "type": "character",
+        "subtype": "npc",
+        "status": "active",
+        "visibility": "public",
+        "description": "Rescued captive with potential clerical abilities",
+        "tags": [
+          "npc",
+          "ally",
+          "rescued",
+          "cleric"
+        ],
+        "relationships": [
+          {
+            "entity": "greeve",
+            "type": "lover",
+            "note": "He kissed her before his final charge"
+          },
+          {
+            "entity": "the-fallen-priest",
+            "type": "enemy",
+            "note": "Was used in his portal ritual"
+          },
+          {
+            "entity": "the-party",
+            "type": "ally",
+            "note": "Rescued by the party"
+          }
+        ],
+        "content": "# Aidin\n\nA captive rescued from the Fallen Priest's clutches, Aidin was being used for the portal ritual to the Undergods.\n\n## Rescue\n\nThe party found Aidin weak but alive after the vault events. She was being drained as part of the Fallen Priest's dark ritual to open a portal to the Undergods.\n\n## Connection to Greeve\n\nGreeve and Aidin had grown close during their captivity. Before his final charge against the Fallen Priest, Greeve kissed her goodbye. His sacrifice sealed the vault—and her freedom.\n\n## Potential\n\nThough weakened from her ordeal, Aidin shows signs of clerical potential. Her survival may yet serve a greater purpose."
+      },
+      {
+        "slug": "alkanar",
+        "name": "Alkanar",
+        "type": "character",
+        "subtype": "npc",
+        "status": "active",
+        "visibility": "public",
+        "description": "Elderly dragonborn historian of the Emerald Enclave",
+        "tags": [
+          "npc",
+          "ally",
+          "historian",
+          "emerald-enclave"
+        ],
+        "relationships": [
+          {
+            "entity": "the-party",
+            "type": "ally",
+            "note": "Briefed them on Sharn and Eberron"
+          },
+          {
+            "entity": "emerald-enclave",
+            "type": "member-of"
+          }
+        ],
+        "content": "# Alkanar\n\nAn elderly dragonborn who serves as a historian for the Emerald Enclave. Alkanar's vast knowledge of Eberron and its history proved invaluable in preparing the party for their mission.\n\n## The Briefing\n\nBefore the party traveled to Sharn, Alkanar provided crucial historical context:\n- The structure and politics of Sharn, the City of Towers\n- The Dhakaani Empire's legacy beneath the city\n- The importance of Eberron in the network of ley anchors\n\n## Wisdom of Ages\n\nThough old and no longer a field operative, Alkanar's knowledge spans centuries of Enclave records. His understanding of planar connections and ancient civilizations makes him an irreplaceable resource."
+      },
+      {
+        "slug": "captain-tallow",
+        "name": "Captain Tallow",
+        "type": "character",
+        "subtype": "npc",
+        "status": "active",
+        "visibility": "public",
+        "description": "Ship captain of the Siren's Song and secret druid of Eberron",
+        "tags": [
+          "npc",
+          "ally",
+          "captain",
+          "druid",
+          "secret-identity"
+        ],
+        "relationships": [
+          {
+            "entity": "the-party",
+            "type": "ally",
+            "note": "Transported them to Stonehell Isle"
+          },
+          {
+            "entity": "emerald-enclave",
+            "type": "ally",
+            "note": "Secret druid connection"
+          }
+        ],
+        "content": "# Captain Tallow\n\nCaptain of the Siren's Song, stationed at Muck Bay. Tallow appears to be a simple ship captain, but is secretly a druid of Eberron with significant magical power.\n\n## Secret Identity\n\nBehind the weathered sailor facade, Tallow wields druidic magic:\n- **Banishment**: When a kraken threatened the ship during the pirate attack, Tallow banished it—an incredibly powerful feat\n- **Mist-Parting Ritual**: Performed the ritual that allowed passage through Stonehell Isle's protective enchanted mist\n\n## The Journey to Stonehell\n\nTallow transported the party to Stonehell Isle, navigating the treacherous waters and performing the ancient ritual needed to pierce the island's magical concealment.\n\n## The Circle Mage Encounter\n\nDuring the kraken attack, Tallow noticed the Circle mage observing him. The mage dove into the water and escaped rather than engaging—suggesting even he recognized Tallow's power."
+      },
+      {
+        "slug": "dryad-erinthin",
+        "name": "Dryad Erinthin",
+        "type": "character",
+        "subtype": "npc",
+        "status": "active",
+        "visibility": "public",
+        "description": "Guardian of Whisperwood Forest who blessed the party",
+        "tags": [
+          "npc",
+          "ally",
+          "forest-guardian",
+          "nature-spirit"
+        ],
+        "relationships": [
+          {
+            "entity": "the-party",
+            "type": "ally",
+            "note": "Blessed the party and gave Skid the Dryad's bow"
+          },
+          {
+            "entity": "skid-demon",
+            "type": "ally",
+            "note": "Gifted him the Dryad's bow"
+          },
+          {
+            "entity": "accoa",
+            "type": "ally",
+            "note": "Recognized her as a lost child of the forest"
+          },
+          {
+            "entity": "night-hag",
+            "type": "enemy",
+            "note": "The hag cursed her forest"
+          },
+          {
+            "entity": "emerald-enclave",
+            "type": "ally",
+            "note": "Harlix recognized her bow as proof of Enclave allegiance"
+          }
+        ],
+        "content": "# Dryad Erinthin\n\nAncient guardian of the Whisperwood Forest heart. Erinthin blessed the party after they defeated the Night Hag and lifted the curse from her domain.\n\n## The Forest Heart\n\nErinthin dwells in the sacred grove at Whisperwood's heart. The Night Hag's curse had weakened her influence, but with the hag defeated, her power is returning.\n\n## Gifts and Blessings\n\n- Blessed the entire party with the forest's favor\n- Gave Skid the Dryad's bow, a mark of trust and alliance\n- Recognized Accoa as a former captive of the hag, welcoming her home\n\n## Connection to the Emerald Enclave\n\nHarlix Darkleaf immediately recognized the Dryad's bow, using it as proof that the party was allied with the forest guardians and, by extension, the Emerald Enclave."
+      },
+      {
+        "slug": "elder-elarion-mossbark",
+        "name": "Elder Elarion Mossbark",
+        "type": "character",
+        "subtype": "npc",
+        "status": "active",
+        "visibility": "public",
+        "description": "Leader of Verdant Hollow, the Emerald Enclave chapter in Sharn",
+        "tags": [
+          "npc",
+          "ally",
+          "elder",
+          "emerald-enclave",
+          "verdant-hollow"
+        ],
+        "relationships": [
+          {
+            "entity": "the-party",
+            "type": "ally",
+            "note": "Warned them about Harlix"
+          },
+          {
+            "entity": "emerald-enclave",
+            "type": "leader-of",
+            "note": "Leads the Sharn chapter"
+          },
+          {
+            "entity": "harlix-darkleaf",
+            "type": "enemy",
+            "note": "Suspected his treachery"
+          }
+        ],
+        "content": "# Elder Elarion Mossbark\n\nLeader of Verdant Hollow, the hidden Emerald Enclave chapter house in Sharn. Elder Mossbark oversees the Enclave's operations in the City of Towers.\n\n## Verdant Hollow\n\nLocated in a hollowed tower garden, Verdant Hollow serves as a sanctuary for Enclave members in Sharn. Elder Mossbark maintains the chapter despite internal suspicion about traitors in their ranks.\n\n## Warnings\n\nWhen the party arrived, Elder Mossbark warned them:\n- Harlix Darkleaf was being tracked by unknown forces\n- The ley shard the party carried made them easier to track\n- Their Black Mantle identities were intentionally compromised to lure enemies\n\n## The Divided Enclave\n\nElder Mossbark carries the burden of knowing the Enclave has been infiltrated. His warnings to the party came just in time—Harlix's betrayal proved his suspicions correct."
+      },
+      {
+        "slug": "greeve",
+        "name": "Greeve",
+        "type": "character",
+        "subtype": "npc",
+        "status": "transformed",
+        "visibility": "public",
+        "description": "Former ally with royal blood, now eternal guardian of the Shavras Vault",
+        "tags": [
+          "ally",
+          "npc",
+          "guardian",
+          "royal-blood",
+          "sacrifice",
+          "wraith"
+        ],
+        "relationships": [
+          {
+            "entity": "the-party",
+            "type": "ally",
+            "note": "Sacrificed himself to seal the vault"
+          },
+          {
+            "entity": "shavras-vault",
+            "type": "guards",
+            "note": "Eternal guardian after sacrifice"
+          },
+          {
+            "entity": "the-fallen-priest",
+            "type": "enemy",
+            "note": "Killed by the Fallen Priest's bone sword"
+          }
+        ],
+        "content": "# Greeve\n\nA tragic hero who unknowingly carried royal blood, Greeve made the ultimate sacrifice to seal the Shavras Vault.\n\n## Background\n\n- Originally from Phandalin\n- Had royal blood (unbeknownst to him)\n- Connected to the bloodline murals discovered in Shavras\n\n## Transformation\n\nGreeve was transformed into a Slaad at some point, then restored by the party. This experience marked him deeply.\n\n## The Sacrifice\n\nDuring the final battle with the Fallen Priest, Greeve was impaled by the Priest's bone sword. In his dying moments, he chose to become a wraith guardian, sealing the vault with his sacrifice.\n\n### Final Words\n> \"My family never told me of their royal blood, but my death will only seal the vault until they track down all of my ancestors.\"\n\n## Current Status\n\nGreeve now exists as an eternal guardian of the Shavras Vault. The vault remains sealed, its treasures and secrets protected by his spectral form."
+      },
+      {
+        "slug": "harlix-darkleaf",
+        "name": "Harlix Darkleaf",
+        "type": "character",
+        "subtype": "npc",
+        "status": "inactive",
+        "visibility": "public",
+        "description": "Former Knock member revealed as Slanted Circle traitor",
+        "tags": [
+          "npc",
+          "traitor",
+          "former-ally",
+          "the-knock"
+        ],
+        "relationships": [
+          {
+            "entity": "the-party",
+            "type": "enemy",
+            "note": "Betrayed the party in Sharn"
+          },
+          {
+            "entity": "slanted-circle",
+            "type": "member-of",
+            "note": "Secret agent"
+          },
+          {
+            "entity": "emerald-enclave",
+            "type": "former-member-of",
+            "note": "Infiltrated the Knock"
+          },
+          {
+            "entity": "the-circle-mage",
+            "type": "ally",
+            "note": "Sold druidic cipher to the 'scarred mage'"
+          },
+          {
+            "entity": "veyra",
+            "type": "ally",
+            "note": "Fellow Slanted Circle operative"
+          }
+        ],
+        "content": "# Harlix Darkleaf\n\nOnce a trusted member of The Knock and initial contact for the party, Harlix was revealed in Sharn as a traitor working for the Slanted Circle.\n\n## The Betrayal\n\nThe party first met Harlix at The Mason and the Chain in Astgrove. He was the one who brought them to witness the Maw Frame and seemed like a valuable ally, devastating in combat alongside Rudiger.\n\nBut in Sharn, his true nature emerged:\n- Sold the stolen druidic cipher book to a \"scarred mage\" in the black market\n- Fed party movements to the Slanted Circle\n- Revealed the location of the Eberron ley anchor in the Dhakaani dungeons\n\n## Confession\n\n\"The Enclave is fractured. The Circle will bring order—a new balance. You're just too blind to see it.\"\n\n## Current Status\n\nCaptured by the party and handed over to Master Molrik and the dwarven clan for custody, along with the recovered Dragonshards."
+      },
+      {
+        "slug": "kei",
+        "name": "Kei",
+        "type": "character",
+        "subtype": "pc",
+        "status": "active",
+        "visibility": "public",
+        "description": "Party fighter known for combat prowess and strength",
+        "tags": [
+          "party",
+          "fighter",
+          "martial"
+        ],
+        "relationships": [
+          {
+            "entity": "rudiger",
+            "type": "ally",
+            "note": "Fellow party member"
+          },
+          {
+            "entity": "stol",
+            "type": "ally"
+          },
+          {
+            "entity": "skid-demon",
+            "type": "ally"
+          },
+          {
+            "entity": "accoa",
+            "type": "ally"
+          }
+        ],
+        "content": "# Kei\n\nParty fighter renowned for combat prowess and exceptional strength. A natural leader in battle.\n\n## Key Moments\n\n### Arm-Wrestling Champion\nWon the arm-wrestling competition in Astgrove at The Mason and the Chain tavern, claiming the 400gp prize.\n\n### Vision in the Dhakaani Ruins\nExperienced a haunting vision in the Hall of Warriors - the weight of command and failure, showing the burden carried by ancient Dhakaani generals.\n\n### Cornerstone Tavern Fight\nHelped finish thugs at the Cornerstone Tavern in Sharn when the party's Black Mantle cover was blown."
+      },
+      {
+        "slug": "master-molrik",
+        "name": "Master Molrik",
+        "type": "character",
+        "subtype": "npc",
+        "status": "active",
+        "visibility": "public",
+        "description": "Leader of the dwarven clan beneath Sharn",
+        "tags": [
+          "npc",
+          "ally",
+          "dwarf",
+          "clan-leader"
+        ],
+        "relationships": [
+          {
+            "entity": "the-party",
+            "type": "ally",
+            "note": "Led them to Dhakaani ruins, rewarded them"
+          },
+          {
+            "entity": "skid-demon",
+            "type": "ally",
+            "note": "Recognized him as Stone-born"
+          },
+          {
+            "entity": "molrik-clan",
+            "type": "leader-of"
+          },
+          {
+            "entity": "harlix-darkleaf",
+            "type": "enemy",
+            "note": "Took custody of the traitor"
+          }
+        ],
+        "content": "# Master Molrik\n\nLeader of the Molrik clan, the dwarven community that dwells beneath Sharn near the ancient Dhakaani ruins.\n\n## The Meeting\n\nWhen the party arrived in the deep passages beneath Sharn, the Molrik clan sensed the ley flux they carried. Master Molrik personally led them to the entrance of the Dhakaani ruins after Glun, one of his clan, recognized Skid as \"Stone-born.\"\n\n## Rewards and Honor\n\nAfter the party stabilized the Heart Stone anchor, Master Molrik:\n- Rewarded them with magical items from the clan's forge\n- Granted them \"eternal respect\" of the Molrik clan\n- Took custody of Harlix Darkleaf for dwarven justice\n- Accepted the captured Dragonshards for safekeeping\n\n## The Forward Camp\n\nThe Molrik clan maintains an ancient forward camp near the Dhakaani ruins, lit by magma streams flowing through dwarven forges. It serves as the last outpost before the goblinoid depths."
+      },
+      {
+        "slug": "rook-targrave",
+        "name": "Rook Targrave",
+        "type": "character",
+        "subtype": "npc",
+        "status": "active",
+        "visibility": "public",
+        "description": "Stern member of the Emerald Enclave High Council",
+        "tags": [
+          "npc",
+          "ally",
+          "high-council",
+          "emerald-enclave"
+        ],
+        "relationships": [
+          {
+            "entity": "the-party",
+            "type": "ally",
+            "note": "Briefed them on Aru'xat and the Slanted Circle"
+          },
+          {
+            "entity": "rudiger",
+            "type": "ally",
+            "note": "Sensed his internal conflict, gave him scroll"
+          },
+          {
+            "entity": "emerald-enclave",
+            "type": "leader-of",
+            "note": "High Council member"
+          },
+          {
+            "entity": "slanted-circle",
+            "type": "enemy"
+          }
+        ],
+        "content": "# Rook Targrave\n\nA stern and perceptive member of the Emerald Enclave's High Council. Rook briefed the party on the true nature of their enemy.\n\n## The Briefing\n\nRook Targrave revealed crucial information to the party:\n- The identity and nature of Aru'xat, the Verdant Maw\n- The Slanted Circle's plan to awaken the primordial\n- The importance of the ley anchors across multiple planes\n\n## Perception\n\nBlunt and direct, Rook sees through pretense. He sensed Rudiger's internal conflict—the wizard's struggle with something deep and unspoken—and gave him the Scroll of Lightning Resistance as both gift and message: some storms you must weather alone.\n\n## Role\n\nAs High Council member, Rook helps coordinate the Emerald Enclave's efforts to stop the Slanted Circle across multiple planes."
+      },
+      {
+        "slug": "rudiger",
+        "name": "Rudiger",
+        "type": "character",
+        "subtype": "pc",
+        "status": "active",
+        "visibility": "public",
+        "description": "Party wizard with internal conflict, master of fire and lightning magic",
+        "tags": [
+          "party",
+          "magic-user",
+          "wizard",
+          "fire-magic",
+          "lightning-magic"
+        ],
+        "relationships": [
+          {
+            "entity": "stol",
+            "type": "ally",
+            "note": "Fellow party member"
+          },
+          {
+            "entity": "kei",
+            "type": "ally"
+          },
+          {
+            "entity": "skid-demon",
+            "type": "ally"
+          },
+          {
+            "entity": "accoa",
+            "type": "ally"
+          },
+          {
+            "entity": "rook-targrave",
+            "type": "mentor",
+            "note": "Gave Scroll of Lightning Resistance"
+          },
+          {
+            "entity": "emerald-enclave",
+            "type": "ally"
+          }
+        ],
+        "content": "# Rudiger\n\nParty wizard whose internal conflict has been noted by Rook Targrave of the Emerald Enclave.\n\n## Notable Abilities\n\n- **Fireball**: Particularly effective on the Lightning Rail encounter\n- **Lightning Magic**: Area of expertise\n\n## Key Moments\n\n### Session 5 - Internal Conflict\nRook Targrave noticed Rudiger's internal conflict and gave him a Scroll of Lightning Resistance.\n\n### Session 6 - Lightning Rail Battle\nRudiger's Fireball proved particularly effective during the combat aboard the Lightning Rail.\n\n### Nythraxil's Lair\nSuccessfully secured the ley stone from Nythraxil's lair, a critical victory for the party."
+      },
+      {
+        "slug": "skid-demon",
+        "name": "Skid Demon",
+        "type": "character",
+        "subtype": "pc",
+        "status": "active",
+        "visibility": "public",
+        "description": "Party member with unique connection to ley energy, carries the Dryad's bow",
+        "tags": [
+          "party",
+          "ley-touched",
+          "stone-born",
+          "prophecy"
+        ],
+        "relationships": [
+          {
+            "entity": "rudiger",
+            "type": "ally"
+          },
+          {
+            "entity": "stol",
+            "type": "ally"
+          },
+          {
+            "entity": "kei",
+            "type": "ally"
+          },
+          {
+            "entity": "accoa",
+            "type": "ally"
+          },
+          {
+            "entity": "dryad-erinthin",
+            "type": "ally",
+            "note": "Gifted him the Dryad's bow"
+          },
+          {
+            "entity": "heart-stone",
+            "type": "connected",
+            "note": "Linked via ley mark"
+          }
+        ],
+        "content": "# Skid Demon\n\nParty member with a unique and growing connection to the world's ley energy. Carries the Dryad's bow gifted by Erinthin.\n\n## The Ley Mark\n\nAfter falling through a ley gate crack and seeing \"rivers of light leading to a heart of stone,\" Skid developed a ley mark that glows faintly. This mark grants him abilities:\n\n- Can sense nearby ley currents\n- Heartbeat syncs with ley pulses\n- Acts as a \"living compass\" to ley energy\n\nThe dwarven explorer Glun recognized this mark and called Skid \"Stone-born\" - a rare individual touched by the deep magic of the world.\n\n## Key Moments\n\n### The Ley Gate Vision\nFell through a crack in a ley gate, witnessing rivers of light leading to a heart of stone - a prophetic vision of what awaited in Eberron.\n\n### Recognition by the Dwarves\nThe Molrik clan's Glun immediately recognized Skid as \"Stone-born,\" treating him with a respect usually reserved for ancient beings.\n\n### Prophetic Visions\nHad visions of world destruction if the ley anchors break - fire, decay, and the rise of something ancient and hungry.\n\n### The Heart Stone Chamber\nHis ley connection intensified after the vision in the Heart Stone Chamber, where his presence helped stabilize the Eberron anchor."
+      },
+      {
+        "slug": "stol",
+        "name": "Stol",
+        "type": "character",
+        "subtype": "pc",
+        "status": "active",
+        "visibility": "public",
+        "description": "Party cleric with powerful Turn Undead ability",
+        "tags": [
+          "party",
+          "cleric",
+          "healer"
+        ],
+        "relationships": [
+          {
+            "entity": "rudiger",
+            "type": "ally",
+            "note": "Restored by Rudiger after falling to the Fallen Priest"
+          },
+          {
+            "entity": "the-fallen-priest",
+            "type": "enemy",
+            "note": "Fell in battle against him"
+          }
+        ],
+        "content": "# Stol\n\nParty cleric whose Turn Undead ability has proven invaluable against undead threats.\n\n## Key Moments\n\n### Battle with the Fallen Priest\nFell during the climactic battle with the Fallen Priest, but was restored by Rudiger.\n\n### Dhakaani Ruins\nTurn Undead was crucial in defeating the Dhakaani Wraith-Tacticians in the ancient ruins beneath Sharn."
+      }
+    ],
+    "enemies": [
+      {
+        "slug": "aruxat",
+        "name": "Aru'xat the Verdant Maw",
+        "type": "enemy",
+        "subtype": "boss",
+        "status": "dormant",
+        "visibility": "public",
+        "description": "Primordial serpentine entity sealed during the Dawn Wars",
+        "tags": [
+          "bbeg",
+          "primordial",
+          "sealed",
+          "campaign-threat",
+          "apocalyptic"
+        ],
+        "relationships": [
+          {
+            "entity": "slanted-circle",
+            "type": "sought-by",
+            "note": "The Circle seeks to awaken him"
+          },
+          {
+            "entity": "maw-frame",
+            "type": "connected",
+            "note": "Resonance engine to wake him"
+          },
+          {
+            "entity": "emerald-enclave",
+            "type": "enemy",
+            "note": "The Enclave works to keep him sealed"
+          }
+        ],
+        "content": "# Aru'xat the Verdant Maw\n\nAn ancient primordial entity of unimaginable power. Also called \"Feeder of Forests,\" Aru'xat once devoured entire worlds before being sealed during the Dawn Wars.\n\n## Origin\n\nWhen the gods first planted life in the cosmos, beings like Aru'xat threatened to consume it all. The Dawn Wars saw these primordials sealed away—but their prisons require maintenance.\n\n## The Threat\n\nThe Slanted Circle's plan:\n1. Construct the Maw Frame (Throat of Aru'xat)\n2. Align the world's ley lines using the resonance engine\n3. Create vibrations that match Aru'xat's frequency\n4. Shatter the seals and awaken the Verdant Maw\n\n## Skid's Vision\n\nSkid Demon received a prophetic vision of what Aru'xat's awakening would mean: fire, decay, and the rise of something ancient and hungry. The world consumed. Life unmade.\n\n## Current Status\n\nSealed—but threatened. Each ley anchor that falls brings Aru'xat closer to waking. The party's mission to stabilize the anchors is all that stands between the world and annihilation."
+      },
+      {
+        "slug": "dain",
+        "name": "Dain",
+        "type": "enemy",
+        "subtype": "minion",
+        "status": "unknown",
+        "visibility": "public",
+        "description": "Former party companion who betrayed them to the Fallen Priest",
+        "tags": [
+          "traitor",
+          "former-ally",
+          "fallen-priest-agent"
+        ],
+        "relationships": [
+          {
+            "entity": "the-fallen-priest",
+            "type": "serves",
+            "note": "Worked for the Fallen Priest"
+          },
+          {
+            "entity": "the-party",
+            "type": "enemy",
+            "note": "Led them into ambush"
+          }
+        ],
+        "content": "# Dain\n\nA former companion of the party who revealed his true allegiance when he led them into a deadly ambush at Umbrage Hill.\n\n## The Betrayal\n\nAt Umbrage Hill, Dain triggered a hidden door that sprang a trap on the party. The ambush was their first encounter with the forces of the Fallen Priest—and the revelation that one of their own had been working against them.\n\n## Fate Unknown\n\nDain escaped during the chaos of the ambush. His current whereabouts and fate are unknown, but his betrayal remains a bitter memory for the party."
+      },
+      {
+        "slug": "general-varkuun",
+        "name": "General Varkuun",
+        "type": "enemy",
+        "subtype": "boss",
+        "status": "dead",
+        "visibility": "public",
+        "description": "The last Dhakaani warlord, guardian of the Heart Stone",
+        "tags": [
+          "boss",
+          "dhakaani",
+          "undead",
+          "defeated",
+          "guardian"
+        ],
+        "relationships": [
+          {
+            "entity": "heart-stone",
+            "type": "guards"
+          },
+          {
+            "entity": "dhakaani-empire",
+            "type": "leader-of",
+            "note": "Last warlord"
+          },
+          {
+            "entity": "the-party",
+            "type": "enemy",
+            "note": "Defeated in the Heart Stone Chamber"
+          }
+        ],
+        "content": "# General Varkuun\n\nThe last warlord of the Dhakaani Empire, bound by duty to guard the Heart Stone anchor for eternity.\n\n## Description\n\nEncased in ley-crystal armor that pulsed with the same light as the anchor. Eyes burning blue with ancient power. Even in undeath, he maintained the bearing of a supreme commander.\n\n## The Final Battle\n\nWhen the party entered the Heart Stone Chamber, a voice spoke from the skulls: \"The Heart endures. Who commands the stone?\"\n\nGeneral Varkuun rose to test them—the final guardian of an empire that fell millennia ago.\n\n## Final Words\n\n\"You are the last commanders. Guard what we could not.\"\n\nIn defeat, Varkuun passed the mantle of protection to the party. The statues of hobgoblin generals bowed and released motes of light as the anchor stabilized."
+      },
+      {
+        "slug": "night-hag",
+        "name": "Night Hag",
+        "type": "enemy",
+        "subtype": "boss",
+        "status": "dead",
+        "visibility": "public",
+        "description": "Defeated creature that cursed Whisperwood Forest and kidnapped Accoa",
+        "tags": [
+          "boss",
+          "defeated",
+          "fey",
+          "whisperwood"
+        ],
+        "relationships": [
+          {
+            "entity": "accoa",
+            "type": "enemy",
+            "note": "Kidnapped her as a child"
+          },
+          {
+            "entity": "dryad-erinthin",
+            "type": "enemy",
+            "note": "Cursed the dryad's forest"
+          },
+          {
+            "entity": "the-party",
+            "type": "enemy",
+            "note": "Defeated by the party"
+          }
+        ],
+        "content": "# Night Hag\n\nA malevolent hag who cursed Whisperwood Forest and preyed on travelers for years.\n\n## Methods\n\nThe Night Hag drained her victims slowly in their sleep, keeping them weak but alive. She took special interest in collecting living trophies, including Accoa as a child.\n\n## Riddles and Portents\n\nBefore her defeat, the hag spoke in riddles about \"paths leading to death\" — prophecies that would prove grimly accurate as the party's journey continued.\n\n## Defeat\n\nThe party tracked the hag to her lair deep in Whisperwood Forest. With Accoa's help, they ended her reign of terror, lifting the curse that had darkened the forest.\n\n## Legacy\n\n- Whisperwood Forest began healing after her death\n- Dryad Erinthin's power returned\n- Accoa was finally freed from her captor\n- The party gained the Dryad's blessing"
+      },
+      {
+        "slug": "nythraxil",
+        "name": "Nythraxil",
+        "type": "enemy",
+        "subtype": "creature",
+        "status": "dead",
+        "visibility": "public",
+        "description": "Ancient rose quartz dragon, keeper of the ley stone",
+        "tags": [
+          "dragon",
+          "ancient",
+          "deceased",
+          "neutral",
+          "prophecy"
+        ],
+        "relationships": [
+          {
+            "entity": "the-circle-mage",
+            "type": "enemy",
+            "note": "Killed by him"
+          },
+          {
+            "entity": "the-party",
+            "type": "neutral",
+            "note": "Tested them and gave them the ley stone"
+          },
+          {
+            "entity": "ley-stone",
+            "type": "guards"
+          }
+        ],
+        "content": "# Nythraxil\n\nAn ancient rose quartz dragon, so old that his body had fused with the stone of Stonehell Isle. Keeper of the ley stone and font of ancient knowledge.\n\n## The Dragon's Lair\n\nTo enter Nythraxil's chamber, visitors had to release their memories into crystal pools. The party shared their experiences, and the dragon judged them worthy.\n\n## Description\n\nRose quartz formations grew from Nythraxil's scales, fused with his ancient body. The ley stone itself had become part of him—extracted only when he chose to give it.\n\n## The Prophecy\n\nBefore his death, Nythraxil directed the party toward their next steps:\n- Seek the Jundites of Eberron\n- Find the word of Ildrar, cleric of Orondin\n- The Key of Agmon may be needed\n\n## Death\n\nThe Circle Mage arrived at the worst moment. His ice blast severed Nythraxil's wing—an injury even the ancient dragon could not survive. With his last breath, Nythraxil breathed fire at his attacker, then died.\n\nRudiger secured the ley stone. The dragon's sacrifice was not in vain."
+      },
+      {
+        "slug": "the-circle-mage",
+        "name": "The Circle Mage",
+        "type": "enemy",
+        "subtype": "boss",
+        "status": "active",
+        "visibility": "public",
+        "description": "Powerful Slanted Circle operative with ice magic, still at large",
+        "tags": [
+          "bbeg",
+          "wizard",
+          "slanted-circle",
+          "recurring"
+        ],
+        "relationships": [
+          {
+            "entity": "slanted-circle",
+            "type": "member-of",
+            "note": "Primary field operative"
+          },
+          {
+            "entity": "nythraxil",
+            "type": "enemy",
+            "note": "Killed the ancient dragon"
+          },
+          {
+            "entity": "harlix-darkleaf",
+            "type": "ally",
+            "note": "Harlix sold cipher to him"
+          },
+          {
+            "entity": "the-party",
+            "type": "enemy",
+            "note": "Multiple encounters"
+          }
+        ],
+        "content": "# The Circle Mage\n\nA terrifyingly powerful wizard and the Slanted Circle's primary field operative. Despite multiple encounters, the Circle Mage has escaped every confrontation.\n\n## Description\n\nTattered robes bearing a burned sigil. Eyes that glow with ley reflection. Power enough to match an ancient dragon.\n\n## Encounters\n\n### 1. The Kraken Attack\nDuring the sea journey to Stonehell Isle, the Circle Mage was spotted observing Captain Tallow. When the kraken attacked the pirate ship, he dove into the water and escaped.\n\n### 2. Stonehell Isle\nArrived at Nythraxil's lair and killed the ancient rose quartz dragon with an ice blast that severed its wing. Fell down the mountain during the combat but survived.\n\n### 3. Heart Stone Chamber\nAppeared when the anchor core opened beneath Sharn. Vanished mysteriously, leaving his sigil burned into the floor—a warning that this is not over.\n\n## Threat Level\n\nThe Circle Mage has proven himself capable of:\n- Killing an ancient dragon\n- Surviving impossible falls\n- Evading capture repeatedly\n- Using magic the party has not yet countered\n\nHis presence at the Heart Stone Chamber suggests the Slanted Circle knew about the anchor before the party did."
+      },
+      {
+        "slug": "the-fallen-priest",
+        "name": "The Fallen Priest",
+        "type": "enemy",
+        "subtype": "boss",
+        "status": "dead",
+        "visibility": "public",
+        "description": "Primary antagonist of the Shavras arc, wielded a bone sword",
+        "tags": [
+          "boss",
+          "undead",
+          "villain",
+          "defeated",
+          "shavras-arc"
+        ],
+        "relationships": [
+          {
+            "entity": "greeve",
+            "type": "enemy",
+            "note": "Killed Greeve with bone sword"
+          },
+          {
+            "entity": "shavras",
+            "type": "controls"
+          },
+          {
+            "entity": "the-party",
+            "type": "enemy"
+          }
+        ],
+        "content": "# The Fallen Priest\n\nThe primary antagonist of the Shavras arc, the Fallen Priest was an undead entity seeking to complete a dark portal ritual.\n\n## Abilities\n\n- Wielded a bone sword capable of draining life\n- Commanded various undead and monstrous minions\n- Attempted portal ritual (interrupted by the party)\n\n## Domain\n\nThe Fallen Priest controlled the Shavras Shrine and the vault beneath it. Various creatures served under his command:\n- Goblins\n- Skeletal warriors\n- Ogre\n- Giant spiders\n\n## Defeat\n\nThe party confronted the Fallen Priest at Shavras Shrine. During the final battle:\n1. The portal ritual was interrupted\n2. Greeve was impaled by the bone sword\n3. The Fallen Priest was destroyed\n4. His body liquified into the earth, opening the vault below\n\n## Legacy\n\nThough destroyed, the Fallen Priest's actions had lasting consequences:\n- Greeve became the eternal guardian of the vault\n- The white dragon Ulfandor was spotted fleeing the scene\n- Treasures from the vault were claimed by the party"
+      },
+      {
+        "slug": "ulfandor",
+        "name": "Ulfandor",
+        "type": "enemy",
+        "subtype": "creature",
+        "status": "unknown",
+        "visibility": "public",
+        "description": "White dragon seen during the Shavras battle, motives unknown",
+        "tags": [
+          "dragon",
+          "mysterious",
+          "shavras"
+        ],
+        "relationships": [
+          {
+            "entity": "the-fallen-priest",
+            "type": "unknown",
+            "note": "Appeared during his defeat"
+          }
+        ],
+        "content": "# Ulfandor\n\nA white dragon spotted flying during the final battle with the Fallen Priest at Shavras shrine. The dragon's appearance and departure remain unexplained.\n\n## The Sighting\n\nAs the Fallen Priest fell for the first time and his body liquified into the earth, a white dragon was seen circling high above the shrine. It did not engage in battle, merely observed, then flew away.\n\n## Mystery\n\nWhy was Ulfandor there? Was he watching the Fallen Priest, the party, or the portal ritual? His connection to events at Shavras remains unknown—a thread yet to be pulled."
+      },
+      {
+        "slug": "veyra",
+        "name": "Veyra",
+        "type": "enemy",
+        "subtype": "minion",
+        "status": "dead",
+        "visibility": "public",
+        "description": "Changeling spy for the Slanted Circle who infiltrated the party's journey",
+        "tags": [
+          "spy",
+          "changeling",
+          "slanted-circle",
+          "defeated"
+        ],
+        "relationships": [
+          {
+            "entity": "slanted-circle",
+            "type": "member-of"
+          },
+          {
+            "entity": "harlix-darkleaf",
+            "type": "ally",
+            "note": "Fellow Circle operative"
+          },
+          {
+            "entity": "the-party",
+            "type": "enemy",
+            "note": "Posed as their contact"
+          }
+        ],
+        "content": "# Veyra\n\nA changeling spy who posed as the party's contact while secretly feeding their every movement to the Slanted Circle.\n\n## Infiltration\n\nVeyra was a master of deception:\n- First appeared as a serving girl\n- Later posed as a rail agent\n- Fed all party movements to the Circle\n- Her true form was only revealed at Tavick's Landing\n\n## Final Words\n\n\"Did you truly think I was your ally? Every step, every whisper—I fed to the Circle.\"\n\n## Defeat\n\nVeyra was killed during the Lightning Rail battle at Tavick's Landing when her treachery was finally exposed alongside Harlix Darkleaf."
+      }
+    ],
+    "locations": [
+      {
+        "slug": "astgrove",
+        "name": "Astgrove",
+        "type": "location",
+        "subtype": "town",
+        "status": "active",
+        "visibility": "public",
+        "description": "Large sub-alpine town, base for Emerald Enclave operations",
+        "tags": [
+          "town",
+          "emerald-enclave",
+          "the-knock"
+        ],
+        "relationships": [
+          {
+            "entity": "emerald-enclave",
+            "type": "connected"
+          },
+          {
+            "entity": "harlix-darkleaf",
+            "type": "connected",
+            "note": "First met here"
+          },
+          {
+            "entity": "the-astralglades",
+            "type": "connected",
+            "note": "North woods nearby"
+          }
+        ],
+        "content": "# Astgrove\n\nA large sub-alpine town of approximately 3,000 people. Astgrove serves as the base for The Knock, a subfaction of the Emerald Enclave.\n\n## Notable Locations\n\n### The Mason and the Chain\n- Tavern where party first met Harlix Darkleaf\n- Kei won the arm-wrestling tournament (400gp)\n\n### Jeweler\n- Party sold gems for 6,000gp\n\n### Arcane Shop\n- Purchased Eyes of the Eagle\n- Purchased Goggles of Night\n\n### Custom Armor Smith\n- Party commissioned equipment"
+      },
+      {
+        "slug": "dhakaani-ruins",
+        "name": "Dhakaani Ruins",
+        "type": "location",
+        "subtype": "dungeon",
+        "status": "active",
+        "visibility": "public",
+        "description": "Ancient goblinoid empire ruins beneath Sharn containing the Heart Stone",
+        "tags": [
+          "dungeon",
+          "ancient",
+          "dhakaani",
+          "ley-anchor",
+          "eberron"
+        ],
+        "relationships": [
+          {
+            "entity": "dhakaani-empire",
+            "type": "originated-from"
+          },
+          {
+            "entity": "heart-stone",
+            "type": "located-in"
+          },
+          {
+            "entity": "general-varkuun",
+            "type": "guards"
+          },
+          {
+            "entity": "molrik-clan",
+            "type": "connected",
+            "note": "Forward camp nearby"
+          }
+        ],
+        "content": "# Dhakaani Ruins\n\nThe remains of an ancient goblinoid civilization, deep beneath the City of Towers. The strongest ley energy the party has ever felt pulses through these corridors.\n\n## Chambers\n\n### Hall of Warriors\n- Statues of hobgoblin warriors with inscriptions\n- \"Hold the line.\" \"The war is eternal.\" \"Guard the heart.\"\n- Time echoes showed ghostly soldiers from the ancient war\n- Each party member experienced different visions\n\n### Hall of Seals\n- Rune-trapped tiles with force-field blades\n- Required deciphering the correct path\n\n### War Scholars' Quarters\n- Three Dhakaani Wraith-Tacticians\n- Death whisper: \"The heart below must never fall...\"\n\n### Gauntlet of Stone & Shadow\n- Six undead hobgoblin warriors\n- Two Stonebound Guardians\n- Shadow Captain (dropped command token)\n\n### Heart Stone Chamber\n- Cathedral-like final chamber\n- Black obsidian monolith (the anchor)\n- Twelve statues of hobgoblin generals\n- Ley conduits flowing into walls\n- General Varkuun's final stand\n\n## The Anchor\n\nThe Heart Stone—a black obsidian monolith veined with pulsing light—serves as the ley anchor for Eberron. Skid's heartbeat synchronized with its pulses when they entered."
+      },
+      {
+        "slug": "phandalin",
+        "name": "Phandalin",
+        "type": "location",
+        "subtype": "town",
+        "status": "active",
+        "visibility": "public",
+        "description": "Small mining town where the party's adventure began",
+        "tags": [
+          "starting-location",
+          "town",
+          "mining"
+        ],
+        "relationships": [
+          {
+            "entity": "the-party",
+            "type": "originated-from"
+          }
+        ],
+        "content": "# Phandalin\n\nA small mining town and the party's original home. Here they heard the legend of the Bell of Shavras from a traveling storyteller, setting them on the path to adventure.\n\n## Significance\n\n- Starting location for the campaign\n- Greeve was originally transformed into a Slaad here\n- Party departed seeking the legendary Bell"
+      },
+      {
+        "slug": "sharn",
+        "name": "Sharn, The City of Towers",
+        "type": "location",
+        "subtype": "city",
+        "status": "active",
+        "visibility": "public",
+        "description": "Massive vertical city in Eberron, built upon Dhakaani ruins",
+        "tags": [
+          "city",
+          "eberron",
+          "vertical",
+          "underworld"
+        ],
+        "relationships": [
+          {
+            "entity": "dhakaani-ruins",
+            "type": "connected",
+            "note": "Ancient goblinoid civilization beneath"
+          },
+          {
+            "entity": "molrik-clan",
+            "type": "located-in"
+          },
+          {
+            "entity": "slanted-circle",
+            "type": "connected",
+            "note": "Circle operations here"
+          },
+          {
+            "entity": "emerald-enclave",
+            "type": "connected",
+            "note": "Verdant Hollow chapter"
+          }
+        ],
+        "content": "# Sharn, The City of Towers\n\nA massive vertical city in the world of Eberron. Built on five plateaus with towers reaching into the sky, Sharn is a hub of commerce, magic, and intrigue.\n\n## Structure\n\nThe city rises in vertical layers:\n- Upper towers for the wealthy and powerful\n- Middle districts for commerce and trade\n- Lower levels hiding black markets and criminal operations\n- Deep beneath: ancient Dhakaani ruins\n\n## Transportation\n\nThe Lightning Rail connects Sharn to distant lands, serving as a major transportation artery.\n\n## Key Locations\n\n### Callestan District\n- Lower city district\n- Narrow streets and bazaars\n- Location of the Cornerstone Tavern\n\n### Cornerstone Tavern\n- Fighting pit tavern\n- Party met \"contact\" Veyra here\n- Ambushed by thugs when Black Mantle cover blown\n\n### Verdant Hollow\n- Hidden Emerald Enclave chapter house\n- Hollowed tower garden\n- Led by Elder Elarion Mossbark\n\n### Tavick's Landing\n- Lightning Rail terminal\n- Site of the Dragonshard shipment interception\n- Location of Harlix and Veyra's exposure"
+      },
+      {
+        "slug": "shavras-shrine",
+        "name": "Shrine of Shavras",
+        "type": "location",
+        "subtype": "dungeon",
+        "status": "inactive",
+        "visibility": "public",
+        "description": "Ancient ruined shrine where the party first defeated the Fallen Priest",
+        "tags": [
+          "shrine",
+          "ruins",
+          "dungeon",
+          "fallen-priest"
+        ],
+        "relationships": [
+          {
+            "entity": "the-fallen-priest",
+            "type": "headquartered-at"
+          },
+          {
+            "entity": "shavras-vault",
+            "type": "connected",
+            "note": "Vault entrance beneath"
+          },
+          {
+            "entity": "bell-of-shavras",
+            "type": "located-in"
+          },
+          {
+            "entity": "ulfandor",
+            "type": "connected",
+            "note": "Dragon sighted here"
+          }
+        ],
+        "content": "# Shrine of Shavras\n\nAn ancient ruined shrine once belonging to a village repeatedly sacked by barbarians. The villagers melted their gold into a bell and covered it with copper to hide its value—creating the Bell of Shavras.\n\n## The Bell\n\nThe legendary Bell of Shavras sat atop the ruined shrine:\n- 5,000gp worth of gold\n- Covered in 1,000cp worth of copper\n- Object of legend that drew the party here\n\n## The Battle\n\nThe Fallen Priest made his base here, preparing a portal ritual to the Undergods. The party interrupted the ritual and destroyed him—but his body liquified into the earth, opening the way to the vault below.\n\n## The Dragon\n\nDuring the battle, the white dragon Ulfandor was spotted flying overhead. He observed but did not engage, then departed—his purpose unknown."
+      },
+      {
+        "slug": "shavras-vault",
+        "name": "Shavras Vault",
+        "type": "location",
+        "subtype": "dungeon",
+        "status": "inactive",
+        "visibility": "public",
+        "description": "Ancient sealed dungeon beneath the Shavras Shrine, now guarded by Greeve's spirit",
+        "tags": [
+          "dungeon",
+          "sealed",
+          "ancient",
+          "vault",
+          "sacred",
+          "bloodline"
+        ],
+        "relationships": [
+          {
+            "entity": "greeve",
+            "type": "guarded-by",
+            "note": "Eternal wraith guardian"
+          },
+          {
+            "entity": "shavras",
+            "type": "located-in",
+            "note": "Beneath the ancient shrine"
+          },
+          {
+            "entity": "the-fallen-priest",
+            "type": "formerly-controlled"
+          }
+        ],
+        "content": "# Shavras Vault\n\nAn ancient sealed dungeon beneath the Shavras Shrine, containing secrets of sacred bloodlines and treasures from ages past.\n\n## Access\n\nThe vault opened after the Fallen Priest's body liquified into the earth following his defeat. It has since been sealed by Greeve's sacrifice.\n\n## Notable Features\n\n### Shadow Memories\nThe walls display shadow memories of ancient priests, replaying scenes from the distant past.\n\n### Bloodline Murals\nMurals depicting sacred bloodlines line the chambers. Greeve recognized his own family crest among them, revealing his unknown royal heritage.\n\n### Heart Chamber\nThe deepest chamber contains:\n- Purple light emanating from unknown sources\n- A floating box containing a heart\n- The source of the vault's power\n\n## Enemies Encountered\n\nDuring the party's exploration:\n- Goblins\n- Skeletal warriors\n- An ogre\n- Giant spiders\n\n## Treasures Found\n\nBefore the vault was sealed:\n- Ring of Protection\n- Battering Shield\n- Bag of Holding\n- Pipes of Haunting\n\n## Current Status\n\n**SEALED** - Greeve serves as the eternal guardian. The vault will remain sealed until someone tracks down all of Greeve's ancestors."
+      },
+      {
+        "slug": "stonehell-isle",
+        "name": "Stonehell Isle",
+        "type": "location",
+        "subtype": "wilderness",
+        "status": "active",
+        "visibility": "public",
+        "description": "Hidden island protected by enchanted mist, home of Nythraxil",
+        "tags": [
+          "island",
+          "hidden",
+          "dragon-lair",
+          "ancient"
+        ],
+        "relationships": [
+          {
+            "entity": "nythraxil",
+            "type": "located-in"
+          },
+          {
+            "entity": "captain-tallow",
+            "type": "connected",
+            "note": "Only he knows the way"
+          },
+          {
+            "entity": "ley-stone",
+            "type": "located-in"
+          }
+        ],
+        "content": "# Stonehell Isle\n\nA hidden island concealed by enchanted mist. Only those who know the ancient rituals can pierce the magical barrier.\n\n## Protection\n\nThe mist surrounding Stonehell Isle:\n- Conceals the island from all approaches\n- Requires Captain Tallow's mist-parting ritual to penetrate\n- Has protected the island for ages\n\n## Features\n\n- Massive stone spires rising from the sea\n- Giant vultures nesting on the cliffs\n- Nythraxil's lair at the summit\n- Crystal pools that read memories\n\n## Nythraxil's Lair\n\nThe ancient rose quartz dragon made his home at the island's summit. To enter, visitors had to release their memories into the crystal pools. The ley stone was here, fused to the dragon's ancient body.\n\n## Current Status\n\nPartially destroyed when the Circle Mage attacked. Nythraxil is dead, but the island remains."
+      },
+      {
+        "slug": "the-astralglades",
+        "name": "The Astralglades",
+        "type": "location",
+        "subtype": "wilderness",
+        "status": "active",
+        "visibility": "public",
+        "description": "Ancient forest corrupted by Slanted Circle construction",
+        "tags": [
+          "forest",
+          "corrupted",
+          "ley-lines",
+          "maw-frame"
+        ],
+        "relationships": [
+          {
+            "entity": "slanted-circle",
+            "type": "controlled-by",
+            "note": "Constructing the Maw Frame"
+          },
+          {
+            "entity": "maw-frame",
+            "type": "located-in"
+          },
+          {
+            "entity": "ley-stone",
+            "type": "connected",
+            "note": "Anchors these ley lines"
+          }
+        ],
+        "content": "# The Astralglades\n\nAncient forest north of Astgrove, now corrupted by Slanted Circle activity. The ley lines here are visible as glowing blue energy, and strange phenomena occur: rocks rolling uphill, gravity anomalies, spatial distortions.\n\n## The Corruption\n\nThe Slanted Circle has been:\n- Cutting down ancient trees\n- Forcing enslaved humans to work\n- Constructing the massive Maw Frame\n- Disrupting the natural ley flow\n\n## The Maw Frame\n\nA massive wooden jaw-like structure under construction in the north woods. Also called the \"Throat of Aru'xat,\" it's a resonance engine designed to awaken the primordial serpent.\n\n## The Ley Stone\n\nThe ley stone obtained from Nythraxil was given to the Emerald Enclave specifically to anchor the Astralglades' ley lines and prevent further corruption."
+      },
+      {
+        "slug": "umbrage-hill",
+        "name": "Umbrage Hill",
+        "type": "location",
+        "subtype": "wilderness",
+        "status": "active",
+        "visibility": "public",
+        "description": "Hill ruins where Dain betrayed the party",
+        "tags": [
+          "ruins",
+          "ambush-site"
+        ],
+        "relationships": [
+          {
+            "entity": "dain",
+            "type": "connected",
+            "note": "Site of his betrayal"
+          },
+          {
+            "entity": "the-fallen-priest",
+            "type": "connected",
+            "note": "First encounter with his forces"
+          }
+        ],
+        "content": "# Umbrage Hill\n\nA ruined area on the road from Phandalin, Umbrage Hill became the site of Dain's betrayal and the party's first encounter with the Fallen Priest's forces.\n\n## The Betrayal\n\nDain led the party here under the pretense of investigation, then triggered a hidden door that sprang an ambush. The ensuing battle was their first taste of the darkness they would come to fight."
+      },
+      {
+        "slug": "whisperwood-forest",
+        "name": "Whisperwood Forest",
+        "type": "location",
+        "subtype": "wilderness",
+        "status": "active",
+        "visibility": "public",
+        "description": "Once-cursed forest now healing under Dryad Erinthin's care",
+        "tags": [
+          "forest",
+          "cursed",
+          "dryad"
+        ],
+        "relationships": [
+          {
+            "entity": "dryad-erinthin",
+            "type": "controlled-by"
+          },
+          {
+            "entity": "night-hag",
+            "type": "formerly-controlled-by"
+          },
+          {
+            "entity": "accoa",
+            "type": "originated-from"
+          }
+        ],
+        "content": "# Whisperwood Forest\n\nA dark, twisted forest that was cursed by the Night Hag for years. Undead patrols wandered its paths, and unnatural fog obscured the way.\n\n## The Curse\n\nThe Night Hag's influence:\n- Twisted the trees\n- Summoned undead patrols\n- Created disorienting fog\n- Weakened Dryad Erinthin's power\n\n## Liberation\n\nAfter the party defeated the Night Hag, the curse began to lift:\n- Dryad Erinthin's power returned\n- The forest heart became safe again\n- Accoa was freed from her captor\n- Party received the Dryad's blessing"
+      }
+    ],
+    "factions": [
+      {
+        "slug": "black-mantle",
+        "name": "The Black Mantle",
+        "type": "faction",
+        "subtype": "criminal",
+        "status": "inactive",
+        "visibility": "public",
+        "description": "Defunct espionage syndicate whose identities the party used in Sharn",
+        "tags": [
+          "espionage",
+          "syndicate",
+          "defunct",
+          "cover-identity"
+        ],
+        "relationships": [
+          {
+            "entity": "the-party",
+            "type": "connected",
+            "note": "Used their identities as cover"
+          }
+        ],
+        "content": "# The Black Mantle\n\nA once-feared espionage syndicate that operated in Sharn's underworlds. Now apparently defunct or displaced.\n\n## The Cover\n\nThe party traveled to Sharn under Black Mantle identities, provided by their Emerald Enclave contacts. The cover was meant to allow them to move freely through the city's darker corners.\n\n## Cover Blown\n\nAt the Cornerstone Tavern, thugs revealed the truth: \"The Mantle don't walk Sharn no more.\"\n\nElder Mossbark later confessed that the Black Mantle identities were intentionally given to make the party easier to track—drawing out the Slanted Circle's agents."
+      },
+      {
+        "slug": "dhakaani-empire",
+        "name": "Dhakaani Empire",
+        "type": "faction",
+        "subtype": "government",
+        "status": "inactive",
+        "visibility": "public",
+        "description": "Ancient goblinoid civilization that sealed the Heart Stone",
+        "tags": [
+          "ancient",
+          "goblinoid",
+          "fallen",
+          "guardians"
+        ],
+        "relationships": [
+          {
+            "entity": "dhakaani-ruins",
+            "type": "originated-from"
+          },
+          {
+            "entity": "general-varkuun",
+            "type": "led-by",
+            "note": "Last warlord"
+          },
+          {
+            "entity": "heart-stone",
+            "type": "guards"
+          }
+        ],
+        "content": "# Dhakaani Empire\n\nAn ancient goblinoid civilization that once ruled beneath what is now Sharn. Though fallen millennia ago, their undead guardians still protect the Heart Stone.\n\n## Philosophy\n\nTheir inscriptions reveal their creed:\n- \"Hold the line.\"\n- \"The war is eternal.\"\n- \"Guard the heart.\"\n\n## Hierarchy\n\n- **Hobgoblin Warriors and Generals** - The military backbone\n- **War Scholars** - Became Wraith-Tacticians in death\n- **Warlords** - Supreme commanders (General Varkuun was the last)\n\n## Legacy\n\nThe Dhakaani sealed the ley anchor beneath Sharn and set eternal guardians to protect it. Their statues \"bowed\" and released light motes when the party restored balance—a final acknowledgment of duty transferred.\n\n## Current State\n\n- Ruins beneath Sharn remain\n- Undead guardians still protect the depths\n- Party has been named the new guardians by General Varkuun"
+      },
+      {
+        "slug": "emerald-enclave",
+        "name": "Emerald Enclave",
+        "type": "faction",
+        "subtype": "religious",
+        "status": "active",
+        "visibility": "public",
+        "description": "Multi-planar druidic organization dedicated to protecting nature",
+        "tags": [
+          "druidic",
+          "multi-planar",
+          "nature-protectors"
+        ],
+        "relationships": [
+          {
+            "entity": "the-knock",
+            "type": "connected",
+            "note": "Subfaction in Astgrove region"
+          },
+          {
+            "entity": "rook-targrave",
+            "type": "led-by",
+            "note": "High Council member"
+          },
+          {
+            "entity": "slanted-circle",
+            "type": "enemy"
+          },
+          {
+            "entity": "aruxat",
+            "type": "enemy",
+            "note": "Work to keep him sealed"
+          }
+        ],
+        "content": "# Emerald Enclave\n\nA druidic organization with chapters across multiple planes, united in the mission to protect the natural order. Members wear a leaf pendant on their right breast as identification.\n\n## Structure\n\n### High Council\nGoverns major decisions across all planes. Rook Targrave is a member.\n\n### The Knock\nA subfaction based in the Astgrove region, known as \"protectors of the wildlands, friends of the forest.\"\n\n### Verdant Hollow\nThe Sharn chapter, led by Elder Elarion Mossbark, hidden in a hollowed tower garden.\n\n## Resources\n\n- **The Keyport**: Ancient planar junction beneath the Heartwood Oak\n- **Ley Stones**: Powers travel through the Keyport\n- **Network of Contacts**: Spanning multiple planes\n\n## Current Mission\n\n- Stop the Slanted Circle from awakening Aru'xat\n- Anchor the ley lines to prevent world destruction\n- Track down ley anchors across planes\n- Root out traitors within their ranks\n\n## Internal Struggle\n\nThe revelation of Harlix Darkleaf as a Slanted Circle agent has shaken the Enclave. Trust is fractured, and suspicion runs deep."
+      },
+      {
+        "slug": "molrik-clan",
+        "name": "Molrik Clan",
+        "type": "faction",
+        "subtype": "guild",
+        "status": "active",
+        "visibility": "public",
+        "description": "Dwarven clan beneath Sharn, keepers of the deep passages",
+        "tags": [
+          "dwarven",
+          "clan",
+          "deep-keepers"
+        ],
+        "relationships": [
+          {
+            "entity": "master-molrik",
+            "type": "led-by"
+          },
+          {
+            "entity": "dhakaani-ruins",
+            "type": "connected",
+            "note": "Forward camp nearby"
+          },
+          {
+            "entity": "the-party",
+            "type": "ally",
+            "note": "Granted eternal respect"
+          },
+          {
+            "entity": "skid-demon",
+            "type": "ally",
+            "note": "Recognized as Stone-born"
+          }
+        ],
+        "content": "# Molrik Clan\n\nA dwarven clan dwelling beneath Sharn, near the ancient Dhakaani ruins. They maintain the last outpost before the goblinoid depths.\n\n## The Forward Camp\n\nThe Molrik clan's forward camp sits in ancient dwarven passages, lit by magma streams flowing through forges that have burned for centuries.\n\n## Recognition\n\n- **Glun**, a clan member, recognized Skid as \"Stone-born\"\n- The clan sensed the ley flux the party carried\n- Master Molrik personally led them to the Dhakaani entrance\n\n## Alliance\n\nAfter the party stabilized the Heart Stone anchor:\n- Magical items from the clan's forge\n- \"Eternal respect\" granted\n- Took custody of the traitor Harlix\n- Accepted Dragonshards for safekeeping"
+      },
+      {
+        "slug": "slanted-circle",
+        "name": "The Slanted Circle",
+        "type": "faction",
+        "subtype": "cult",
+        "status": "active",
+        "visibility": "public",
+        "description": "Cult seeking to awaken the primordial entity Aru'xat the Verdant Maw",
+        "tags": [
+          "cult",
+          "antagonist",
+          "primordial",
+          "ley-lines",
+          "main-threat"
+        ],
+        "relationships": [
+          {
+            "entity": "aruxat",
+            "type": "serves",
+            "note": "Seek to awaken this primordial entity"
+          },
+          {
+            "entity": "emerald-enclave",
+            "type": "enemy",
+            "note": "Primary opposition"
+          },
+          {
+            "entity": "harlix-darkleaf",
+            "type": "member-of",
+            "note": "Infiltrated the Emerald Enclave"
+          },
+          {
+            "entity": "the-circle-mage",
+            "type": "member-of",
+            "note": "Primary field operative"
+          }
+        ],
+        "content": "# The Slanted Circle\n\nA dangerous cult conspiracy seeking to awaken Aru'xat the Verdant Maw, a primordial entity of immense destructive power.\n\n## Identification\n\nMembers can be identified by:\n- Purple robes\n- Purple scarves\n- Slanted Circle markings/tattoos\n\n## Known Members\n\n### The Circle Mage\n- **Role**: Primary field operative\n- **Abilities**: Powerful ice magic\n- **Status**: Still at large\n\n### Harlix Darkleaf\n- **Role**: Deep cover infiltrator\n- **Target**: The Emerald Enclave (specifically The Knock)\n- **Status**: Captured (revealed as traitor in Session 8)\n\n### Veyra\n- **Race**: Changeling\n- **Role**: Spy\n- **Status**: Deceased\n\n## Goals\n\nTheir ultimate objective is to align the ley lines in a specific configuration that will awaken Aru'xat the Verdant Maw. Success would mean catastrophic destruction.\n\n## Threat Assessment\n\nThe Slanted Circle represents the primary antagonist faction of the campaign. Their infiltration of the Emerald Enclave demonstrates sophisticated intelligence capabilities, and The Circle Mage remains a dangerous threat."
+      },
+      {
+        "slug": "the-knock",
+        "name": "The Knock",
+        "type": "faction",
+        "subtype": "guild",
+        "status": "active",
+        "visibility": "public",
+        "description": "Subfaction of the Emerald Enclave based in Astgrove",
+        "tags": [
+          "druidic",
+          "ranger",
+          "astgrove",
+          "emerald-enclave"
+        ],
+        "relationships": [
+          {
+            "entity": "emerald-enclave",
+            "type": "member-of",
+            "note": "Subfaction"
+          },
+          {
+            "entity": "harlix-darkleaf",
+            "type": "formerly-led-by",
+            "note": "Revealed as traitor"
+          }
+        ],
+        "content": "# The Knock\n\n\"Protectors of the wildlands, friends of the forest\" — the Knock is a subfaction of the Emerald Enclave operating in the Astgrove region.\n\n## Members\n\nRangers in forest green, operating in the north woods. They monitor threats to the natural order, particularly the Slanted Circle's corruption of the Astralglades.\n\n## Compromised\n\nHarlix Darkleaf was a prominent member of the Knock before his betrayal was revealed. His infiltration raises questions about how deeply the Slanted Circle has compromised this chapter."
+      },
+      {
+        "slug": "the-party",
+        "name": "The Party",
+        "type": "faction",
+        "subtype": "guild",
+        "status": "active",
+        "visibility": "public",
+        "description": "The adventuring party, heroes standing against the Slanted Circle",
+        "tags": [
+          "adventurers",
+          "heroes",
+          "protagonists"
+        ],
+        "relationships": [
+          {
+            "entity": "rudiger",
+            "type": "member-of"
+          },
+          {
+            "entity": "stol",
+            "type": "member-of"
+          },
+          {
+            "entity": "kei",
+            "type": "member-of"
+          },
+          {
+            "entity": "skid-demon",
+            "type": "member-of"
+          },
+          {
+            "entity": "accoa",
+            "type": "member-of"
+          },
+          {
+            "entity": "emerald-enclave",
+            "type": "ally"
+          },
+          {
+            "entity": "slanted-circle",
+            "type": "enemy"
+          }
+        ],
+        "content": "# The Party\n\nThe adventuring party at the heart of this chronicle. Originally from Phandalin, they followed the legend of the Bell of Shavras and became entangled in a cosmic struggle for the world's survival.\n\n## Members\n\n- **Rudiger** - Wizard, arcane specialist\n- **Stol** - Cleric, healer and undead-turner\n- **Kei** - Fighter, martial specialist\n- **Skid Demon** - Ley-touched, Stone-born\n- **Accoa** - Centaur scout\n\n## Former Members\n\n- **Greeve** - Now eternal guardian of Shavras vault\n- **Dain** - Betrayer, fate unknown\n\n## Mission\n\nStabilize the ley anchors across multiple planes to prevent the awakening of Aru'xat the Verdant Maw."
+      }
+    ],
+    "items": [
+      {
+        "slug": "bag-of-holding",
+        "name": "Bag of Holding",
+        "type": "item",
+        "subtype": "treasure",
+        "status": "active",
+        "visibility": "public",
+        "description": "Extra-dimensional storage container found in Shavras vault",
+        "tags": [
+          "magic-item",
+          "utility",
+          "shavras"
+        ],
+        "relationships": [
+          {
+            "entity": "shavras-vault",
+            "type": "originated-from"
+          },
+          {
+            "entity": "the-party",
+            "type": "possesses"
+          }
+        ],
+        "content": "# Bag of Holding\n\nAn extra-dimensional storage container recovered from the Shavras vault. This magical bag holds far more than its size suggests, making it invaluable for the party's travels."
+      },
+      {
+        "slug": "bell-of-shavras",
+        "name": "Bell of Shavras",
+        "type": "item",
+        "subtype": "treasure",
+        "status": "active",
+        "visibility": "public",
+        "description": "Legendary bell that drew the party on their first adventure",
+        "tags": [
+          "treasure",
+          "legend",
+          "shavras",
+          "starting-hook"
+        ],
+        "relationships": [
+          {
+            "entity": "shavras-shrine",
+            "type": "located-in"
+          },
+          {
+            "entity": "the-party",
+            "type": "connected",
+            "note": "Quest object that started their journey"
+          }
+        ],
+        "content": "# Bell of Shavras\n\nA legendary bell that started the party's adventure. According to the tale heard in Phandalin, the villagers of Shavras melted their gold into a bell and covered it with copper to hide its value from barbarian raiders.\n\n## Composition\n\n- 5,000gp worth of gold at the core\n- 1,000cp worth of copper coating\n- Ancient craftsmanship\n\n## Significance\n\nThe legend of the Bell drew the party from Phandalin to the Shrine of Shavras, where they encountered the Fallen Priest and began their true adventure."
+      },
+      {
+        "slug": "dryads-bow",
+        "name": "Dryad's Bow",
+        "type": "item",
+        "subtype": "weapon",
+        "status": "active",
+        "visibility": "public",
+        "description": "Magical bow gifted to Skid Demon by Dryad Erinthin",
+        "tags": [
+          "weapon",
+          "bow",
+          "dryad",
+          "nature-magic"
+        ],
+        "relationships": [
+          {
+            "entity": "skid-demon",
+            "type": "possesses"
+          },
+          {
+            "entity": "dryad-erinthin",
+            "type": "created"
+          },
+          {
+            "entity": "emerald-enclave",
+            "type": "connected",
+            "note": "Recognized as proof of allegiance"
+          }
+        ],
+        "content": "# Dryad's Bow\n\nA magical bow crafted by Dryad Erinthin, gifted to Skid Demon as a mark of trust and alliance.\n\n## Recognition\n\nWhen Harlix Darkleaf first met the party, he immediately recognized the Dryad's bow. It served as proof that the party was allied with the forest guardians and, by extension, the Emerald Enclave.\n\n## Current Owner\n\nSkid Demon carries the bow as both weapon and symbol of the party's connection to the natural forces that oppose the Slanted Circle."
+      },
+      {
+        "slug": "heart-stone",
+        "name": "Heart Stone",
+        "type": "item",
+        "subtype": "artifact",
+        "status": "active",
+        "visibility": "public",
+        "description": "The ley anchor of Eberron, stabilized by the party",
+        "tags": [
+          "artifact",
+          "ley-anchor",
+          "eberron",
+          "dhakaani"
+        ],
+        "relationships": [
+          {
+            "entity": "general-varkuun",
+            "type": "guards",
+            "note": "Defended it for millennia"
+          },
+          {
+            "entity": "dhakaani-empire",
+            "type": "created"
+          },
+          {
+            "entity": "skid-demon",
+            "type": "connected",
+            "note": "Linked via ley mark"
+          },
+          {
+            "entity": "the-circle-mage",
+            "type": "sought-by"
+          }
+        ],
+        "content": "# Heart Stone\n\nA black obsidian monolith veined with pulsing light, the Heart Stone serves as the ley anchor for all of Eberron.\n\n## Location\n\nDeep in the Heart Stone Chamber beneath Sharn, surrounded by twelve statues of Dhakaani generals and ley conduits that feed into the walls.\n\n## The Voice\n\nWhen the party approached, a voice spoke from the skulls: \"The Heart endures. Who commands the stone?\"\n\nGeneral Varkuun rose to test them, and upon his defeat, passed guardianship to the party.\n\n## Skid's Connection\n\nSkid Demon's heartbeat synchronized with the Heart Stone's pulses. The ley mark he carries connects him to this anchor—he has become a living compass to ley energy.\n\n## Current Status\n\nSTABILIZED by the party. The anchor holds, but the Circle Mage's appearance suggests the enemy knew of it and may have other plans."
+      },
+      {
+        "slug": "ley-stone",
+        "name": "Ley Stone",
+        "type": "item",
+        "subtype": "artifact",
+        "status": "active",
+        "visibility": "public",
+        "description": "Ancient artifact that anchors ley lines in the Astralglades",
+        "tags": [
+          "artifact",
+          "ley-anchor",
+          "stonehell"
+        ],
+        "relationships": [
+          {
+            "entity": "nythraxil",
+            "type": "formerly-possessed",
+            "note": "Fused to the dragon"
+          },
+          {
+            "entity": "rudiger",
+            "type": "formerly-possessed",
+            "note": "Secured it from Stonehell"
+          },
+          {
+            "entity": "emerald-enclave",
+            "type": "possesses",
+            "note": "Currently in their care"
+          },
+          {
+            "entity": "the-astralglades",
+            "type": "connected",
+            "note": "Anchors these ley lines"
+          }
+        ],
+        "content": "# Ley Stone\n\nAn ancient artifact obtained from Nythraxil's lair on Stonehell Isle. The stone was literally fused to the dragon's quartz body, extracted only when the dragon chose to give it.\n\n## Purpose\n\nThe ley stone anchors ley lines in the Astralglades, preventing the Slanted Circle from completing their corruption of that region. However, it only works for one area—other anchors are needed elsewhere.\n\n## Current Status\n\nGiven to Rook Targrave and the Emerald Enclave for safekeeping and proper deployment."
+      },
+      {
+        "slug": "mace-of-disruption",
+        "name": "Mace of Disruption",
+        "type": "item",
+        "subtype": "weapon",
+        "status": "active",
+        "visibility": "public",
+        "description": "Anti-undead weapon found at the Shavras shrine",
+        "tags": [
+          "weapon",
+          "anti-undead",
+          "shavras"
+        ],
+        "relationships": [
+          {
+            "entity": "shavras-shrine",
+            "type": "originated-from"
+          },
+          {
+            "entity": "the-party",
+            "type": "possesses"
+          }
+        ],
+        "content": "# Mace of Disruption\n\nA holy weapon particularly effective against undead, recovered from the Shavras shrine. The mace radiates divine energy that disrupts the negative energy animating undead creatures.\n\n## Significance\n\nGiven the party's frequent encounters with undead forces—from the Fallen Priest's minions to the Dhakaani Wraith-Tacticians—this weapon has proven invaluable."
+      },
+      {
+        "slug": "maw-frame",
+        "name": "The Maw Frame",
+        "type": "item",
+        "subtype": "artifact",
+        "status": "active",
+        "visibility": "public",
+        "description": "Massive resonance engine under construction to awaken Aru'xat",
+        "tags": [
+          "artifact",
+          "slanted-circle",
+          "threat",
+          "under-construction"
+        ],
+        "relationships": [
+          {
+            "entity": "slanted-circle",
+            "type": "created"
+          },
+          {
+            "entity": "aruxat",
+            "type": "connected",
+            "note": "Designed to awaken him"
+          },
+          {
+            "entity": "the-astralglades",
+            "type": "located-in"
+          }
+        ],
+        "content": "# The Maw Frame\n\nAlso called the \"Throat of Aru'xat,\" the Maw Frame is a massive wooden construction shaped like a giant jaw. It is being built in the corrupted north woods of the Astralglades.\n\n## Purpose\n\nThe Maw Frame is a resonance engine designed to:\n1. Align the world's ley lines\n2. Generate vibrations matching Aru'xat's frequency\n3. Shatter the seals binding the primordial\n4. Awaken the Verdant Maw\n\n## Construction\n\nThe Slanted Circle is using enslaved humans to cut down ancient trees and construct the Frame. Purple-robed cultists oversee the work.\n\n## Current Status\n\nUnder construction. The party has witnessed it but not yet moved to destroy it."
+      },
+      {
+        "slug": "ring-of-protection",
+        "name": "Ring of Protection",
+        "type": "item",
+        "subtype": "wondrous",
+        "status": "active",
+        "visibility": "public",
+        "description": "Magical ring that grants defensive bonuses, found in the Shavras Vault",
+        "tags": [
+          "treasure",
+          "magic-item",
+          "ring",
+          "defensive",
+          "shavras-loot"
+        ],
+        "relationships": [
+          {
+            "entity": "shavras-vault",
+            "type": "originated-from",
+            "note": "Found in the vault before it was sealed"
+          }
+        ],
+        "content": "# Ring of Protection\n\nA magical ring discovered in the Shavras Vault before it was sealed by Greeve's sacrifice.\n\n## Properties\n\nThis ring offers magical protection to its wearer, granting bonuses to armor class and saving throws.\n\n## History\n\n### Discovery\nFound among the treasures in the Shavras Vault during the party's exploration, alongside the Battering Shield, Bag of Holding, and Pipes of Haunting.\n\n### Current Status\nThe ring was claimed before Greeve sealed the vault. Its current bearer is unknown."
+      }
+    ]
+  },
+  "sessions": {
+    "campaign-overview-the-mawframe": {
+      "slug": "campaign-overview-the-mawframe",
+      "title": "Campaign Overview: The Mawframe",
+      "date": "2024-01-20",
+      "description": "An introduction to our D&D campaign - from the frontier town of Phandalin to the planar city of Sharn, follow six heroes as they race to prevent an ancient primordial from awakening.",
+      "tags": [
+        "campaign",
+        "overview",
+        "the-mawframe"
+      ],
+      "content": "## The Story So Far\n\nWhat began as a simple investigation into bandit raids in the frontier town of **Phandalin** has grown into a world-spanning quest to prevent catastrophe. Our party of six adventurers has faced undead priests, cursed forests, ancient dragons, and sinister cults—all while uncovering a conspiracy that threatens the very fabric of reality.\n\n## The Heroes\n\nOur tale follows six unlikely allies, now bound by fate and battle:\n\n- **Accoa Krigsdottir** — An Aasimar Paladin sworn to the Oath of the Ancients, she joined the party in the cursed Whisperwood Forest and has proven invaluable in their darkest hours.\n- **Kei Eaglesnout** — A Human Champion Fighter whose strength and determination anchor the party's front line (and who can't resist a good arm-wrestling competition).\n- **Malum Munus Exemplar** — A Half-Elf Assassin whose shadowy skills have gotten the party out of—and occasionally into—trouble.\n- **Rudiger** — A Human Evoker with a storm building inside him, learning to channel arcane power that even the Emerald Enclave has taken notice of.\n- **Skid Demon** — A Half-Elf Gloom Stalker Ranger marked by the leylines themselves, now able to sense the ancient currents that flow beneath the world.\n- **Stol** — A Human Life Domain Cleric whose faith has turned undead hordes and kept his companions standing when all seemed lost.\n\n## Arc One: The Fallen Priest & The Golden Bell of Shavras\n\nThe adventure began when the party was summoned to investigate raids on Phandalin's supply lines. What seemed like simple banditry soon revealed a darker purpose—a fallen priest seeking to open a gateway using the blood of an ancient lineage.\n\nThe heroes journeyed through the haunted **Whisperwood Forest**, faced a Night Hag's curse, and ultimately confronted the undead priest at the ruins of Shavras. There, they learned that **Aidin**, a simple village woman, was the last of a sacred bloodline. Her companion **Greeve** sacrificed himself to seal the vault, becoming its eternal guardian.\n\n## Arc Two: The Mawframe\n\nAfter sealing Shavras, the party arrived in **Astgrove** where they encountered **The Knock**, a faction of the Emerald Enclave. Rangers reported something unnatural in the North Woods—enslaved humans constructing a massive wooden structure that defied the laws of nature.\n\nThis structure is the **Maw Frame**, a resonance engine designed to awaken **Aru'xat the Verdant Maw**—an ancient primordial being sealed during the Dawn Wars. The Slanted Circle, a mysterious cult, seeks to unbind this world-devourer and remake reality in chaos.\n\nTo stop them, the party must anchor the leylines that keep Aru'xat imprisoned. This quest led them to:\n\n- **Stonehell Isle**, where they met **Nythraxil**, an ancient rose quartz dragon fused to stone, who gave them a crucial ley stone before falling to a Circle mage.\n- **Sharn, the City of Towers** in the plane of **Eberron**, where they infiltrated as Black Mantle operatives, only to discover traitors within the Enclave itself.\n- **The Dhakaani Ruins** beneath Sharn, where they stabilized a ley anchor in the heart of an ancient goblinoid empire.\n\n## What Lies Ahead\n\nThe Circle mage escaped, leaving only a cryptic sigil behind. Skid Demon now carries the mark of the leylines, able to sense their pulse across the world. The Enclave speaks of other anchors, other threats, and an enemy who seems always one step ahead.\n\nThe Maw Frame still rises in the Astralglades. Aru'xat stirs in his prison of root and stone. And somewhere in the shadows, the Slanted Circle continues their work.\n\nThe adventure continues.\n\n---\n\n*This campaign uses D&D 5th Edition rules and is run by our DM through D&D Beyond. Session summaries and character updates will be posted as our story unfolds.*"
+    },
+    "session-01-the-bell-of-shavras": {
+      "slug": "session-01-the-bell-of-shavras",
+      "title": "Session 1: The Bell of Shavras",
+      "date": "2024-02-01",
+      "description": "Our heroes arrive in Phandalin to investigate mysterious raids and kidnappings, only to discover an ancient artifact tied to something far darker.",
+      "tags": [
+        "session",
+        "arc-1",
+        "phandalin",
+        "shavras"
+      ],
+      "content": "## The Adventure Begins\n\nOur party arrived in the frontier town of **Phandalin**, summoned by Townmaster Riglid Hoxley. The town had been plagued by raids on their supply lines, and worse—three villagers had been kidnapped, one already murdered. Rumors swirled that two of the missing, **Aidin** and **Greeve**, had been having an affair before their disappearance.\n\n## The Party\n\n- **Stol** — Human Cleric\n- **Rudiger** — Human Rogue\n- **Skid Demon** — Half-Elf Ranger\n- **Kei Eaglesnout** — Human Fighter\n- **Malum Munus Exemplar** — Half-Elf Rogue\n- **Cribben Hayduke** — Elf Druid\n\n## A Dwarf's Request\n\nOur meeting with Riglid was interrupted by **Dain Hemnulim**, a dwarf warrior seeking escort to Dalvenholm. He claimed goblins and orcs had overrun the Triboar Trail and separated him from his travel party. In exchange for safe passage, he pledged his services to our cause.\n\n## Drunk Goblins and Dark Omens\n\nSetting out from Phandalin, we encountered a burning cart and three drunken goblins attempting to extort us for ale. After dispatching them (Dain's great axe made quick work of the captives), one goblin revealed something troubling before his demise: *\"There is more to just supply raids... our master is looking for someone.\"*\n\nThe goblin carried a trinket—a small gold-colored bell on a chain, bearing the ancient word **\"Shavras\"** in worn, raised lettering.\n\n## The Fallenore Hot Springs\n\nWe arrived at the Fallenore Hot Springs, an ancient tiered waterfall cascading down a cliff. Two thieves—enslaved women fleeing an orc horde—attempted to rob us but quickly surrendered. They mentioned the town of **Ulfandor** and a *\"hidden door\"* before Stol's charity sent them safely on their way.\n\n## Rest at Gullborey\n\nThe session ended with the party purchasing potions at a small rest stop called Gullborey. A sleepy town with little to offer but an inn, tavern, and arcane shop.\n\nBut even here, the innkeeper's strange reaction to Dain gave us pause...\n\n---\n\n*What secrets does the Bell of Shavras hold? Who is the \"someone\" the goblins' master seeks? And what waits behind the hidden door of Ulfandor?*\n\n**Next Session:** The road to Umbrage Hill and the mysteries of Ulfandor await."
+    },
+    "session-02-the-hidden-door": {
+      "slug": "session-02-the-hidden-door",
+      "title": "Session 2: The Hidden Door",
+      "date": "2024-02-08",
+      "description": "A manticore at Umbrage Hill, goblin ambushes, and a shocking betrayal reveal the true horror lurking beneath Ulfandor.",
+      "tags": [
+        "session",
+        "arc-1",
+        "ulfandor",
+        "fallen-priest"
+      ],
+      "content": "## Umbrage Hill\n\nAfter departing Gullborey, our journey took us to **Umbrage Hill**—a place named for two feuding dwarf clans whose ancient grudge has been lost to time, leaving only cairns of the dead.\n\nAt the hill's stone windmill, we found a manticore attempting to break through the door while a woman cried for help from the second-story window. Rather than fight, we negotiated—offering the beast gold to find elsewhere to lair.\n\nThe grateful **Adabra Gwynn**, an apothecary, rewarded us with healing potions and entrusted us with a letter for Townmaster Riglid.\n\n## Ambush in the Night\n\nEn route to Ulfandor, Rudiger triggered a trap that showered pebbles from the trees—a goblin alarm. Torches emerged from the darkness as goblins attacked. We made quick work of them, but during the skirmish, we noticed something peculiar: Dain dressed his wounds with a handkerchief bearing the same symbology as the Bell of Shavras.\n\nHe claimed he'd lifted it from the thieves at the hot springs. We had our doubts.\n\n## The Mining Town of Ulfandor\n\n**Ulfandor** proved to be a bustling mining town—a stark contrast to sleepy Gullborey. The local tavern, the Stout Arrow, revealed that businesses were being extorted by an orc horde camping near the abandoned eastern mines.\n\nWe followed the orcs to the mine entrance and confronted them. Inside the abandoned mines, strange symbols covered the walls, leading to a circular room with a stone door marked by an etched sigil.\n\nDain lingered at the door, running his fingers over the carvings with an expression we couldn't read—reverence? Dread? He muttered something in an unfamiliar language.\n\n## Betrayal Revealed\n\nSuddenly, orcs and goblins burst into the cavern, led by a hulking chieftain and a terrifying robed figure—hovering, pale as death, with sunken eyes and tattered, bloodstained robes. **The Fallen Priest.**\n\nThe orc leader addressed Dain directly: *\"You've done well bringing them here, dwarf. Your debt is repaid—but your treachery ends now.\"*\n\nThe Fallen Priest's command echoed through the chamber: *\"Kill them all, secure the bloodline, and bring me the girl!\"*\n\nDain insisted his family had been held captive, forcing his conspiracy. But before he could name who they sought, the Priest raised two fingers—and Dain's tongue was ripped from his mouth, falling to the floor in a bloody mess. The Priest vanished.\n\n## Greeve's Testimony\n\nDespite his grievous wound, Dain fought alongside us as we defeated the remaining orcs and goblins. The Bell of Shavras opened the sealed door, revealing a captive man amid a room of symbols, bloody candles, and a bowl of smoldering eyeballs.\n\n**Greeve.** Weak and dirty, he kept repeating that he was *\"not the one\"* and needed to *\"find Aidin before they find her.\"*\n\nHis explanation chilled us to the bone: Aidin is the last of the bloodline of the ancient temple of Shavras. Her sacrifice will open the gateway.\n\n---\n\n*The Fallen Priest seeks to use Aidin's blood to unlock something terrible. But where is she? And what gateway does he mean to open?*\n\n**Next Session:** Into the cursed Whisperwood Forest we must go..."
+    },
+    "session-03-whisperwood-forest": {
+      "slug": "session-03-whisperwood-forest",
+      "title": "Session 3: Whisperwood Forest",
+      "date": "2024-02-15",
+      "description": "The party ventures into the cursed Whisperwood—a forest of shifting shadows, undead horrors, and a Night Hag's terrible curse.",
+      "tags": [
+        "session",
+        "arc-1",
+        "whisperwood",
+        "night-hag"
+      ],
+      "content": "## Into the Cursed Wood\n\nStill reeling from Greeve's revelation, we learned that the only path to Shavras runs through **Whisperwood Forest**—a haunting place of despair and witchcraft, cursed by echoes of past atrocities. Greeve insisted we had no choice. To save Aidin, we must set aside fear.\n\nDain, unable to speak with his tongue torn out, wrote \"Home\" in blood on the mine wall. Greeve suggested he stay in Ulfandor to heal. We gave him Adabra's letter to deliver to Riglid in Phandalin.\n\nGreeve also revealed the truth about him and Aidin: they weren't having an affair. They had denounced their religion and were practicing ancient rituals in secret. A mysterious traveler had told Aidin her surname \"Trynn\" might connect her to the founders of Shavras. During a summer solstice ritual, the world went cold and dark—then they awoke in chains, prisoners of the orc horde.\n\n## The Forest That Watches\n\nAt Whisperwood's edge, an old robed man with a lantern warned us: *\"Beware the shifting paths of illusion. This way to the grove of lost souls.\"*\n\nThe forest lived up to its reputation:\n- The air grew colder with every step\n- Ghostly whispers echoed around us, sometimes taking familiar voices\n- Trees seemed to move when unobserved\n- A layer of ground fog swirled with every footstep\n\n## Grove of Lost Souls\n\nIn a clearing of scattered stone ruins and ancient gravestones, **six skeletal warriors** rose from the earth—tattered armor, rusted helmets, longswords drawn. Stol's Turn Undead repelled three of them, and we made quick work of the rest, though their bones exploded into damaging fragments when destroyed.\n\n## The Ossuary\n\nBeyond a wrought-iron gate, we found a stone structure under a blood-red moon. Inside lay thousands of bones and skulls wrapped in linen on marble slabs. As we explored, seven mummified corpses slowly rose and shuffled toward us.\n\nStol's holy power once again proved invaluable, repelling several zombies while we dispatched the rest. A crash of thunder and flash of lightning followed, then an evil laugh echoed through the ossuary as every candle suddenly ignited.\n\n## The Silent Boatman\n\nThe trail led to a fog-shrouded lake. A wooden raft emerged from the mist, steered by a robed figure who spoke no words—only motioned us aboard. Floating orbs of light drifted past as we crossed the phantom water.\n\nExhausted, we made camp on the far shore amid the forest's maddening symphony of whispers, cackling birds, and torrential rain.\n\n## The Night Hag's Deception\n\nMalum found a torn piece of fabric—Aidin's dress. Greeve touched it and received a vision: Aidin running, a group chasing her. Then Aidin's voice joined the forest whispers: *\"My dear Aidin, I am beyond the veil, beyond hope now. Do not come for me.\"*\n\nGiant spiders emerged from the shrubs. We defeated them easily—perhaps too easily.\n\nThen we saw her. A woman lying on the ground in a tattered dress. Greeve ran to her, crying *\"Aidin!\"* But when he touched her shoulder, her face contorted—revealing an elderly hag with wispy gray hair and a twisted pale face.\n\nAs Greeve levitated in agony, the **Night Hag** uttered her curse:\n\n> *\"Through roots that twist and shadows dance,*\n> *You will find no second chance.*\n> *Each step you take, the forest claims,*\n> *Your blood, your soul, your very name.*\n> *Turn back now, or face the cost—*\n> *All you love shall soon be lost.\"*\n\nLightning struck. The hag vanished. Greeve crumpled to the ground. And each of us felt our wisdom drain away as a vision of the dark priest invaded our minds.\n\n**We are cursed.**\n\n---\n\n*Cribben's fate was stranger still—the curse transformed him into a toad, and he hopped off into the forest, never to be seen again...*\n\n**Next Session:** Can we break the Hag's curse and reach Shavras in time?"
+    },
+    "session-04-the-dryads-blessing": {
+      "slug": "session-04-the-dryads-blessing",
+      "title": "Session 4: The Dryad's Blessing",
+      "date": "2024-02-22",
+      "description": "A new ally joins our party, a Dryad lifts the Hag's curse, and we finally confront the Night Hag at the edge of Whisperwood.",
+      "tags": [
+        "session",
+        "arc-1",
+        "whisperwood",
+        "dryad",
+        "accoa"
+      ],
+      "content": "## A New Ally\n\nStill cursed and lost in Whisperwood's eternal night, we spotted an old wooden watchtower jutting above the treeline. Inside, we found **Accoa Krigsdottir**, an Aasimar Paladin who had lost her way while scouting goblins near Kryptgarden Forest. She had taken refuge from the storm.\n\nFrom the top of the watchtower, we glimpsed hope—the edge of Whisperwood gave way to sweeping plains of light-tufted grasslands awash in midday sunshine.\n\n## Under Siege\n\nOur relief was short-lived. Loud chanting rose from below, and we saw torches approaching—**nine cultists** bearing sickles and flames. They set the watchtower ablaze.\n\nIn the thick of battle, something miraculous happened. A massive tree fell on four cultists, killing them instantly. But the tree was *moving*—and from within it emerged the shape of a woman.\n\n## Erinthin of the Moonwoods\n\nAfter the battle calmed, the Dryad **Erinthin** communicated with us through Accoa's Speak with Animals spell:\n\n> *\"I am Erinthin, a Dryad of the Moonwoods. This evil has soured these woods for far too long. I watched as the Witch cursed your party, and I will attempt to break her wretched spell.\"*\n\nTrue to her word, Erinthin lifted the Night Hag's curse—our wisdom was restored. She also gave us three gifts:\n\n- **Longbow +1** with five thorn-bloom arrows that cause extra damage\n- **Nature's Mantle** — a cloak that shifts color to blend with terrain\n- **Three Imbued Acorns** — when planted, they sprout saplings of Erinthin's bonded tree\n\nHer final words guided our path: *\"My kin tell me you are after the Priest? He travels in shadow, between this world and soon another if he has his way. You are not far from Shavras.\"*\n\n## The Night Hag's Last Stand\n\nLeaving Whisperwood at last, we came to a bridge where a traveling merchant awaited. But as we approached, the merchant transformed—revealing the **Night Hag** once more.\n\n*\"This is not the way. Right or left, one of which will lead to death.\"*\n\nShe attacked, claws slashing. But this time, we were ready. **Kei** dealt the killing blow and released her **Soul Bag**, freeing the tormented spirits she had collected over centuries.\n\n## The Shrine of Shavras\n\nAt the top of the hill beyond the bridge, an open field spread before us—and in the distance stood the ruins of the **Shrine of Shavras**. But the field was chaos.\n\n**Dain** and his dwarf clan were locked in battle with goblins and orcs. Near the shrine itself, the Fallen Priest stood over a woman's body laid upon a stone slab—**Aidin**. Behind them, a circle of stone glowed red.\n\nAnd then Greeve... transformed. His body twisted into a lizard-like creature—a **Gray Slaad**—and charged toward the shrine.\n\nThe final confrontation had begun.\n\n---\n\n*With Aidin's life hanging in the balance and the Fallen Priest attempting his dark ritual, we must fight through an army to reach the shrine. But what has become of Greeve?*\n\n**Next Session:** The Battle of Shavras."
+    },
+    "session-05-the-vault-of-shavras": {
+      "slug": "session-05-the-vault-of-shavras",
+      "title": "Session 5: The Vault of Shavras",
+      "date": "2024-02-29",
+      "description": "The Fallen Priest is defeated, but the true horror lies beneath the shrine. In the depths of Shavras, a sacrifice seals the vault forever.",
+      "tags": [
+        "session",
+        "arc-1",
+        "shavras",
+        "fallen-priest",
+        "greeve"
+      ],
+      "content": "## The Battle for Shavras\n\nThe Fallen Priest hovered above Aidin, chanting in an incomprehensible tongue. Hundreds of blood-dripping candles surrounded them. Behind him, the portal shimmered with red energy.\n\nAs we battled the skeletal knights flanking him, a massive shadow passed overhead—a **white dragon** soaring away from the battle. We had no time to wonder why.\n\nThe fight was brutal. Stol fell and was restored by Rudiger. But together we chipped away at the Priest's unholy defenses, defeating his acolytes while simultaneously confronting the Fallen Priest himself.\n\nAt last, we struck him down. The portal crumbled. **Aidin was saved**—weak, but alive.\n\n## The Legend of the Golden Bell\n\nAfter the battle, Greeve—restored from his Slaad transformation—explained what he knew. The traveler who had come to Phandalin told them of an ancient legend: when barbarians repeatedly sacked Shavras, the villagers melted all their gold into a bell and covered it with copper to hide its value.\n\nThe **Bell of Shavras** still sat atop the ruined shrine—5,000 gold pieces covered in 1,000 copper pieces. Along with it, we claimed:\n\n- **Devotee's Censer**\n- **Circlet of Blasting**\n- **Mace of Disruption**\n- **Throwing Axe +1**\n\n## Something Awakens Below\n\nAs we approached Aidin, the Priest's body liquified and seeped into the earth. The ground shook. Ruins collapsed. When the dust settled, a dark entrance had opened—leading into the depths of Shavras.\n\nAidin sat up, eyes wide: *\"Something old is awakening. We must put an end to this.\"*\n\n## The Dungeon Beneath\n\nShadows flickered on the walls, replaying the last moments of ancient priests who had sealed this place:\n\n> *\"The bloodline must remain unbroken...\"*\n> *\"We were betrayed... the last of the faithful... slaughtered...\"*\n> *\"If the seal fails... the world will burn...\"*\n\nWe descended, fighting our way through goblin warriors, skeletal warriors, a hulking ogre, and giant spiders. Each chamber held treasures:\n\n- **Ring of Protection**\n- **Battering Shield**\n- **Bag of Holding**\n- **Pipes of Haunting**\n\nWe found murals depicting sacred bloodlines—Greeve noticed one crest similar to his own family's. The Priest's voice echoed: *\"The portal of the Undergods will be defended at all costs!\"*\n\n## The Heart of Shavras\n\nIn the final chamber, purple light pulsed from a floating box containing a heart. The room shook violently, and a massive dark shade took the form of the Priest once more.\n\n*\"The power of the old gods is beyond your wildest dreams. Pledge to the ancients and you will wield its power.\"*\n\nFour skeletal warriors rose from the ground—the actual remains of ancient buried priests. We fought desperately while Aidin chanted in the corner, Greeve shielding her with his body.\n\nThen Greeve kissed Aidin on the back of her head, stood, and charged the wraith.\n\n## The Guardian's Sacrifice\n\nThe Priest's bone sword impaled Greeve. *\"A bastard's blood may be as thin as water, but it still carries the weight of a crown.\"*\n\nGreeve slid off the blade and crumpled to the ground.\n\nWe banished the undead priest. Aidin ran to Greeve's side.\n\nWith his dying breath, Greeve spoke: *\"My family never told me of their royal blood, but my death will only seal the vault until they track down all of my ancestors. Go. My fate is now tied here.\"*\n\n**Greeve became a wraith—the eternal guardian of the vault of Shavras.**\n\nThe walls began to crumble. We escaped with our lives, our loot, and the knowledge that one chapter had ended.\n\n---\n\n*The Fallen Priest is destroyed. The vault of Shavras is sealed—guarded forever by Greeve's sacrifice. But what of Aidin? And what ancient evil first corrupted the Priest?*\n\n**Arc One Complete.**\n\n**Next Session:** A new threat emerges in Astgrove..."
+    },
+    "session-06-the-maw-frame": {
+      "slug": "session-06-the-maw-frame",
+      "title": "Session 6: The Maw Frame",
+      "date": "2024-03-07",
+      "description": "In Astgrove, we meet The Knock—and discover a horrifying construction in the North Woods that threatens to unmake the world.",
+      "tags": [
+        "session",
+        "arc-2",
+        "astgrove",
+        "emerald-enclave",
+        "maw-frame"
+      ],
+      "content": "## Arc Two Begins: The Mawframe\n\nThrough the other side of Shavras's chamber, we emerged into a small valley. About three miles distant lay **Astgrove**, a large sub-alpine town of roughly 3,000 villagers—a welcome sight after our ordeal.\n\nWe sold some gems to a jeweler for 6,000 gold, commissioned custom plate armor, purchased weapons, and visited the arcane shop for **Eyes of the Eagle** and **Goggles of Night**.\n\n## The Knock\n\nOutside the tavern called The Mason and the Chain, a man stumbled into us—shot in the leg by an arrow. Rangers in forest green approached calmly, one scooping up the wounded man. They wore leaf pendants on their right breasts.\n\nTheir leader, **Harlix Darkleaf**, leaned close to Skid, hand on dagger: *\"What would you be doing with a Dryad's bow?\"*\n\nWe explained our encounter with Erinthin in Whisperwood. Harlix's demeanor shifted immediately: *\"On behalf of the Emerald Enclave, you have our admiration for aiding our woodland friends. Please, join us for a pint.\"*\n\nInside the tavern, Harlix explained: *\"We are brothers of The Knock—protectors of the wildlands, friends of the forest. We are a faction of the Emerald Enclave, drawn here by unnatural forces in the North Woods of the Astralglades.\"*\n\nHe invited us to accompany them that night. We accepted.\n\n## Goblin Ambush\n\nEn route, we encountered goblin riders and a goblin wizard attacking from a ridge. Rudiger and Harlix proved devastating, and we pressed on without delay.\n\n## Horror in the Astralglades\n\nWhat we found defied comprehension.\n\nA large group of **enslaved humans** were being forced to build a massive wooden structure by cutting down the ancient forest. Purple-robed figures watched over them. Lines of glowing blue energy surrounded the structure. Rocks rolled *uphill*, defying gravity.\n\nThe wooden construction resembled the jaw of a giant creature.\n\n**The Maw Frame.**\n\nHarlix insisted we retreat immediately. This required the attention of the full Enclave.\n\n## Kei's Victory\n\nBack in Astgrove, Kei entered an arm-wrestling competition at the tavern—defeating three of four competitors and winning **400 gold pieces**.\n\nBut our minds remained on what we'd witnessed in the North Woods. What were those robed figures building? Why did they need slaves? And what creature's jaw was that structure meant to represent?\n\n---\n\n*The Emerald Enclave has taken notice of us. But the horror of the Maw Frame lingers. What ancient force is being summoned in the Astralglades?*\n\n**Next Session:** An audience with the High Council reveals the terrible truth..."
+    },
+    "session-07-the-ancient-dragon": {
+      "slug": "session-07-the-ancient-dragon",
+      "title": "Session 7: The Ancient Dragon",
+      "date": "2024-03-14",
+      "description": "We learn the terrifying truth about Aru'xat the Verdant Maw, journey to Stonehell Isle, and witness the death of an ancient dragon.",
+      "tags": [
+        "session",
+        "arc-2",
+        "stonehell",
+        "nythraxil",
+        "ley-stone"
+      ],
+      "content": "## Before the High Council\n\nHarlix summoned us to a large round room filled with members of The Knock and the High Council of the Emerald Enclave. We were given supplies—silvered arrows and rations—before being introduced to **Rook Targrave**, a stern member of the High Council.\n\nHis words were blunt:\n\n> *\"You aren't here because you defeated some wayward heretic. What you witnessed in the Astralglades is a force greater than anything you could imagine—an ancient being, a builder of worlds, being summoned to rip this world apart.*\n>\n> *Those robed men are the **Slanted Circle**. What the slaves construct is the **Throat of Aru'xat**—a resonance engine designed to awaken a slumbering primordial beast. **Aru'xat the Verdant Maw**, the Feeder of Forests, a serpentine entity sealed during the Dawn Wars when the gods first planted life. It once devoured entire worlds.*\n>\n> *The Circle attempts to align ley lines to wake it. You must find the ancient beings who can help us anchor those ley lines. Most notably: **Nythraxil**, a rose quartz dragon banished to Stonehell Isle.\"*\n\nRook pulled Rudiger aside afterward, sensing the young wizard's internal conflict. He handed him a scroll of Lightning Resistance: *\"The storm within us can manifest out if we are not careful.\"*\n\n## Journey to Stonehell\n\nWe traveled through the Astralglades toward Muck Bay, where **Captain Tallow** awaited with his ship, the Siren's Song. Along the way:\n\n- A **Frost Elemental** emerged from ley-scarred flowers, warning that the world's balance was shifting. It gave us an amulet teaching the Frost Fingers spell.\n- We were ambushed by men bearing Slanted Circle markings.\n\n## The Kraken Attack\n\nAt sea, pirates attacked from the fog. But mid-battle, a **kraken** erupted from the depths, grabbing pirates and smashing ships. The pirate vessel's explosives detonated, severing a tentacle and dealing massive damage.\n\nThrough it all, a mage on the pirate ship stared at Captain Tallow before diving into the water and vanishing.\n\nTallow revealed he was a druid of Eberron and had banished the kraken—but the mage had escaped on his own. *\"That mage is not far behind. I sensed his confusion about Stonehell's location. The island is hidden by enchanted mist.\"*\n\n## Nythraxil's Lair\n\nTallow's ritual parted the mist, revealing Stonehell Isle's massive stone spires. We fought through giant vultures to reach the lair at the summit.\n\nBefore meeting the dragon, we were required to release memories into crystal pools—the dragon \"sees\" mortals through their memories.\n\n**Nythraxil** lay on his side—a hulking mass of red, pink, and white quartz. So ancient his body had fused to the stone itself.\n\n> *\"Aru'xat... a name I hoped would stay buried. You require the ley stone? Like my body, it too has fused to the quartz. The ley stone will only anchor the ley lines in the Astralglades. The Slanted Circle will seek other anchors. The Jundites of Eberron will have the key of Agmon. Seek the word of Ildrar, a cleric of the ancient race of Orondin.\"*\n\n## The Mage Returns\n\nA massive blast shattered stone above the dragon. The mage from the shipwreck had found us.\n\nNythraxil thrashed in startled rage, breathing fire. The mage's ice blast missed the dragon but struck a stone pillar above—it froze and fell, severing Nythraxil's wing.\n\nWith his last breath, the ancient dragon unleashed fire at the mage, sending him tumbling down the mountain. Then Nythraxil fell silent forever.\n\n**Rudiger secured the ley stone.** We defeated the mage and returned to Captain Tallow.\n\n## Return to Astgrove\n\nBack in Astgrove, we reluctantly handed the ley stone to Rook and the Enclave. We told him what Nythraxil had said about Eberron.\n\nRook nodded gravely. Our next journey would take us to another plane entirely.\n\n---\n\n*Nythraxil is dead. The Circle mage escaped once, but we have the ley stone. Now we must travel to Eberron—a different plane of existence—to find the next anchor.*\n\n**Next Session:** Journey to Sharn, the City of Towers..."
+    },
+    "session-08-city-of-towers": {
+      "slug": "session-08-city-of-towers",
+      "title": "Session 8: City of Towers",
+      "date": "2024-03-21",
+      "description": "We travel to Eberron under false identities, navigate the treacherous streets of Sharn, and discover that betrayal can come from within.",
+      "tags": [
+        "session",
+        "arc-2",
+        "eberron",
+        "sharn",
+        "harlix",
+        "veyra"
+      ],
+      "content": "## The Black Mantle\n\nRook explained our mission: travel to **Sharn** in **Eberron** via the Keyport—an ancient planar junction beneath the Heartwood Oak. The ley stone would power our journey.\n\nBut we wouldn't travel as ourselves.\n\n> *\"You will travel under the guise of operatives of The Black Mantle—a shadowy espionage syndicate feared in Sharn's underworlds. Your faces, your papers, your deeds. Play the role well, or be unmasked.\"*\n\n**Alkanar**, the Enclave's elderly Dragonborn historian, briefed us on Sharn: the City of Towers, built atop ancient Dhakaani goblinoid ruins. A vertical city of five plateaus, where the Lightning Rail connects distant lands.\n\nWe were blindfolded, led to the Keyport, and teleported through folding light and rushing voices.\n\n## Arrival in Sharn\n\nWe landed hard in a tavern backroom. Tobacco smoke, cheap brandy, the tang of iron. A sealed envelope waited on a scarred table, pressed with a black wax sigil of crossed swords.\n\nThe barkeep's nervous voice: *\"Black Mantle... your reputation precedes you.\"*\n\nThe letter directed us to the **Cornerstone Tavern** in Callestan—ask for the house game of \"Iron and Ash.\" Our contact would find us.\n\n## The Cornerstone\n\nThe Cornerstone was built around a fighting pit where mercenaries brawled for gamblers' entertainment. We took our seats and ordered drinks.\n\nA serving girl approached—but her face flickered. Too-sharp eyes, a smile that didn't quite fit. A **changeling**.\n\nShe whispered: *\"Mantle. You're late. And the Circle is already moving. Meet me outside in 25 minutes.\"*\n\nBefore she vanished into the smoke, thugs surrounded our table. One slammed a dagger into the wood: *\"Funny thing—the Mantle don't walk Sharn no more. So who are you wearing their faces?\"*\n\n## The Chase\n\nDuring the brawl, three men in purple scarves—**Slanted Circle agents**—slipped through the chaos. A pickpocket stole our letter.\n\nStol and Kei finished the thugs while the rest of us gave chase through Callestan's narrow streets, bazaars, and angry vendors. Accoa finally stunned the runner.\n\nHis only words: *\"The stone sang your path. He sees.\"*\n\nOn his person: a torn logbook page in druidic script mentioning a Dragonshard shipment via the Lightning Rail, and a crystal shard keyed to a scrying focus. **Someone was watching through it.**\n\n## Verdant Hollow\n\nOur changeling contact, **Veyra**, led us to her cipher contact in the black markets—**Yog**, a one-eyed goblin. Under intimidation, he revealed that a scarred mage had paid well for a druidic cipher book and mentioned \"Verdant Hollow.\"\n\nBefore he could say more, an arrow split his skull.\n\nWe fought off Circle warriors and fled to **Verdant Hollow**—the local Emerald Enclave chapter, hidden in a hollowed tower garden.\n\n## Traitors Revealed\n\nThe Enclave druids were divided—half believed we'd planted the forged druidic note, half feared a traitor within. Elder **Elarion Mossbark** pulled us aside:\n\n> *\"A druidic cipher was stolen two days ago. I saw a tall man in Enclave robes near the black market. His name was 'Harlix.' I have someone tailing him.\"*\n\nHe also warned that the ley shard we carried was tracking our movements more than our Black Mantle disguise. *\"The suggestion of Mantle operatives was so your presence could be more easily tracked.\"*\n\n## Lightning Rail\n\nWe headed to Tavick's Landing to intercept the Dragonshard shipment. Near the cargo platform, we spotted him: **Harlix**, hood drawn, speaking with a rail agent.\n\nThen he stepped from the shadows and removed his hood.\n\n> *\"You should have stayed blind. The anchors bind more than Aru'xat—they bind the world! I would see those chains broken, even if it means burning every bridge.\"*\n\nThe rail agent's face shifted. **Veyra.**\n\n> *\"Did you truly think I was your ally? Every step, every whisper—I fed to the Circle. You weren't Mantle. You were marionettes.\"*\n\nWe were shoved aboard the train. After battling Night Watch guards and Circle agents (Rudiger's fireball was particularly effective), we confronted Harlix and Veyra in the engine room.\n\nHarlix fought with conflicted respect. Veyra taunted us with half-truths about the Enclave. In the end, **Veyra died** and **Harlix surrendered**.\n\nHis confession: the Eberron ley anchor lies deep in the Dhakaani dungeons beneath Sharn. The Circle mage intends to reach it, backed by a Dragonmarked House.\n\n---\n\n*Harlix and Veyra were traitors all along. But we have the Dragonshards and know where the anchor lies. Now we must descend into ancient goblinoid ruins beneath Sharn.*\n\n**Next Session:** Into the depths of the Dhakaani Empire..."
+    },
+    "session-09-heart-of-stone": {
+      "slug": "session-09-heart-of-stone",
+      "title": "Session 9: Heart of Stone",
+      "date": "2024-03-28",
+      "description": "We descend into the ancient Dhakaani ruins beneath Sharn, face trials of the old empire, and stabilize the ley anchor—but at what cost?",
+      "tags": [
+        "session",
+        "arc-2",
+        "dhakaani",
+        "ley-anchor",
+        "skid-demon"
+      ],
+      "content": "## The Ley Storm\n\nAt Tavick's Landing, while inspecting the captured Dragonshards, a bright flash and thunderous crash erupted behind us. The memory of the ley gate burned in our minds—we remembered stepping through together, but something had gone wrong.\n\nA hand jutted from collapsed tunnel rubble. **Skid Demon** dragged himself free, armor crackling with static, blade still glowing from ley discharge.\n\nHis eyes flashed white: *\"The ley current split. I fell through like a crack in glass. I saw lines—rivers of light leading to a heart of stone. Something's moving beneath. Watching. Waiting.\"*\n\nThree dwarven warriors approached, led by **Master Molrik**: *\"We felt a flux of ley energy from half a mile away.\"*\n\nOne dwarf, Glun, stared at Skid in astonishment as ley energy arced around him: *\"Stone-born.\"*\n\n## Into the Deep\n\nMolrik's clan took custody of Harlix and the Dragonshards, then led us through a collapsed tunnel into the depths beneath Sharn. Ancient dwarven forges lit by magma streams. Anvils and bellows from an age before memory.\n\nAt a sealed archway carved with Dhakaani script, Molrik stopped: *\"Beyond this door lies the old empire. The ley runs strongest there. You'll feel it in your bones.\"*\n\nSkid felt the pulse sync with his heartbeat. He had become a living compass.\n\n## The Hall of Warriors\n\nThe Dhakaani ruins stretched before us—statues of hobgoblin warriors bearing inscriptions: *\"Hold the line.\" \"The war is eternal.\" \"Guard the heart.\"*\n\nThe leyline's hum deepened. Stone warped. Colors shifted. We blinked and the hall came alive—hobgoblin soldiers marching in perfect formation, banners blazing crimson and gold. They marched through us like ghosts.\n\n**The Hall remembered its last war.**\n\nEach of us experienced visions:\n- **Stol** saw himself as a Dhakaani soldier\n- **Kei** felt the weight of command and failure\n- **Skid** saw a storm tearing through the ley—the same pulse that had marked him\n\nThe floor dropped away, hurling us into the next level.\n\n## Trials of the Dhakaani\n\nWe fought through chamber after chamber:\n\n**The Hall of Seals** — Rune-trapped tiles sliced us with force-field blades until we deciphered the correct path.\n\n**The War Scholars' Quarters** — Three Dhakaani Wraith-Tacticians rose from the shadows. Stol's Turn Undead sent them recoiling. Their death whisper: *\"The heart below must never fall...\"*\n\n**The Gauntlet of Stone & Shadow** — Six undead hobgoblin warriors attacked methodically, followed by two Stonebound Guardians and a Shadow Captain whose body dissolved into ash, leaving a command token pointing toward the final chamber.\n\n## The Heart Stone Chamber\n\nA spiral stair descended into a cathedral-like chamber. In the center rose a black obsidian monolith, veined with pulsing light, throbbing like a heartbeat. Twelve statues of hobgoblin generals surrounded it. Ley conduits snaked into the walls, vanishing into infinity.\n\nA voice spoke within our skulls: *\"The Heart endures. Who commands the stone?\"*\n\n**General Varkuun** erupted from the ground—the last Dhakaani warlord, encased in ley-crystal armor, eyes burning blue.\n\n*\"You come for the Heart. As we once did. Prove your right, or perish.\"*\n\nWe used the ley conduits to channel extra damage, and finally brought the ancient general to his knees. His last words: *\"You are the last commanders. Guard what we could not.\"*\n\n## The Circle Mage\n\nAs the Anchor's core opened, a figure stepped from the light—the **Circle Mage**, sigil burned into his tattered robes, eyes glowing with ley reflection.\n\n*\"You've done what even my peers dared not—touched the Heart itself.\"*\n\nThen he vanished, leaving only a glowing sigil burned into the floor.\n\n## Skid's Vision\n\nLight surged from the monolith. Skid went rigid, eyes white with leyfire. He stood alone in an endless cavern of glass and shadow, ley lines pulsing with his heartbeat. Through the cracks, something vast shifted beneath the earth.\n\nA voice rose from the ley:\n\n> *\"If the pulse breaks, the world will bleed.\"*\n> *\"The roots that bind will tear, and the sky will burn.\"*\n> *\"Stabilize the pulse, and the heart will sleep again.\"*\n\nHe saw Sharn's towers collapsing. Oceans boiling. Forests splitting along glowing fault lines.\n\n## Balance Restored\n\nSkid shared what he'd seen: *\"I saw what happens if we pull it free. Everything breaks. The ley runs through the bones of the world. We keep it steady, or we all fall with it.\"*\n\nWorking together, we stabilized the anchor. The light steadied. The hum faded to a deep, even pulse. The fractures sealed into glowing veins.\n\n**The leyline beneath Sharn grew calm.**\n\nSkid's ley mark now glows faintly—he can sense nearby ley currents. The Dhakaani statues bowed as motes of light rose from their eyes: *\"Balance restored.\"*\n\n## Return\n\nWe ascended to Molrik's forward camp and returned the dwarven war banners we'd found. The Molrik clan rewarded us with magical items and their eternal respect.\n\nThe Eberron anchor is stable. But the Circle Mage escaped. The Maw Frame still rises in the Astralglades. And somewhere, **Aru'xat the Verdant Maw** stirs in his ancient prison.\n\nThe fight continues.\n\n---\n\n*One anchor secured. More remain. The Circle Mage left only a sigil behind—what does it mean? And what will Skid's new connection to the leylines reveal?*\n\n**The adventure continues...**"
+    },
+    "welcome-to-the-adventure": {
+      "slug": "welcome-to-the-adventure",
+      "title": "Welcome to the Adventure",
+      "date": "2026-01-13",
+      "description": "Welcome to Chronicles of the Mawframe - a campaign journal documenting our D&D 5e adventures as we uncover ancient secrets and battle forces that threaten to unmake the world.",
+      "tags": [
+        "announcement",
+        "campaign",
+        "welcome"
+      ],
+      "content": "# Welcome, Adventurers!\n\nWelcome to **Chronicles of the Mawframe**, the official campaign journal for our ongoing D&D 5th Edition adventure. What started as a simple investigation into bandit raids has grown into an epic tale spanning multiple planes of existence.\n\n## Our Story So Far\n\nOur party of adventurers first met in the frontier town of Phandalin, summoned to investigate raids and kidnappings. What we discovered was far more sinister: an ancient cult, a fallen priest, and artifacts tied to the dark god Shavras.\n\nAfter sealing the Vault of Shavras and defeating the Fallen Priest, we learned of an even greater threat: **Aru'xat the Verdant Maw**, a primordial world-devourer that the Slanted Circle seeks to awaken using the Maw Frame.\n\nOur quest has taken us from the haunted depths of Whisperwood Forest to the towering spires of Sharn in Eberron, where we've fought to protect the ley anchors that keep the world intact.\n\n## The Party\n\n- **Stol** - Human Cleric (Life Domain) - Our steadfast healer\n- **Rudiger** - Human Wizard (Evoker) - Master of arcane destruction\n- **Skid Demon** - Half-Elf Ranger (Gloom Stalker) - Now marked by ley energy\n- **Kei Eaglesnout** - Human Fighter (Champion) - Our stalwart frontline\n- **Malum Munus Exemplar** - Half-Elf Rogue (Assassin) - Striking from the shadows\n- **Accoa Krigsdottir** - Aasimar Paladin (Oath of the Ancients) - Divine warrior\n\n## What You'll Find Here\n\nThis blog chronicles our tabletop adventures:\n\n- **[Session Chronicles](/sessions)** - Detailed recaps of every session from the beginning\n- **[Campaign Reference](/reference)** - Characters, locations, factions, and lore\n\n## The Journey Continues\n\nWith nine sessions behind us and the Eberron ley anchor now stabilized, our party prepares for what comes next. The Slanted Circle's burned mage still lurks in the shadows, and there are more anchors to protect before Aru'xat can be stopped for good.\n\nRoll well, and may your natural 20s be plentiful!\n\n---\n\n*\"The story has just begun...\"*\n\n---\n\n<small>This site is automatically built and deployed via GitHub Actions CI/CD.</small>"
+    }
+  },
+  "indexes": {
+    "byName": {
+      "Accoa": "accoa",
+      "Aidin": "aidin",
+      "Alkanar": "alkanar",
+      "Captain Tallow": "captain-tallow",
+      "Dryad Erinthin": "dryad-erinthin",
+      "Elder Elarion Mossbark": "elder-elarion-mossbark",
+      "Greeve": "greeve",
+      "Harlix Darkleaf": "harlix-darkleaf",
+      "Kei": "kei",
+      "Master Molrik": "master-molrik",
+      "Rook Targrave": "rook-targrave",
+      "Rudiger": "rudiger",
+      "Skid Demon": "skid-demon",
+      "Stol": "stol",
+      "Aru'xat the Verdant Maw": "aruxat",
+      "Dain": "dain",
+      "General Varkuun": "general-varkuun",
+      "Night Hag": "night-hag",
+      "Nythraxil": "nythraxil",
+      "The Circle Mage": "the-circle-mage",
+      "The Fallen Priest": "the-fallen-priest",
+      "Ulfandor": "ulfandor",
+      "Veyra": "veyra",
+      "Astgrove": "astgrove",
+      "Dhakaani Ruins": "dhakaani-ruins",
+      "Phandalin": "phandalin",
+      "Sharn, The City of Towers": "sharn",
+      "Shrine of Shavras": "shavras-shrine",
+      "Shavras Vault": "shavras-vault",
+      "Stonehell Isle": "stonehell-isle",
+      "The Astralglades": "the-astralglades",
+      "Umbrage Hill": "umbrage-hill",
+      "Whisperwood Forest": "whisperwood-forest",
+      "The Black Mantle": "black-mantle",
+      "Dhakaani Empire": "dhakaani-empire",
+      "Emerald Enclave": "emerald-enclave",
+      "Molrik Clan": "molrik-clan",
+      "The Slanted Circle": "slanted-circle",
+      "The Knock": "the-knock",
+      "The Party": "the-party",
+      "Bag of Holding": "bag-of-holding",
+      "Bell of Shavras": "bell-of-shavras",
+      "Dryad's Bow": "dryads-bow",
+      "Heart Stone": "heart-stone",
+      "Ley Stone": "ley-stone",
+      "Mace of Disruption": "mace-of-disruption",
+      "The Maw Frame": "maw-frame",
+      "Ring of Protection": "ring-of-protection"
+    },
+    "byVariant": {},
+    "byTag": {
+      "party": [
+        "accoa",
+        "kei",
+        "rudiger",
+        "skid-demon",
+        "stol"
+      ],
+      "centaur": [
+        "accoa"
+      ],
+      "scout": [
+        "accoa"
+      ],
+      "whisperwood-survivor": [
+        "accoa"
+      ],
+      "npc": [
+        "aidin",
+        "alkanar",
+        "captain-tallow",
+        "dryad-erinthin",
+        "elder-elarion-mossbark",
+        "greeve",
+        "harlix-darkleaf",
+        "master-molrik",
+        "rook-targrave"
+      ],
+      "ally": [
+        "aidin",
+        "alkanar",
+        "captain-tallow",
+        "dryad-erinthin",
+        "elder-elarion-mossbark",
+        "greeve",
+        "master-molrik",
+        "rook-targrave"
+      ],
+      "rescued": [
+        "aidin"
+      ],
+      "cleric": [
+        "aidin",
+        "stol"
+      ],
+      "historian": [
+        "alkanar"
+      ],
+      "emerald-enclave": [
+        "alkanar",
+        "elder-elarion-mossbark",
+        "rook-targrave",
+        "astgrove",
+        "the-knock"
+      ],
+      "captain": [
+        "captain-tallow"
+      ],
+      "druid": [
+        "captain-tallow"
+      ],
+      "secret-identity": [
+        "captain-tallow"
+      ],
+      "forest-guardian": [
+        "dryad-erinthin"
+      ],
+      "nature-spirit": [
+        "dryad-erinthin"
+      ],
+      "elder": [
+        "elder-elarion-mossbark"
+      ],
+      "verdant-hollow": [
+        "elder-elarion-mossbark"
+      ],
+      "guardian": [
+        "greeve",
+        "general-varkuun"
+      ],
+      "royal-blood": [
+        "greeve"
+      ],
+      "sacrifice": [
+        "greeve"
+      ],
+      "wraith": [
+        "greeve"
+      ],
+      "traitor": [
+        "harlix-darkleaf",
+        "dain"
+      ],
+      "former-ally": [
+        "harlix-darkleaf",
+        "dain"
+      ],
+      "the-knock": [
+        "harlix-darkleaf",
+        "astgrove"
+      ],
+      "fighter": [
+        "kei"
+      ],
+      "martial": [
+        "kei"
+      ],
+      "dwarf": [
+        "master-molrik"
+      ],
+      "clan-leader": [
+        "master-molrik"
+      ],
+      "high-council": [
+        "rook-targrave"
+      ],
+      "magic-user": [
+        "rudiger"
+      ],
+      "wizard": [
+        "rudiger",
+        "the-circle-mage"
+      ],
+      "fire-magic": [
+        "rudiger"
+      ],
+      "lightning-magic": [
+        "rudiger"
+      ],
+      "ley-touched": [
+        "skid-demon"
+      ],
+      "stone-born": [
+        "skid-demon"
+      ],
+      "prophecy": [
+        "skid-demon",
+        "nythraxil"
+      ],
+      "healer": [
+        "stol"
+      ],
+      "bbeg": [
+        "aruxat",
+        "the-circle-mage"
+      ],
+      "primordial": [
+        "aruxat",
+        "slanted-circle"
+      ],
+      "sealed": [
+        "aruxat",
+        "shavras-vault"
+      ],
+      "campaign-threat": [
+        "aruxat"
+      ],
+      "apocalyptic": [
+        "aruxat"
+      ],
+      "fallen-priest-agent": [
+        "dain"
+      ],
+      "boss": [
+        "general-varkuun",
+        "night-hag",
+        "the-fallen-priest"
+      ],
+      "dhakaani": [
+        "general-varkuun",
+        "dhakaani-ruins",
+        "heart-stone"
+      ],
+      "undead": [
+        "general-varkuun",
+        "the-fallen-priest"
+      ],
+      "defeated": [
+        "general-varkuun",
+        "night-hag",
+        "the-fallen-priest",
+        "veyra"
+      ],
+      "fey": [
+        "night-hag"
+      ],
+      "whisperwood": [
+        "night-hag"
+      ],
+      "dragon": [
+        "nythraxil",
+        "ulfandor"
+      ],
+      "ancient": [
+        "nythraxil",
+        "dhakaani-ruins",
+        "shavras-vault",
+        "stonehell-isle",
+        "dhakaani-empire"
+      ],
+      "deceased": [
+        "nythraxil"
+      ],
+      "neutral": [
+        "nythraxil"
+      ],
+      "slanted-circle": [
+        "the-circle-mage",
+        "veyra",
+        "maw-frame"
+      ],
+      "recurring": [
+        "the-circle-mage"
+      ],
+      "villain": [
+        "the-fallen-priest"
+      ],
+      "shavras-arc": [
+        "the-fallen-priest"
+      ],
+      "mysterious": [
+        "ulfandor"
+      ],
+      "shavras": [
+        "ulfandor",
+        "bag-of-holding",
+        "bell-of-shavras",
+        "mace-of-disruption"
+      ],
+      "spy": [
+        "veyra"
+      ],
+      "changeling": [
+        "veyra"
+      ],
+      "town": [
+        "astgrove",
+        "phandalin"
+      ],
+      "dungeon": [
+        "dhakaani-ruins",
+        "shavras-shrine",
+        "shavras-vault"
+      ],
+      "ley-anchor": [
+        "dhakaani-ruins",
+        "heart-stone",
+        "ley-stone"
+      ],
+      "eberron": [
+        "dhakaani-ruins",
+        "sharn",
+        "heart-stone"
+      ],
+      "starting-location": [
+        "phandalin"
+      ],
+      "mining": [
+        "phandalin"
+      ],
+      "city": [
+        "sharn"
+      ],
+      "vertical": [
+        "sharn"
+      ],
+      "underworld": [
+        "sharn"
+      ],
+      "shrine": [
+        "shavras-shrine"
+      ],
+      "ruins": [
+        "shavras-shrine",
+        "umbrage-hill"
+      ],
+      "fallen-priest": [
+        "shavras-shrine"
+      ],
+      "vault": [
+        "shavras-vault"
+      ],
+      "sacred": [
+        "shavras-vault"
+      ],
+      "bloodline": [
+        "shavras-vault"
+      ],
+      "island": [
+        "stonehell-isle"
+      ],
+      "hidden": [
+        "stonehell-isle"
+      ],
+      "dragon-lair": [
+        "stonehell-isle"
+      ],
+      "forest": [
+        "the-astralglades",
+        "whisperwood-forest"
+      ],
+      "corrupted": [
+        "the-astralglades"
+      ],
+      "ley-lines": [
+        "the-astralglades",
+        "slanted-circle"
+      ],
+      "maw-frame": [
+        "the-astralglades"
+      ],
+      "ambush-site": [
+        "umbrage-hill"
+      ],
+      "cursed": [
+        "whisperwood-forest"
+      ],
+      "dryad": [
+        "whisperwood-forest",
+        "dryads-bow"
+      ],
+      "espionage": [
+        "black-mantle"
+      ],
+      "syndicate": [
+        "black-mantle"
+      ],
+      "defunct": [
+        "black-mantle"
+      ],
+      "cover-identity": [
+        "black-mantle"
+      ],
+      "goblinoid": [
+        "dhakaani-empire"
+      ],
+      "fallen": [
+        "dhakaani-empire"
+      ],
+      "guardians": [
+        "dhakaani-empire"
+      ],
+      "druidic": [
+        "emerald-enclave",
+        "the-knock"
+      ],
+      "multi-planar": [
+        "emerald-enclave"
+      ],
+      "nature-protectors": [
+        "emerald-enclave"
+      ],
+      "dwarven": [
+        "molrik-clan"
+      ],
+      "clan": [
+        "molrik-clan"
+      ],
+      "deep-keepers": [
+        "molrik-clan"
+      ],
+      "cult": [
+        "slanted-circle"
+      ],
+      "antagonist": [
+        "slanted-circle"
+      ],
+      "main-threat": [
+        "slanted-circle"
+      ],
+      "ranger": [
+        "the-knock"
+      ],
+      "astgrove": [
+        "the-knock"
+      ],
+      "adventurers": [
+        "the-party"
+      ],
+      "heroes": [
+        "the-party"
+      ],
+      "protagonists": [
+        "the-party"
+      ],
+      "magic-item": [
+        "bag-of-holding",
+        "ring-of-protection"
+      ],
+      "utility": [
+        "bag-of-holding"
+      ],
+      "treasure": [
+        "bell-of-shavras",
+        "ring-of-protection"
+      ],
+      "legend": [
+        "bell-of-shavras"
+      ],
+      "starting-hook": [
+        "bell-of-shavras"
+      ],
+      "weapon": [
+        "dryads-bow",
+        "mace-of-disruption"
+      ],
+      "bow": [
+        "dryads-bow"
+      ],
+      "nature-magic": [
+        "dryads-bow"
+      ],
+      "artifact": [
+        "heart-stone",
+        "ley-stone",
+        "maw-frame"
+      ],
+      "stonehell": [
+        "ley-stone"
+      ],
+      "anti-undead": [
+        "mace-of-disruption"
+      ],
+      "threat": [
+        "maw-frame"
+      ],
+      "under-construction": [
+        "maw-frame"
+      ],
+      "ring": [
+        "ring-of-protection"
+      ],
+      "defensive": [
+        "ring-of-protection"
+      ],
+      "shavras-loot": [
+        "ring-of-protection"
+      ]
+    },
+    "bySession": {},
+    "byRelationship": {
+      "ally": {
+        "accoa": [
+          "rudiger",
+          "stol",
+          "kei",
+          "skid-demon",
+          "dryad-erinthin"
+        ],
+        "aidin": [
+          "the-party"
+        ],
+        "alkanar": [
+          "the-party"
+        ],
+        "captain-tallow": [
+          "the-party",
+          "emerald-enclave"
+        ],
+        "dryad-erinthin": [
+          "the-party",
+          "skid-demon",
+          "accoa",
+          "emerald-enclave"
+        ],
+        "elder-elarion-mossbark": [
+          "the-party"
+        ],
+        "greeve": [
+          "the-party"
+        ],
+        "harlix-darkleaf": [
+          "the-circle-mage",
+          "veyra"
+        ],
+        "kei": [
+          "rudiger",
+          "stol",
+          "skid-demon",
+          "accoa"
+        ],
+        "master-molrik": [
+          "the-party",
+          "skid-demon"
+        ],
+        "rook-targrave": [
+          "the-party",
+          "rudiger"
+        ],
+        "rudiger": [
+          "stol",
+          "kei",
+          "skid-demon",
+          "accoa",
+          "emerald-enclave"
+        ],
+        "skid-demon": [
+          "rudiger",
+          "stol",
+          "kei",
+          "accoa",
+          "dryad-erinthin"
+        ],
+        "stol": [
+          "rudiger"
+        ],
+        "the-circle-mage": [
+          "harlix-darkleaf"
+        ],
+        "veyra": [
+          "harlix-darkleaf"
+        ],
+        "molrik-clan": [
+          "the-party",
+          "skid-demon"
+        ],
+        "the-party": [
+          "emerald-enclave"
+        ]
+      },
+      "enemy": {
+        "accoa": [
+          "night-hag"
+        ],
+        "aidin": [
+          "the-fallen-priest"
+        ],
+        "dryad-erinthin": [
+          "night-hag"
+        ],
+        "elder-elarion-mossbark": [
+          "harlix-darkleaf"
+        ],
+        "greeve": [
+          "the-fallen-priest"
+        ],
+        "harlix-darkleaf": [
+          "the-party"
+        ],
+        "master-molrik": [
+          "harlix-darkleaf"
+        ],
+        "rook-targrave": [
+          "slanted-circle"
+        ],
+        "stol": [
+          "the-fallen-priest"
+        ],
+        "aruxat": [
+          "emerald-enclave"
+        ],
+        "dain": [
+          "the-party"
+        ],
+        "general-varkuun": [
+          "the-party"
+        ],
+        "night-hag": [
+          "accoa",
+          "dryad-erinthin",
+          "the-party"
+        ],
+        "nythraxil": [
+          "the-circle-mage"
+        ],
+        "the-circle-mage": [
+          "nythraxil",
+          "the-party"
+        ],
+        "the-fallen-priest": [
+          "greeve",
+          "the-party"
+        ],
+        "veyra": [
+          "the-party"
+        ],
+        "emerald-enclave": [
+          "slanted-circle",
+          "aruxat"
+        ],
+        "slanted-circle": [
+          "emerald-enclave"
+        ],
+        "the-party": [
+          "slanted-circle"
+        ]
+      },
+      "lover": {
+        "aidin": [
+          "greeve"
+        ]
+      },
+      "member-of": {
+        "alkanar": [
+          "emerald-enclave"
+        ],
+        "harlix-darkleaf": [
+          "slanted-circle"
+        ],
+        "the-circle-mage": [
+          "slanted-circle"
+        ],
+        "veyra": [
+          "slanted-circle"
+        ],
+        "slanted-circle": [
+          "harlix-darkleaf",
+          "the-circle-mage"
+        ],
+        "the-knock": [
+          "emerald-enclave"
+        ],
+        "the-party": [
+          "rudiger",
+          "stol",
+          "kei",
+          "skid-demon",
+          "accoa"
+        ]
+      },
+      "leader-of": {
+        "elder-elarion-mossbark": [
+          "emerald-enclave"
+        ],
+        "master-molrik": [
+          "molrik-clan"
+        ],
+        "rook-targrave": [
+          "emerald-enclave"
+        ],
+        "general-varkuun": [
+          "dhakaani-empire"
+        ]
+      },
+      "guards": {
+        "greeve": [
+          "shavras-vault"
+        ],
+        "general-varkuun": [
+          "heart-stone"
+        ],
+        "nythraxil": [
+          "ley-stone"
+        ],
+        "dhakaani-ruins": [
+          "general-varkuun"
+        ],
+        "dhakaani-empire": [
+          "heart-stone"
+        ],
+        "heart-stone": [
+          "general-varkuun"
+        ]
+      },
+      "former-member-of": {
+        "harlix-darkleaf": [
+          "emerald-enclave"
+        ]
+      },
+      "mentor": {
+        "rudiger": [
+          "rook-targrave"
+        ]
+      },
+      "connected": {
+        "skid-demon": [
+          "heart-stone"
+        ],
+        "aruxat": [
+          "maw-frame"
+        ],
+        "astgrove": [
+          "emerald-enclave",
+          "harlix-darkleaf",
+          "the-astralglades"
+        ],
+        "dhakaani-ruins": [
+          "molrik-clan"
+        ],
+        "sharn": [
+          "dhakaani-ruins",
+          "slanted-circle",
+          "emerald-enclave"
+        ],
+        "shavras-shrine": [
+          "shavras-vault",
+          "ulfandor"
+        ],
+        "stonehell-isle": [
+          "captain-tallow"
+        ],
+        "the-astralglades": [
+          "ley-stone"
+        ],
+        "umbrage-hill": [
+          "dain",
+          "the-fallen-priest"
+        ],
+        "black-mantle": [
+          "the-party"
+        ],
+        "emerald-enclave": [
+          "the-knock"
+        ],
+        "molrik-clan": [
+          "dhakaani-ruins"
+        ],
+        "bell-of-shavras": [
+          "the-party"
+        ],
+        "dryads-bow": [
+          "emerald-enclave"
+        ],
+        "heart-stone": [
+          "skid-demon"
+        ],
+        "ley-stone": [
+          "the-astralglades"
+        ],
+        "maw-frame": [
+          "aruxat"
+        ]
+      },
+      "sought-by": {
+        "aruxat": [
+          "slanted-circle"
+        ],
+        "heart-stone": [
+          "the-circle-mage"
+        ]
+      },
+      "serves": {
+        "dain": [
+          "the-fallen-priest"
+        ],
+        "slanted-circle": [
+          "aruxat"
+        ]
+      },
+      "neutral": {
+        "nythraxil": [
+          "the-party"
+        ]
+      },
+      "controls": {
+        "the-fallen-priest": [
+          "shavras"
+        ]
+      },
+      "unknown": {
+        "ulfandor": [
+          "the-fallen-priest"
+        ]
+      },
+      "originated-from": {
+        "dhakaani-ruins": [
+          "dhakaani-empire"
+        ],
+        "phandalin": [
+          "the-party"
+        ],
+        "whisperwood-forest": [
+          "accoa"
+        ],
+        "dhakaani-empire": [
+          "dhakaani-ruins"
+        ],
+        "bag-of-holding": [
+          "shavras-vault"
+        ],
+        "mace-of-disruption": [
+          "shavras-shrine"
+        ],
+        "ring-of-protection": [
+          "shavras-vault"
+        ]
+      },
+      "located-in": {
+        "dhakaani-ruins": [
+          "heart-stone"
+        ],
+        "sharn": [
+          "molrik-clan"
+        ],
+        "shavras-shrine": [
+          "bell-of-shavras"
+        ],
+        "shavras-vault": [
+          "shavras"
+        ],
+        "stonehell-isle": [
+          "nythraxil",
+          "ley-stone"
+        ],
+        "the-astralglades": [
+          "maw-frame"
+        ],
+        "bell-of-shavras": [
+          "shavras-shrine"
+        ],
+        "maw-frame": [
+          "the-astralglades"
+        ]
+      },
+      "headquartered-at": {
+        "shavras-shrine": [
+          "the-fallen-priest"
+        ]
+      },
+      "guarded-by": {
+        "shavras-vault": [
+          "greeve"
+        ]
+      },
+      "formerly-controlled": {
+        "shavras-vault": [
+          "the-fallen-priest"
+        ]
+      },
+      "controlled-by": {
+        "the-astralglades": [
+          "slanted-circle"
+        ],
+        "whisperwood-forest": [
+          "dryad-erinthin"
+        ]
+      },
+      "formerly-controlled-by": {
+        "whisperwood-forest": [
+          "night-hag"
+        ]
+      },
+      "led-by": {
+        "dhakaani-empire": [
+          "general-varkuun"
+        ],
+        "emerald-enclave": [
+          "rook-targrave"
+        ],
+        "molrik-clan": [
+          "master-molrik"
+        ]
+      },
+      "formerly-led-by": {
+        "the-knock": [
+          "harlix-darkleaf"
+        ]
+      },
+      "possesses": {
+        "bag-of-holding": [
+          "the-party"
+        ],
+        "dryads-bow": [
+          "skid-demon"
+        ],
+        "ley-stone": [
+          "emerald-enclave"
+        ],
+        "mace-of-disruption": [
+          "the-party"
+        ]
+      },
+      "created": {
+        "dryads-bow": [
+          "dryad-erinthin"
+        ],
+        "heart-stone": [
+          "dhakaani-empire"
+        ],
+        "maw-frame": [
+          "slanted-circle"
+        ]
+      },
+      "formerly-possessed": {
+        "ley-stone": [
+          "nythraxil",
+          "rudiger"
+        ]
+      }
+    },
+    "byType": {
+      "character": [
+        "accoa",
+        "aidin",
+        "alkanar",
+        "captain-tallow",
+        "dryad-erinthin",
+        "elder-elarion-mossbark",
+        "greeve",
+        "harlix-darkleaf",
+        "kei",
+        "master-molrik",
+        "rook-targrave",
+        "rudiger",
+        "skid-demon",
+        "stol"
+      ],
+      "enemy": [
+        "aruxat",
+        "dain",
+        "general-varkuun",
+        "night-hag",
+        "nythraxil",
+        "the-circle-mage",
+        "the-fallen-priest",
+        "ulfandor",
+        "veyra"
+      ],
+      "location": [
+        "astgrove",
+        "dhakaani-ruins",
+        "phandalin",
+        "sharn",
+        "shavras-shrine",
+        "shavras-vault",
+        "stonehell-isle",
+        "the-astralglades",
+        "umbrage-hill",
+        "whisperwood-forest"
+      ],
+      "faction": [
+        "black-mantle",
+        "dhakaani-empire",
+        "emerald-enclave",
+        "molrik-clan",
+        "slanted-circle",
+        "the-knock",
+        "the-party"
+      ],
+      "item": [
+        "bag-of-holding",
+        "bell-of-shavras",
+        "dryads-bow",
+        "heart-stone",
+        "ley-stone",
+        "mace-of-disruption",
+        "maw-frame",
+        "ring-of-protection"
+      ]
+    }
+  }
+}

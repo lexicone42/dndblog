@@ -1,0 +1,323 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { marked } from 'marked';
+
+const title = "The Tale of Two Rudigers";
+const description = "When fate—or cosmic coincidence—replaces a rogue with a wizard of the same name, the party learns that the universe has a peculiar sense of humor.";
+const pubDate = "2025-01-13";
+
+const storyContent = `
+## A Twist of Fate and Magic
+
+The party had just emerged from the cursed depths of Whisperwood Forest, battered but victorious. The night hag lay defeated, though not before her riddles planted seeds of dread about paths leading to death. They had lost Cribben to wild magic—transformed into a toad and vanished into the darkness—but gained Accoa, a scout rescued from a burning watchtower. Erinthin the Dryad had lifted their curse and bestowed magical gifts.
+
+But as they made camp at the forest's edge, preparing for the journey to the Shrine of Shavras, they discovered Rudiger the Rogue had vanished.
+
+In his place, a note: *"Following a lead on the Brotherhood of Shadows. If I don't return, find another Rudiger—the universe abhors a vacuum. Trust the coincidence."*
+
+---
+
+## The Crimson Quill
+
+It was at the Crimson Quill, a dusty shop specializing in rare tomes and arcane curiosities, where fate intervened. Rudiger the Rogue had left a message with the proprietor for a contact regarding a "special acquisition." But the universe has a sense of humor about names.
+
+Enter Rudiger Blackwood, recently graduated from the Academy of Whispered Words in Neverwinter. The young wizard, eager to make his mark on the world, had been tracking magical disturbances reported near Astgrove. His research into the ancient cults of Shavras had led him to seek a particular text rumored to be in the Crimson Quill's collection.
+
+"Message for Rudiger," the elderly shopkeeper announced without looking up from his ledger.
+
+"That's me," the wizard replied, adjusting his deep blue robes embroidered with silver astronomical symbols.
+
+The message was cryptic: *"The bell has rung. The door is open. Meet at the Mason and Chain at sunset. Come prepared for darkness. —S.D."*
+
+---
+
+## A Case of Mistaken Identity
+
+Intrigued by the mention of a bell—his research had uncovered references to the Bell of Shavras—Rudiger the Wizard arrived at the tavern to find a party of battle-worn adventurers. The confusion was immediate and almost comical.
+
+"Rudiger! Where have you been? And why are you dressed like a hedge wizard?" Kei exclaimed.
+
+"I... believe there's been a misunderstanding," the wizard began, but Skid Demon interrupted.
+
+"Wait. You're not our Rudiger. But you ARE named Rudiger?"
+
+What followed was an hour of explanations, verifications, and growing amazement. Stol cast a detection spell and confirmed what they all suspected—this was no mere chance. The threads of fate had woven themselves around this meeting.
+
+The wizard's knowledge of Shavras's history, his expertise in ancient languages, and his particular studies in planar magic made him invaluable for what lay ahead.
+
+"Your former companion was correct," Rudiger the Wizard mused, studying the artifacts they'd collected. "The universe does abhor a vacuum. And it seems I've been pulled in to fill it. Though I must say, following a rogue's footsteps with a spellbook rather than lockpicks will be... interesting."
+
+---
+
+## Trial by Fire
+
+The party tested him that very night. A goblin ambush on the road proved the wizard's mettle—where the rogue might have slipped into shadows, the wizard commanded fire and frost with devastating efficiency. His magical talents complemented the party's dynamics in unexpected ways.
+
+"Different Rudiger, same results," Mal observed with a grin as they stood over the defeated goblins.
+
+---
+
+## The Journal
+
+The wizard kept the rogue's room at the inn, finding a journal left behind with notes about the party's adventures. The entries grew increasingly cryptic toward the end, mentioning "shadows within shadows" and "the price of blood unpaid."
+
+The final entry, dated the night of his disappearance, was chilling:
+
+> *"The Brotherhood knows about Greeve's bloodline. They know what's coming. I go to delay them, but the party will need magic for what awaits at the shrine. R.B. will understand. The universe was already moving pieces into place—I'm just helping it along.*
+>
+> *Tell them I'm sorry. Tell them to trust the wizard."*
+
+Rudiger Blackwood smiled at the initials—his own.
+
+---
+
+## Epilogue
+
+And so, through cosmic coincidence or divine intervention, Rudiger the Wizard took his place among the heroes just in time for their greatest trial. His arcane knowledge would prove crucial in the battles ahead, deciphering the ancient wards of Shavras and understanding the true nature of the Heart they would soon face.
+
+The party adapted quickly to their new companion—after all, in a world of curses and transformations, a coincidentally convenient Rudiger seemed almost mundane by comparison.
+
+Some coincidences are carefully crafted. And somewhere out there, a hooded rogue watches from the shadows, knowing his gambit worked perfectly.
+
+*"You've delayed us, but not stopped us. Your friends will still fall."*
+
+*"They have a wizard now. That was always the plan."*
+`;
+---
+
+<BaseLayout
+  title={`${title} - Rudiger's Evocation of Events`}
+  description={description}
+>
+  <article class="story-page">
+    <header class="story-header">
+      <div class="story-meta">
+        <span class="story-tag">Character Spotlight</span>
+        <time datetime={pubDate}>{new Date(pubDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</time>
+      </div>
+      <h1 class="story-title">{title}</h1>
+      <p class="story-subtitle">{description}</p>
+      <div class="story-author">
+        <span class="author-label">Chronicled by</span>
+        <span class="author-name">The Chronicler</span>
+      </div>
+    </header>
+
+    <div class="story-divider">
+      <span class="divider-symbol">&#10022;</span>
+    </div>
+
+    <div class="story-content prose" set:html={marked(storyContent)} />
+
+    <footer class="story-footer">
+      <div class="story-divider">
+        <span class="divider-symbol">&#10022;</span>
+      </div>
+      <nav class="story-nav">
+        <a href="/blog" class="nav-link">
+          <span class="nav-arrow">&larr;</span>
+          <span class="nav-text">The Chronicles</span>
+        </a>
+        <a href="/reference" class="nav-link">
+          <span class="nav-text">Campaign Reference</span>
+          <span class="nav-arrow">&rarr;</span>
+        </a>
+      </nav>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style>
+  .story-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+  }
+
+  .story-header {
+    text-align: center;
+    margin-bottom: var(--space-2xl);
+  }
+
+  .story-meta {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .story-tag {
+    background: var(--color-gold);
+    color: var(--color-bg);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: var(--text-xs);
+  }
+
+  .story-title {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    color: var(--color-gold);
+    margin-bottom: var(--space-md);
+    line-height: 1.2;
+  }
+
+  .story-subtitle {
+    font-size: var(--text-lg);
+    color: var(--color-text-muted);
+    font-style: italic;
+    max-width: 600px;
+    margin: 0 auto var(--space-lg);
+    line-height: 1.6;
+  }
+
+  .story-author {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+  }
+
+  .author-label {
+    color: var(--color-text-muted);
+  }
+
+  .author-name {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  .story-divider {
+    text-align: center;
+    margin: var(--space-xl) 0;
+  }
+
+  .divider-symbol {
+    color: var(--color-gold);
+    font-size: var(--text-2xl);
+    opacity: 0.7;
+  }
+
+  .story-content {
+    background: var(--color-bg-secondary);
+    padding: var(--space-2xl);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--color-border);
+    line-height: 1.8;
+  }
+
+  .story-content :global(h2) {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    color: var(--color-gold);
+    margin-top: var(--space-2xl);
+    margin-bottom: var(--space-lg);
+    text-align: center;
+  }
+
+  .story-content :global(h2:first-child) {
+    margin-top: 0;
+  }
+
+  .story-content :global(p) {
+    margin-bottom: var(--space-lg);
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  .story-content :global(em) {
+    color: var(--color-accent);
+  }
+
+  .story-content :global(blockquote) {
+    border-left: 4px solid var(--color-gold);
+    padding: var(--space-md) var(--space-lg);
+    margin: var(--space-xl) 0;
+    background: var(--color-bg);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    font-style: italic;
+  }
+
+  .story-content :global(blockquote p) {
+    margin-bottom: var(--space-sm);
+  }
+
+  .story-content :global(blockquote p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .story-content :global(hr) {
+    border: none;
+    text-align: center;
+    margin: var(--space-2xl) 0;
+  }
+
+  .story-content :global(hr::before) {
+    content: "* * *";
+    color: var(--color-gold);
+    font-size: var(--text-lg);
+    letter-spacing: 0.5em;
+  }
+
+  .story-footer {
+    margin-top: var(--space-2xl);
+  }
+
+  .story-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-lg);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+  }
+
+  .nav-link:hover {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+    background: var(--color-bg-secondary);
+  }
+
+  .nav-arrow {
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+  }
+
+  @media (max-width: 768px) {
+    .story-page {
+      padding: var(--space-md);
+    }
+
+    .story-title {
+      font-size: var(--text-3xl);
+    }
+
+    .story-content {
+      padding: var(--space-lg);
+    }
+
+    .story-nav {
+      flex-direction: column;
+    }
+
+    .nav-link {
+      justify-content: center;
+    }
+  }
+</style>

@@ -1,0 +1,319 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('enemies');
+  return entries.map(entry => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+const statusColors: Record<string, string> = {
+  active: 'status--active',
+  inactive: 'status--inactive',
+  dead: 'status--dead',
+  destroyed: 'status--dead',
+  unknown: 'status--unknown',
+};
+---
+
+<BaseLayout
+  title={`${entry.data.name} - Campaign Reference`}
+  description={entry.data.description || `Details about ${entry.data.name}`}
+>
+  <article class="entity-page">
+    <header class="entity-header">
+      <nav class="breadcrumb">
+        <a href="/reference">Reference</a>
+        <span class="breadcrumb__sep">/</span>
+        <a href="/reference#enemies">Enemies</a>
+        <span class="breadcrumb__sep">/</span>
+        <span>{entry.data.name}</span>
+      </nav>
+
+      <div class="entity-title-row">
+        <h1 class="entity-title">{entry.data.name}</h1>
+        <span class={`entity-status ${statusColors[entry.data.status] || 'status--unknown'}`}>
+          {entry.data.status}
+        </span>
+      </div>
+
+      {entry.data.description && (
+        <p class="entity-description">{entry.data.description}</p>
+      )}
+
+      <div class="entity-meta">
+        {entry.data.subtype && (
+          <span class="meta-tag meta-tag--enemy">{entry.data.subtype}</span>
+        )}
+        {entry.data.cr && (
+          <span class="meta-tag">CR {entry.data.cr}</span>
+        )}
+        {entry.data.baseMonster && (
+          <span class="meta-tag">{entry.data.baseMonster}</span>
+        )}
+      </div>
+
+      {entry.data.tags && entry.data.tags.length > 0 && (
+        <ul class="entity-tags">
+          {entry.data.tags.map((tag: string) => (
+            <li class="entity-tag">{tag}</li>
+          ))}
+        </ul>
+      )}
+    </header>
+
+    <div class="entity-content prose">
+      <Content />
+    </div>
+
+    {entry.data.relationships && entry.data.relationships.length > 0 && (
+      <aside class="entity-relationships">
+        <h2>Relationships</h2>
+        <ul class="relationship-list">
+          {entry.data.relationships.map((rel: { entity: string; type: string; note?: string }) => (
+            <li class="relationship-item">
+              <span class="relationship-type">{rel.type}</span>
+              <span class="relationship-entity">{rel.entity}</span>
+              {rel.note && <span class="relationship-note">{rel.note}</span>}
+            </li>
+          ))}
+        </ul>
+      </aside>
+    )}
+
+    <footer class="entity-footer">
+      <a href="/reference" class="back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Back to Reference
+      </a>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style>
+  .entity-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-lg);
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-gold);
+  }
+
+  .breadcrumb__sep {
+    color: var(--color-border);
+  }
+
+  .entity-header {
+    margin-bottom: var(--space-2xl);
+    padding-bottom: var(--space-xl);
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .entity-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .entity-title {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    color: var(--color-error);
+    margin: 0;
+  }
+
+  .entity-status {
+    font-size: var(--text-sm);
+    padding: 4px 12px;
+    border-radius: var(--radius-md);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .status--active { background: var(--color-success); color: white; }
+  .status--inactive { background: var(--color-text-muted); color: white; }
+  .status--dead { background: var(--color-error); color: white; }
+  .status--unknown { background: var(--color-warning); color: var(--color-bg); }
+
+  .entity-description {
+    font-size: var(--text-lg);
+    color: var(--color-text-secondary);
+    font-style: italic;
+    margin: 0 0 var(--space-md);
+  }
+
+  .entity-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+
+  .meta-tag {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    padding: 4px 12px;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    text-transform: capitalize;
+    color: var(--color-accent);
+  }
+
+  .meta-tag--enemy {
+    background: var(--color-error);
+    border-color: var(--color-error);
+    color: white;
+  }
+
+  .entity-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .entity-tag {
+    background: var(--color-bg-tertiary);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .entity-content {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .entity-content :global(h1) {
+    display: none;
+  }
+
+  .entity-content :global(h2) {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-accent);
+    margin-top: var(--space-xl);
+    margin-bottom: var(--space-md);
+  }
+
+  .entity-content :global(h3) {
+    font-size: var(--text-lg);
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-sm);
+  }
+
+  .entity-content :global(p) {
+    margin-bottom: var(--space-md);
+    line-height: 1.7;
+  }
+
+  .entity-content :global(ul) {
+    margin-bottom: var(--space-md);
+    padding-left: var(--space-lg);
+  }
+
+  .entity-relationships {
+    background: var(--color-bg-secondary);
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--color-border);
+    margin-bottom: var(--space-2xl);
+  }
+
+  .entity-relationships h2 {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+  }
+
+  .relationship-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .relationship-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .relationship-type {
+    background: var(--color-accent);
+    color: white;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .relationship-entity {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .relationship-note {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  .entity-footer {
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+  }
+
+  .back-link:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text);
+  }
+</style>
