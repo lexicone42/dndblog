@@ -1,0 +1,350 @@
+---
+/**
+ * EquipmentSection.astro
+ * Displays equipped items (with entity links), mundane gear, and currency.
+ * Supports 5e 2024 Weapon Mastery properties.
+ */
+
+interface EquippedItem {
+  slot: string;
+  item: string; // Entity slug
+  attuned?: boolean;
+  mastery?: string; // 5e 2024 weapon mastery
+}
+
+interface MundaneItem {
+  name: string;
+  quantity?: number;
+  weight?: number;
+  notes?: string;
+}
+
+interface Currency {
+  pp?: number;
+  gp?: number;
+  ep?: number;
+  sp?: number;
+  cp?: number;
+}
+
+interface Props {
+  equipment?: {
+    equipped?: EquippedItem[];
+    mundane?: MundaneItem[];
+    currency?: Currency;
+  };
+  itemLookup?: Record<string, { name: string; path: string; rarity?: string }>;
+}
+
+const { equipment, itemLookup = {} } = Astro.props;
+
+const equipped = equipment?.equipped ?? [];
+const mundane = equipment?.mundane ?? [];
+const currency = equipment?.currency;
+
+// Rarity color mapping (D&D standard colors)
+const rarityColors: Record<string, string> = {
+  common: 'rarity--common',
+  uncommon: 'rarity--uncommon',
+  rare: 'rarity--rare',
+  'very-rare': 'rarity--very-rare',
+  legendary: 'rarity--legendary',
+  artifact: 'rarity--artifact',
+  unique: 'rarity--artifact',
+};
+
+// Slot display names
+const slotNames: Record<string, string> = {
+  'main-hand': 'Main Hand',
+  'off-hand': 'Off Hand',
+  'two-hand': 'Two-Handed',
+  armor: 'Armor',
+  shield: 'Shield',
+  head: 'Head',
+  cloak: 'Cloak',
+  neck: 'Neck',
+  'ring-1': 'Ring',
+  'ring-2': 'Ring',
+  gloves: 'Gloves',
+  boots: 'Boots',
+  belt: 'Belt',
+  other: 'Other',
+};
+
+// Weapon mastery display names
+const masteryNames: Record<string, string> = {
+  cleave: 'Cleave',
+  graze: 'Graze',
+  nick: 'Nick',
+  push: 'Push',
+  sap: 'Sap',
+  slow: 'Slow',
+  topple: 'Topple',
+  vex: 'Vex',
+};
+
+// Check if we have any equipment data
+const hasEquipment = equipped.length > 0 || mundane.length > 0 || currency;
+
+// Calculate total gold value
+function getTotalGold(): number {
+  if (!currency) return 0;
+  return (currency.pp ?? 0) * 10 +
+    (currency.gp ?? 0) +
+    (currency.ep ?? 0) * 0.5 +
+    (currency.sp ?? 0) * 0.1 +
+    (currency.cp ?? 0) * 0.01;
+}
+---
+
+{hasEquipment && (
+  <section class="equipment-section">
+    <h3 class="equipment-section__title">Equipment</h3>
+
+    {equipped.length > 0 && (
+      <div class="equipment-equipped">
+        <h4 class="equipment-subtitle">Equipped</h4>
+        <ul class="equipped-list">
+          {equipped.map((equip) => {
+            const itemData = itemLookup[equip.item];
+            const rarity = itemData?.rarity;
+            const rarityClass = rarity ? rarityColors[rarity] : '';
+
+            return (
+              <li class="equipped-item">
+                <span class="equipped-slot">{slotNames[equip.slot] ?? equip.slot}</span>
+                {itemData ? (
+                  <a href={itemData.path} class={`equipped-name ${rarityClass}`}>
+                    {itemData.name}
+                  </a>
+                ) : (
+                  <span class="equipped-name equipped-name--plain">{equip.item}</span>
+                )}
+                {equip.attuned && (
+                  <span class="equipped-attuned" title="Attuned">✦</span>
+                )}
+                {equip.mastery && (
+                  <span class="equipped-mastery" title={`Weapon Mastery: ${masteryNames[equip.mastery] ?? equip.mastery}`}>
+                    {masteryNames[equip.mastery] ?? equip.mastery}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    )}
+
+    {mundane.length > 0 && (
+      <div class="equipment-mundane">
+        <h4 class="equipment-subtitle">Gear</h4>
+        <ul class="mundane-list">
+          {mundane.map((item) => (
+            <li class="mundane-item">
+              <span class="mundane-name">{item.name}</span>
+              {item.quantity && item.quantity > 1 && (
+                <span class="mundane-qty">×{item.quantity}</span>
+              )}
+              {item.notes && (
+                <span class="mundane-notes">({item.notes})</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {currency && (
+      <div class="equipment-currency">
+        <h4 class="equipment-subtitle">Currency</h4>
+        <div class="currency-grid">
+          {currency.pp !== undefined && currency.pp > 0 && (
+            <span class="currency-item currency--pp">{currency.pp} PP</span>
+          )}
+          {currency.gp !== undefined && currency.gp > 0 && (
+            <span class="currency-item currency--gp">{currency.gp} GP</span>
+          )}
+          {currency.ep !== undefined && currency.ep > 0 && (
+            <span class="currency-item currency--ep">{currency.ep} EP</span>
+          )}
+          {currency.sp !== undefined && currency.sp > 0 && (
+            <span class="currency-item currency--sp">{currency.sp} SP</span>
+          )}
+          {currency.cp !== undefined && currency.cp > 0 && (
+            <span class="currency-item currency--cp">{currency.cp} CP</span>
+          )}
+        </div>
+        <span class="currency-total">≈ {getTotalGold().toFixed(0)} GP total</span>
+      </div>
+    )}
+  </section>
+)}
+
+<style>
+  .equipment-section {
+    margin-bottom: var(--space-xl);
+  }
+
+  .equipment-section__title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .equipment-subtitle {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    margin: 0 0 var(--space-sm);
+    font-weight: 600;
+  }
+
+  .equipment-equipped,
+  .equipment-mundane,
+  .equipment-currency {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .equipped-list,
+  .mundane-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .equipped-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .equipped-slot {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    min-width: 70px;
+  }
+
+  .equipped-name {
+    flex: 1;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  .equipped-name:hover {
+    text-decoration: underline;
+  }
+
+  .equipped-name--plain {
+    color: var(--color-text);
+  }
+
+  /* Rarity colors */
+  .rarity--common { color: var(--color-text-secondary); }
+  .rarity--uncommon { color: #1eff00; }
+  .rarity--rare { color: #0070dd; }
+  .rarity--very-rare { color: #a335ee; }
+  .rarity--legendary { color: #ff8000; }
+  .rarity--artifact { color: #e6cc80; }
+
+  .equipped-attuned {
+    color: var(--color-accent);
+    font-size: var(--text-sm);
+  }
+
+  .equipped-mastery {
+    font-size: var(--text-xs);
+    background: var(--color-accent);
+    color: white;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .mundane-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-xs) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .mundane-item:last-child {
+    border-bottom: none;
+  }
+
+  .mundane-name {
+    flex: 1;
+    color: var(--color-text);
+  }
+
+  .mundane-qty {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .mundane-notes {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  .currency-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xs);
+  }
+
+  .currency-item {
+    font-weight: 600;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+  }
+
+  .currency--pp {
+    background: linear-gradient(135deg, #e5e5e5, #b8b8b8);
+    color: #333;
+  }
+
+  .currency--gp {
+    background: linear-gradient(135deg, #ffd700, #b8860b);
+    color: #333;
+  }
+
+  .currency--ep {
+    background: linear-gradient(135deg, #c0c0c0, #808080);
+    color: #333;
+  }
+
+  .currency--sp {
+    background: linear-gradient(135deg, #d3d3d3, #a9a9a9);
+    color: #333;
+  }
+
+  .currency--cp {
+    background: linear-gradient(135deg, #b87333, #8b4513);
+    color: white;
+  }
+
+  .currency-total {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+</style>

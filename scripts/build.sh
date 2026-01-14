@@ -48,16 +48,28 @@ else
 fi
 echo ""
 
-# Step 4: Build Astro site
-echo -e "${YELLOW}Step 4: Building Astro site...${NC}"
+# Step 4: Run tests
+echo -e "${YELLOW}Step 4: Running tests...${NC}"
+cd packages/site
+if pnpm test; then
+    echo -e "${GREEN}✓ All tests passed${NC}"
+else
+    echo -e "${RED}✗ Tests failed${NC}"
+    exit 1
+fi
+cd "$PROJECT_ROOT"
+echo ""
+
+# Step 5: Build Astro site
+echo -e "${YELLOW}Step 5: Building Astro site...${NC}"
 cd packages/site
 SITE_URL="${SITE_URL:-http://localhost:4321}" pnpm run build
 cd "$PROJECT_ROOT"
 echo -e "${GREEN}✓ Site build complete${NC}"
 echo ""
 
-# Step 5: Synthesize CDK (validate CloudFormation)
-echo -e "${YELLOW}Step 5: Validating CDK infrastructure...${NC}"
+# Step 6: Synthesize CDK (validate CloudFormation)
+echo -e "${YELLOW}Step 6: Validating CDK infrastructure...${NC}"
 cd packages/infra
 if [ -n "${DOMAIN_NAME:-}" ] && [ -n "${HOSTED_ZONE_DOMAIN:-}" ]; then
     npx cdk synth --quiet \
@@ -73,8 +85,8 @@ fi
 cd "$PROJECT_ROOT"
 echo ""
 
-# Step 6: Security audit
-echo -e "${YELLOW}Step 6: Running security audit...${NC}"
+# Step 7: Security audit
+echo -e "${YELLOW}Step 7: Running security audit...${NC}"
 if pnpm audit --audit-level=high; then
     echo -e "${GREEN}✓ No high or critical vulnerabilities found${NC}"
 else

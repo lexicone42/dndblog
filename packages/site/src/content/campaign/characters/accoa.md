@@ -6,7 +6,172 @@ status: "active"
 description: "A Protector Aasimar Paladin devoted to the Oath of Ancients, wielding divine light and nature's wrath"
 race: "Protector Aasimar"
 class: "Paladin"
+subclass: "Oath of Ancients"
 level: 6
+
+# D&D 5e 2024 Origin
+origin:
+  species: "Aasimar"
+  lineage: "Protector"
+  background: "Outlander"
+  originFeat: "Tough"
+
+# Ability Scores
+abilityScores:
+  str: 15
+  dex: 11
+  con: 14
+  int: 13
+  wis: 15
+  cha: 12
+
+# Combat Stats
+combat:
+  ac: 19
+  hp: 57
+  maxHp: 57
+  speed: 30
+  initiative: 0
+  proficiencyBonus: 3
+  hitDice: "6d10"
+
+# Saving Throws (WIS and CHA proficient for Paladin)
+savingThrows:
+  str: false
+  dex: false
+  con: false
+  int: false
+  wis: true
+  cha: true
+
+# Skills
+skills:
+  - name: "Animal Handling"
+    proficient: true
+    bonus: 5
+  - name: "Athletics"
+    proficient: true
+    bonus: 5
+  - name: "Persuasion"
+    proficient: true
+    bonus: 4
+  - name: "Survival"
+    proficient: true
+    bonus: 5
+
+# Senses
+senses:
+  darkvision: 60
+  passivePerception: 12
+  passiveInvestigation: 11
+  passiveInsight: 12
+
+# Defenses
+defenses:
+  resistances:
+    - "Necrotic"
+    - "Radiant"
+  conditionImmunities:
+    - "Disease"
+
+# Spellcasting
+spellcasting:
+  ability: "cha"
+  spellSaveDC: 12
+  spellAttackBonus: 4
+  spellSlots:
+    - { level: 1, total: 4, expended: 0 }
+    - { level: 2, total: 2, expended: 0 }
+  preparedSpells:
+    - "Divine Smite"
+    - "Shield of Faith"
+    - "Cure Wounds"
+    - "Bless"
+    - "Misty Step"
+    - "Moonbeam"
+
+# Equipment
+equipment:
+  equipped:
+    - slot: "main-hand"
+      item: "dragons-wrath-weapon-stirring"
+      mastery: "sap"
+    - slot: "off-hand"
+      item: "shield"
+    - slot: "armor"
+      item: "plate-armor"
+  mundane:
+    - name: "Longbow"
+      quantity: 1
+    - name: "Arrows"
+      quantity: 20
+    - name: "Alchemist's Supplies"
+      quantity: 1
+
+# Class Features
+features:
+  - name: "Divine Sense"
+    source: "class"
+    level: 1
+    uses:
+      current: 4
+      max: 4
+      recharge: "long-rest"
+  - name: "Lay on Hands"
+    source: "class"
+    level: 1
+    description: "Pool of 30 HP to heal or cure disease/poison"
+  - name: "Divine Smite"
+    source: "class"
+    level: 2
+    description: "Expend spell slot to deal extra radiant damage on hit"
+  - name: "Extra Attack"
+    source: "class"
+    level: 5
+  - name: "Aura of Protection"
+    source: "class"
+    level: 6
+    description: "+1 to saving throws for allies within 10 ft"
+  - name: "Channel Divinity"
+    source: "subclass"
+    level: 3
+    uses:
+      current: 1
+      max: 1
+      recharge: "short-rest"
+  - name: "Nature's Wrath"
+    source: "subclass"
+    level: 3
+    description: "Spectral vines restrain creatures within 10 ft (STR/DEX save DC 12)"
+  - name: "Turn the Faithless"
+    source: "subclass"
+    level: 3
+    description: "Turn fey and fiends"
+  - name: "Radiant Soul"
+    source: "species"
+    level: 1
+    description: "Sprout spectral wings, gain flying speed equal to walking speed for 1 minute"
+    uses:
+      current: 1
+      max: 1
+      recharge: "long-rest"
+
+# Proficiencies
+languages:
+  - "Celestial"
+  - "Common"
+armorProficiencies:
+  - "Heavy Armor"
+  - "Medium Armor"
+  - "Light Armor"
+  - "Shields"
+weaponProficiencies:
+  - "Martial Weapons"
+  - "Simple Weapons"
+toolProficiencies:
+  - "Alchemist's Supplies"
+  - "Vehicles (Land)"
+
 tags:
   - party
   - aasimar
@@ -29,70 +194,6 @@ visibility: "public"
 # Accoa Krigsdottir
 
 A Female Protector Aasimar Paladin who has sworn the Oath of Ancients. Accoa was taken from Whisperwood Forest by the Night Hag as a child, freed by the party, and now travels with them wielding divine power and nature magic.
-
-## Ability Scores
-
-| STR | DEX | CON | INT | WIS | CHA |
-|-----|-----|-----|-----|-----|-----|
-| 15 (+2) | 11 (+0) | 14 (+2) | 13 (+1) | 15 (+2) | 12 (+1) |
-
-## Combat Statistics
-
-- **Armor Class:** 19
-- **Hit Points:** 57
-- **Speed:** 30 ft.
-- **Initiative:** +0
-- **Proficiency Bonus:** +3
-
-### Saving Throws
-- **STR:** +4 | **DEX:** +2 | **CON:** +4
-- **INT:** +3 | **WIS:** +7 | **CHA:** +6
-
-### Defenses
-- Resistance to Necrotic and Radiant damage
-- Immunity to Disease
-
-## Skills
-
-**Proficient:**
-- Animal Handling +5
-- Athletics +5
-- Persuasion +4
-- Survival +5
-
-## Senses
-
-- **Darkvision:** 60 ft.
-- **Passive Perception:** 12
-- **Passive Investigation:** 11
-- **Passive Insight:** 12
-
-## Proficiencies
-
-**Armor:** Heavy Armor, Medium Armor, Light Armor, Shields
-
-**Weapons:** Martial Weapons, Simple Weapons
-
-**Tools:** Alchemist's Supplies, Vehicles (Land)
-
-**Languages:** Celestial, Common
-
-## Equipment
-
-- **Dragon's Wrath Weapon (Stirring)** — +6 to hit, 1d8+3 (1d10+3 versatile), Martial, Sap
-- **Longbow** — +3 to hit, 1d8 piercing, range 150/600
-- **Unarmed Strike** — +5 to hit, 3 bludgeoning
-
-## Oath of Ancients Features
-
-### Extra Attack
-Can attack twice when taking the Attack action.
-
-### Channel Divinity (1/Short Rest)
-
-**Nature's Wrath:** As an action, cause spectral vines to spring up and reach for a creature within 10 ft. The creature must succeed on a STR or DEX saving throw (DC 12) or be restrained. It can repeat the save at the end of each turn.
-
-**Turn the Faithless:** Channel divine energy to turn fey and fiends.
 
 ## Origin
 

@@ -7,6 +7,92 @@ description: "An Elf Druid who was cursed by the Night Hag and transformed into 
 race: "Elf"
 class: "Druid"
 level: 3
+
+# D&D 5e 2024 Origin (pre-transformation)
+origin:
+  species: "Elf"
+  lineage: "Wood Elf"
+  background: "Hermit"
+
+# Ability Scores (estimated from narrative)
+abilityScores:
+  str: 10
+  dex: 14
+  con: 12
+  int: 12
+  wis: 16
+  cha: 10
+
+# Combat Stats (pre-transformation)
+combat:
+  ac: 14
+  hp: 21
+  maxHp: 21
+  speed: 35
+  initiative: 2
+  proficiencyBonus: 2
+  hitDice: "3d8"
+
+# Saving Throws (INT and WIS proficient for Druid)
+savingThrows:
+  str: false
+  dex: false
+  con: false
+  int: true
+  wis: true
+  cha: false
+
+# Senses
+senses:
+  darkvision: 60
+  passivePerception: 13
+
+# Spellcasting (pre-transformation)
+spellcasting:
+  ability: "wis"
+  spellSaveDC: 13
+  spellAttackBonus: 5
+  spellSlots:
+    - { level: 1, total: 4, expended: 0 }
+    - { level: 2, total: 2, expended: 0 }
+  cantrips:
+    - "Thorn Whip"
+    - "Druidcraft"
+  preparedSpells:
+    - "Entangle"
+    - "Goodberry"
+    - "Thunderwave"
+    - "Moonbeam"
+
+# Class Features (pre-transformation)
+features:
+  - name: "Wild Shape"
+    source: "class"
+    level: 2
+    description: "Transform into beasts (final transformation was involuntary)"
+    uses:
+      current: 0
+      max: 2
+      recharge: "short-rest"
+  - name: "Druidic"
+    source: "class"
+    level: 1
+    description: "Secret language of druids"
+
+# Proficiencies
+languages:
+  - "Common"
+  - "Druidic"
+  - "Elvish"
+  - "Sylvan"
+armorProficiencies:
+  - "Light Armor"
+  - "Medium Armor"
+  - "Shields"
+weaponProficiencies:
+  - "Simple Weapons"
+  - "Scimitars"
+
 tags:
   - party
   - druid
@@ -40,13 +126,6 @@ An Elf Druid who was one of the original members of the adventuring party. Cribb
 ## Background
 
 Cribben joined the party at the very beginning of their adventure in Phandalin, answering Townmaster Riglid's call to investigate the raids and kidnappings plaguing the town's supply lines.
-
-## Abilities
-
-As a druid, Cribben demonstrated:
-- **Thorn Whip** — Used to incapacitate enemies and give the party tactical advantages
-- **Wild Shape** — Could transform into animals (ironically, his final transformation was involuntary)
-- **Nature Magic** — Connection to the natural world
 
 ## Key Moments
 

@@ -1,0 +1,347 @@
+---
+/**
+ * SpellcastingSection.astro
+ * Displays spellcasting ability, slots, cantrips, and prepared/known spells.
+ * Supports both standard slots and Warlock Pact Magic.
+ */
+
+interface SpellSlot {
+  level: number;
+  total: number;
+  expended?: number;
+}
+
+interface PactSlot {
+  level: number;
+  total: number;
+  expended?: number;
+}
+
+interface Props {
+  spellcasting?: {
+    ability?: 'int' | 'wis' | 'cha';
+    spellSaveDC?: number;
+    spellAttackBonus?: number;
+    spellSlots?: SpellSlot[];
+    pactSlots?: PactSlot;
+    cantrips?: string[];
+    preparedSpells?: string[];
+    knownSpells?: string[];
+    spellbook?: string[];
+    ritualCaster?: boolean;
+  };
+}
+
+const { spellcasting } = Astro.props;
+
+if (!spellcasting) return;
+
+const {
+  ability,
+  spellSaveDC,
+  spellAttackBonus,
+  spellSlots = [],
+  pactSlots,
+  cantrips = [],
+  preparedSpells = [],
+  knownSpells = [],
+  spellbook = [],
+  ritualCaster = false,
+} = spellcasting;
+
+const abilityNames: Record<string, string> = {
+  int: 'Intelligence',
+  wis: 'Wisdom',
+  cha: 'Charisma',
+};
+
+// Format spell attack bonus
+function formatBonus(bonus: number | undefined): string {
+  if (bonus === undefined) return '—';
+  return bonus >= 0 ? `+${bonus}` : `${bonus}`;
+}
+
+// Determine which spell list to show
+const spellList = preparedSpells.length > 0 ? preparedSpells :
+  knownSpells.length > 0 ? knownSpells :
+  spellbook;
+const spellListLabel = preparedSpells.length > 0 ? 'Prepared Spells' :
+  knownSpells.length > 0 ? 'Known Spells' :
+  spellbook.length > 0 ? 'Spellbook' : 'Spells';
+
+// Check if we have meaningful spellcasting data
+const hasSpellcasting = ability || spellSlots.length > 0 || pactSlots || cantrips.length > 0 || spellList.length > 0;
+---
+
+{hasSpellcasting && (
+  <section class="spellcasting-section">
+    <h3 class="spellcasting-section__title">Spellcasting</h3>
+
+    <!-- Spellcasting Stats -->
+    <div class="spellcasting-stats">
+      {ability && (
+        <div class="spell-stat">
+          <span class="spell-stat__label">Ability</span>
+          <span class="spell-stat__value">{abilityNames[ability]}</span>
+        </div>
+      )}
+      {spellSaveDC && (
+        <div class="spell-stat">
+          <span class="spell-stat__label">Spell Save DC</span>
+          <span class="spell-stat__value spell-stat__value--highlight">{spellSaveDC}</span>
+        </div>
+      )}
+      {spellAttackBonus !== undefined && (
+        <div class="spell-stat">
+          <span class="spell-stat__label">Spell Attack</span>
+          <span class="spell-stat__value spell-stat__value--highlight">{formatBonus(spellAttackBonus)}</span>
+        </div>
+      )}
+      {ritualCaster && (
+        <div class="spell-stat spell-stat--badge">
+          <span class="ritual-badge">Ritual Caster</span>
+        </div>
+      )}
+    </div>
+
+    <!-- Spell Slots -->
+    {spellSlots.length > 0 && (
+      <div class="spell-slots">
+        <h4 class="spell-subtitle">Spell Slots</h4>
+        <div class="slots-grid">
+          {spellSlots.map(({ level, total, expended = 0 }) => (
+            <div class="slot-level">
+              <span class="slot-level__label">{level === 1 ? '1st' : level === 2 ? '2nd' : level === 3 ? '3rd' : `${level}th`}</span>
+              <div class="slot-pips">
+                {Array.from({ length: total }).map((_, i) => (
+                  <span class={`slot-pip ${i < (total - expended) ? 'slot-pip--available' : 'slot-pip--expended'}`}>
+                    ●
+                  </span>
+                ))}
+              </div>
+              <span class="slot-count">{total - expended}/{total}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <!-- Pact Slots (Warlock) -->
+    {pactSlots && (
+      <div class="pact-slots">
+        <h4 class="spell-subtitle">Pact Slots</h4>
+        <div class="pact-info">
+          <span class="pact-level">{pactSlots.level === 1 ? '1st' : pactSlots.level === 2 ? '2nd' : pactSlots.level === 3 ? '3rd' : `${pactSlots.level}th`} Level</span>
+          <div class="slot-pips">
+            {Array.from({ length: pactSlots.total }).map((_, i) => (
+              <span class={`slot-pip slot-pip--pact ${i < (pactSlots.total - (pactSlots.expended ?? 0)) ? 'slot-pip--available' : 'slot-pip--expended'}`}>
+                ●
+              </span>
+            ))}
+          </div>
+          <span class="pact-recharge">(Short Rest)</span>
+        </div>
+      </div>
+    )}
+
+    <!-- Cantrips -->
+    {cantrips.length > 0 && (
+      <div class="spell-list">
+        <h4 class="spell-subtitle">Cantrips</h4>
+        <ul class="spells">
+          {cantrips.map((spell) => (
+            <li class="spell spell--cantrip">{spell}</li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    <!-- Prepared/Known Spells or Spellbook -->
+    {spellList.length > 0 && (
+      <div class="spell-list">
+        <h4 class="spell-subtitle">{spellListLabel}</h4>
+        <ul class="spells">
+          {spellList.map((spell) => (
+            <li class="spell">{spell}</li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </section>
+)}
+
+<style>
+  .spellcasting-section {
+    margin-bottom: var(--space-xl);
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-accent);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+  }
+
+  .spellcasting-section__title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-accent);
+    margin: 0 0 var(--space-md);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .spellcasting-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .spell-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--color-bg);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+  }
+
+  .spell-stat--badge {
+    background: transparent;
+  }
+
+  .spell-stat__label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .spell-stat__value {
+    font-size: var(--text-md);
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .spell-stat__value--highlight {
+    font-size: var(--text-xl);
+    color: var(--color-accent);
+  }
+
+  .ritual-badge {
+    font-size: var(--text-xs);
+    background: var(--color-accent);
+    color: white;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .spell-subtitle {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    margin: 0 0 var(--space-sm);
+    font-weight: 600;
+  }
+
+  .spell-slots,
+  .pact-slots,
+  .spell-list {
+    margin-bottom: var(--space-md);
+  }
+
+  .slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: var(--space-sm);
+  }
+
+  .slot-level {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--color-bg);
+    padding: var(--space-sm);
+    border-radius: var(--radius-sm);
+  }
+
+  .slot-level__label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .slot-pips {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+
+  .slot-pip {
+    font-size: var(--text-lg);
+    line-height: 1;
+  }
+
+  .slot-pip--available {
+    color: var(--color-accent);
+  }
+
+  .slot-pip--expended {
+    color: var(--color-text-muted);
+    opacity: 0.4;
+  }
+
+  .slot-pip--pact.slot-pip--available {
+    color: var(--color-warning);
+  }
+
+  .slot-count {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .pact-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    background: var(--color-bg);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+  }
+
+  .pact-level {
+    font-weight: 600;
+    color: var(--color-warning);
+  }
+
+  .pact-recharge {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .spells {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .spell {
+    background: var(--color-bg);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+
+  .spell--cantrip {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+</style>

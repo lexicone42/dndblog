@@ -1,0 +1,191 @@
+---
+/**
+ * AbilityScoresBlock.astro
+ * Displays the 6 D&D ability scores with modifiers and saving throw proficiencies.
+ * Uses 5e 2024 terminology.
+ */
+
+interface Props {
+  abilityScores?: {
+    str?: number;
+    dex?: number;
+    con?: number;
+    int?: number;
+    wis?: number;
+    cha?: number;
+  };
+  savingThrows?: {
+    str?: boolean;
+    dex?: boolean;
+    con?: boolean;
+    int?: boolean;
+    wis?: boolean;
+    cha?: boolean;
+  };
+  proficiencyBonus?: number;
+}
+
+const { abilityScores, savingThrows, proficiencyBonus = 2 } = Astro.props;
+
+// Calculate modifier from ability score
+function getModifier(score: number | undefined): number {
+  if (!score) return 0;
+  return Math.floor((score - 10) / 2);
+}
+
+// Format modifier with sign
+function formatModifier(mod: number): string {
+  return mod >= 0 ? `+${mod}` : `${mod}`;
+}
+
+// Calculate save bonus
+function getSaveBonus(ability: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'): number {
+  const mod = getModifier(abilityScores?.[ability]);
+  const isProficient = savingThrows?.[ability] ?? false;
+  return isProficient ? mod + proficiencyBonus : mod;
+}
+
+const abilities = [
+  { key: 'str' as const, name: 'Strength', abbr: 'STR' },
+  { key: 'dex' as const, name: 'Dexterity', abbr: 'DEX' },
+  { key: 'con' as const, name: 'Constitution', abbr: 'CON' },
+  { key: 'int' as const, name: 'Intelligence', abbr: 'INT' },
+  { key: 'wis' as const, name: 'Wisdom', abbr: 'WIS' },
+  { key: 'cha' as const, name: 'Charisma', abbr: 'CHA' },
+];
+---
+
+{abilityScores && (
+  <section class="ability-scores">
+    <h3 class="ability-scores__title">Ability Scores</h3>
+    <div class="ability-scores__grid">
+      {abilities.map(({ key, name, abbr }) => {
+        const score = abilityScores[key];
+        const mod = getModifier(score);
+        const saveBonus = getSaveBonus(key);
+        const isProficient = savingThrows?.[key] ?? false;
+
+        return (
+          <div class="ability-card" data-ability={key}>
+            <span class="ability-card__abbr">{abbr}</span>
+            <span class="ability-card__score">{score ?? '—'}</span>
+            <span class="ability-card__modifier">{score ? formatModifier(mod) : '—'}</span>
+            <div class={`ability-card__save ${isProficient ? 'ability-card__save--proficient' : ''}`}>
+              <span class="ability-card__save-label">Save</span>
+              <span class="ability-card__save-value">
+                {isProficient && <span class="proficiency-dot" title="Proficient">●</span>}
+                {score ? formatModifier(saveBonus) : '—'}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </section>
+)}
+
+<style>
+  .ability-scores {
+    margin-bottom: var(--space-xl);
+  }
+
+  .ability-scores__title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .ability-scores__grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--space-sm);
+  }
+
+  @media (max-width: 640px) {
+    .ability-scores__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (max-width: 400px) {
+    .ability-scores__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .ability-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm);
+    text-align: center;
+    transition: border-color var(--transition-fast);
+  }
+
+  .ability-card:hover {
+    border-color: var(--color-gold);
+  }
+
+  .ability-card__abbr {
+    font-family: var(--font-display);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: var(--space-xs);
+  }
+
+  .ability-card__score {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--color-text);
+    line-height: 1;
+  }
+
+  .ability-card__modifier {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--color-accent);
+    margin: var(--space-xs) 0;
+  }
+
+  .ability-card__save {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: var(--space-xs);
+    border-top: 1px solid var(--color-border);
+    width: 100%;
+    margin-top: var(--space-xs);
+  }
+
+  .ability-card__save-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+  }
+
+  .ability-card__save-value {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .ability-card__save--proficient .ability-card__save-value {
+    color: var(--color-success);
+  }
+
+  .proficiency-dot {
+    font-size: var(--text-xs);
+    color: var(--color-success);
+  }
+</style>

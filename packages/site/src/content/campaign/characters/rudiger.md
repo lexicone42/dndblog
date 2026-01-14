@@ -8,6 +8,152 @@ race: "Human"
 class: "Wizard"
 subclass: "Evoker"
 level: 6
+
+# D&D 5e 2024 Origin
+origin:
+  species: "Human"
+  background: "Sage"
+  originFeat: "Magic Initiate (Wizard)"
+  backgroundAbilityMods: ["int", "int", "con"]
+
+# Ability Scores
+abilityScores:
+  str: 8
+  dex: 14
+  con: 12
+  int: 18
+  wis: 10
+  cha: 15
+
+# Combat Stats
+combat:
+  ac: 12
+  hp: 49
+  maxHp: 49
+  speed: 30
+  initiative: 2
+  proficiencyBonus: 3
+  hitDice: "6d6"
+
+# Saving Throws (INT and WIS proficient for Wizard)
+savingThrows:
+  str: false
+  dex: false
+  con: false
+  int: true
+  wis: true
+  cha: false
+
+# Skills
+skills:
+  - name: "Arcana"
+    proficient: true
+    expertise: true
+    bonus: 10
+  - name: "History"
+    proficient: true
+    bonus: 7
+  - name: "Investigation"
+    proficient: true
+    bonus: 7
+  - name: "Acrobatics"
+    proficient: true
+    bonus: 5
+  - name: "Insight"
+    proficient: true
+    bonus: 3
+  - name: "Perception"
+    proficient: true
+    bonus: 3
+
+# Senses
+senses:
+  passivePerception: 13
+  passiveInvestigation: 17
+  passiveInsight: 13
+
+# Spellcasting
+spellcasting:
+  ability: "int"
+  spellSaveDC: 15
+  spellAttackBonus: 7
+  spellSlots:
+    - { level: 1, total: 4, expended: 0 }
+    - { level: 2, total: 3, expended: 0 }
+    - { level: 3, total: 3, expended: 0 }
+  cantrips:
+    - "Ray of Frost"
+    - "Fire Bolt"
+    - "Light"
+    - "Mage Hand"
+  preparedSpells:
+    - "Fireball"
+    - "Lightning Bolt"
+    - "Counterspell"
+    - "Shield"
+    - "Misty Step"
+    - "Melf's Acid Arrow"
+    - "Magic Missile"
+
+# Equipment
+equipment:
+  equipped:
+    - slot: "main-hand"
+      item: "quarterstaff"
+      mastery: "topple"
+    - slot: "off-hand"
+      item: "dagger"
+      mastery: "nick"
+  mundane:
+    - name: "Component pouch"
+      quantity: 1
+    - name: "Spellbook"
+      quantity: 1
+    - name: "Scroll of Lightning Resistance"
+      quantity: 1
+      notes: "Gift from Rook Targrave"
+    - name: "Calligrapher's Supplies"
+      quantity: 1
+  currency:
+    gp: 150
+    sp: 20
+
+# Class Features
+features:
+  - name: "Spellcasting"
+    source: "class"
+    level: 1
+  - name: "Arcane Recovery"
+    source: "class"
+    level: 1
+    description: "Recover spell slots during short rest"
+    uses:
+      current: 1
+      max: 1
+      recharge: "long-rest"
+  - name: "Evocation Savant"
+    source: "subclass"
+    level: 2
+    description: "Copy evocation spells at half time and gold cost"
+  - name: "Sculpt Spells"
+    source: "subclass"
+    level: 2
+    description: "Protect allies from your evocation spells"
+  - name: "Potent Cantrip"
+    source: "subclass"
+    level: 6
+    description: "Cantrips deal half damage on successful saves"
+
+# Proficiencies
+languages:
+  - "Common"
+  - "Draconic"
+  - "Elvish"
+weaponProficiencies:
+  - "Simple Weapons"
+toolProficiencies:
+  - "Calligrapher's Supplies"
+
 tags:
   - party
   - wizard
@@ -39,67 +185,6 @@ visibility: "public"
 # Rudiger
 
 A Human Wizard of the Evoker school whose internal conflict has been noted by Rook Targrave of the Emerald Enclave. Rudiger specializes in devastating area-effect spells, particularly fire and lightning magic.
-
-## Ability Scores
-
-| STR | DEX | CON | INT | WIS | CHA |
-|-----|-----|-----|-----|-----|-----|
-| 8 (-1) | 14 (+2) | 12 (+1) | 18 (+4) | 10 (+0) | 15 (+2) |
-
-## Combat Statistics
-
-- **Armor Class:** 12
-- **Hit Points:** 49
-- **Speed:** 30 ft.
-- **Initiative:** +2
-- **Proficiency Bonus:** +3
-
-### Saving Throws
-- **STR:** -1 | **DEX:** +2 | **CON:** +1
-- **INT:** +7 | **WIS:** +3 | **CHA:** +2
-
-## Skills
-
-**Proficient:**
-- Arcana +10 (Expertise)
-- History +7
-- Investigation +7
-- Acrobatics +5
-- Insight +3
-- Perception +3
-
-## Senses
-
-- **Passive Perception:** 13
-- **Passive Investigation:** 17
-- **Passive Insight:** 13
-
-## Proficiencies
-
-**Armor:** None
-
-**Weapons:** Simple Weapons
-
-**Tools:** Calligrapher's Supplies
-
-**Languages:** Common, Draconic, Elvish
-
-## Equipment
-
-- **Dagger** — +5 to hit, 1d4+2 piercing, range 20/60, Finesse, Light, Thrown, Nick
-- **Quarterstaff** — +2 to hit, 1d6-1 (1d8-1 versatile) bludgeoning, Topple
-- **Ray of Frost** — Cantrip, +7 to hit, 2d8 cold, range 60 ft.
-- **Melf's Acid Arrow** — 2nd Level, +7 to hit, 4d4 acid, range 90 ft.
-
-## Evocation Savant Features
-
-As an Evoker, Rudiger has learned to shape his spells to protect allies while maximizing damage to enemies. His Evocation Savant feature allows him to cast evocation spells more efficiently.
-
-### Known Spells (Notable)
-- **Fireball** — Signature spell, devastating area damage
-- **Lightning Bolt** — Line damage, matches his internal storm
-- **Ray of Frost** — Reliable cantrip damage
-- **Melf's Acid Arrow** — Persistent acid damage
 
 ## Key Moments
 

@@ -1,0 +1,299 @@
+---
+/**
+ * CharacterSheet.astro
+ * Main container for the D&D 5e 2024 character sheet display.
+ * Only renders for PC characters with mechanical data.
+ */
+
+import AbilityScoresBlock from './AbilityScoresBlock.astro';
+import CombatStatsPanel from './CombatStatsPanel.astro';
+import SkillsGrid from './SkillsGrid.astro';
+import EquipmentSection from './EquipmentSection.astro';
+import SpellcastingSection from './SpellcastingSection.astro';
+import FeaturesSection from './FeaturesSection.astro';
+
+interface Props {
+  character: {
+    // Basic info
+    name: string;
+    class?: string;
+    subclass?: string;
+    level?: number;
+    race?: string; // Legacy field
+
+    // 5e 2024 Origin
+    origin?: {
+      species?: string;
+      lineage?: string;
+      size?: string;
+      background?: string;
+      originFeat?: string;
+      backgroundAbilityMods?: string[];
+    };
+
+    // Stats
+    abilityScores?: {
+      str?: number;
+      dex?: number;
+      con?: number;
+      int?: number;
+      wis?: number;
+      cha?: number;
+    };
+    combat?: {
+      ac?: number;
+      hp?: number;
+      maxHp?: number;
+      tempHp?: number;
+      speed?: number;
+      initiative?: number;
+      proficiencyBonus?: number;
+      hitDice?: string;
+    };
+    savingThrows?: {
+      str?: boolean;
+      dex?: boolean;
+      con?: boolean;
+      int?: boolean;
+      wis?: boolean;
+      cha?: boolean;
+    };
+    skills?: Array<{
+      name: string;
+      proficient?: boolean;
+      expertise?: boolean;
+      bonus?: number;
+    }>;
+
+    // Equipment
+    equipment?: {
+      equipped?: Array<{
+        slot: string;
+        item: string;
+        attuned?: boolean;
+        mastery?: string;
+      }>;
+      mundane?: Array<{
+        name: string;
+        quantity?: number;
+        weight?: number;
+        notes?: string;
+      }>;
+      currency?: {
+        pp?: number;
+        gp?: number;
+        ep?: number;
+        sp?: number;
+        cp?: number;
+      };
+    };
+
+    // Spellcasting
+    spellcasting?: {
+      ability?: 'int' | 'wis' | 'cha';
+      spellSaveDC?: number;
+      spellAttackBonus?: number;
+      spellSlots?: Array<{ level: number; total: number; expended?: number }>;
+      pactSlots?: { level: number; total: number; expended?: number };
+      cantrips?: string[];
+      preparedSpells?: string[];
+      knownSpells?: string[];
+      spellbook?: string[];
+      ritualCaster?: boolean;
+    };
+
+    // Features
+    features?: Array<{
+      name: string;
+      source: 'class' | 'subclass' | 'species' | 'background' | 'feat' | 'epic-boon' | 'item';
+      level?: number;
+      description?: string;
+      uses?: {
+        current: number;
+        max: number;
+        recharge: 'short-rest' | 'long-rest' | 'dawn' | 'turn' | 'encounter';
+      };
+    }>;
+  };
+  itemLookup?: Record<string, { name: string; path: string; rarity?: string }>;
+}
+
+const { character, itemLookup = {} } = Astro.props;
+
+// Determine if we have enough data to show the character sheet
+const hasAbilityScores = character.abilityScores && Object.values(character.abilityScores).some(v => v !== undefined);
+const hasCombatStats = character.combat && Object.values(character.combat).some(v => v !== undefined);
+const hasSkills = character.skills && character.skills.length > 0;
+const hasEquipment = character.equipment && (
+  (character.equipment.equipped && character.equipment.equipped.length > 0) ||
+  (character.equipment.mundane && character.equipment.mundane.length > 0) ||
+  character.equipment.currency
+);
+const hasSpellcasting = character.spellcasting && Object.keys(character.spellcasting).length > 0;
+const hasFeatures = character.features && character.features.length > 0;
+
+const hasCharacterSheetData = hasAbilityScores || hasCombatStats || hasSkills || hasEquipment || hasSpellcasting || hasFeatures;
+
+// Get species display (prefer 5e 2024 origin.species, fallback to legacy race)
+const speciesDisplay = character.origin?.species ?? character.race;
+const lineageDisplay = character.origin?.lineage;
+
+// Get proficiency bonus from combat stats, or calculate from level
+const proficiencyBonus = character.combat?.proficiencyBonus ??
+  (character.level ? Math.floor((character.level - 1) / 4) + 2 : 2);
+---
+
+{hasCharacterSheetData && (
+  <div class="character-sheet">
+    <!-- Character Header Summary -->
+    <header class="character-sheet__header">
+      <div class="character-identity">
+        {character.level && (
+          <span class="character-level">Level {character.level}</span>
+        )}
+        {speciesDisplay && (
+          <span class="character-species">
+            {lineageDisplay ? `${lineageDisplay} ${speciesDisplay}` : speciesDisplay}
+          </span>
+        )}
+        {character.class && (
+          <span class="character-class">
+            {character.subclass ? `${character.class} (${character.subclass})` : character.class}
+          </span>
+        )}
+      </div>
+
+      {character.origin && (
+        <div class="character-origin">
+          {character.origin.background && (
+            <span class="origin-background">Background: {character.origin.background}</span>
+          )}
+          {character.origin.originFeat && (
+            <span class="origin-feat">Origin Feat: {character.origin.originFeat}</span>
+          )}
+        </div>
+      )}
+    </header>
+
+    <!-- Main Stats Section -->
+    <div class="character-sheet__stats">
+      <AbilityScoresBlock
+        abilityScores={character.abilityScores}
+        savingThrows={character.savingThrows}
+        proficiencyBonus={proficiencyBonus}
+      />
+
+      <CombatStatsPanel combat={character.combat} />
+    </div>
+
+    <!-- Skills Section -->
+    {hasSkills && (
+      <SkillsGrid
+        skills={character.skills}
+        abilityScores={character.abilityScores}
+        proficiencyBonus={proficiencyBonus}
+      />
+    )}
+
+    <!-- Two-column layout for Equipment and Spellcasting -->
+    <div class="character-sheet__columns">
+      {hasEquipment && (
+        <EquipmentSection
+          equipment={character.equipment}
+          itemLookup={itemLookup}
+        />
+      )}
+
+      {hasSpellcasting && (
+        <SpellcastingSection spellcasting={character.spellcasting} />
+      )}
+    </div>
+
+    <!-- Features Section -->
+    {hasFeatures && (
+      <FeaturesSection
+        features={character.features}
+        className={character.class}
+        subclass={character.subclass}
+      />
+    )}
+  </div>
+)}
+
+<style>
+  .character-sheet {
+    background: var(--color-bg);
+    border: 2px solid var(--color-gold);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin: var(--space-xl) 0;
+  }
+
+  .character-sheet__header {
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-md);
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .character-identity {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+  }
+
+  .character-level {
+    background: var(--color-gold);
+    color: var(--color-bg);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: var(--text-sm);
+  }
+
+  .character-species,
+  .character-class {
+    background: var(--color-bg-secondary);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .character-class {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  .character-origin {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .origin-background,
+  .origin-feat {
+    display: flex;
+    gap: var(--space-xs);
+  }
+
+  .character-sheet__stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+  }
+
+  .character-sheet__columns {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+  }
+
+  @media (min-width: 900px) {
+    .character-sheet__columns {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>
