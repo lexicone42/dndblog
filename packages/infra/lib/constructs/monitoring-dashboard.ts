@@ -37,7 +37,22 @@ export class MonitoringDashboard extends Construct {
     // CloudFront Metrics (Row 1)
     // ==========================================================================
     if (props.distribution) {
-      const distribution = props.distribution;
+      const distributionId = props.distribution.distributionId;
+
+      // Helper to create CloudFront metrics
+      const cfMetric = (metricName: string, statistic: string, label?: string, color?: string) =>
+        new cloudwatch.Metric({
+          namespace: 'AWS/CloudFront',
+          metricName,
+          dimensionsMap: {
+            DistributionId: distributionId,
+            Region: 'Global',
+          },
+          statistic,
+          period: cdk.Duration.minutes(5),
+          label,
+          color,
+        });
 
       // CloudFront header
       const cloudfrontHeader = new cloudwatch.TextWidget({
@@ -49,12 +64,7 @@ export class MonitoringDashboard extends Construct {
       // Request metrics
       const requestsWidget = new cloudwatch.GraphWidget({
         title: 'Requests',
-        left: [
-          distribution.metric('Requests', {
-            statistic: 'Sum',
-            period: cdk.Duration.minutes(5),
-          }),
-        ],
+        left: [cfMetric('Requests', 'Sum')],
         width: 8,
         height: 6,
       });
@@ -63,18 +73,8 @@ export class MonitoringDashboard extends Construct {
       const errorRateWidget = new cloudwatch.GraphWidget({
         title: 'Error Rates (%)',
         left: [
-          distribution.metric('4xxErrorRate', {
-            statistic: 'Average',
-            period: cdk.Duration.minutes(5),
-            label: '4xx Errors',
-            color: '#ff9900',
-          }),
-          distribution.metric('5xxErrorRate', {
-            statistic: 'Average',
-            period: cdk.Duration.minutes(5),
-            label: '5xx Errors',
-            color: '#d13212',
-          }),
+          cfMetric('4xxErrorRate', 'Average', '4xx Errors', '#ff9900'),
+          cfMetric('5xxErrorRate', 'Average', '5xx Errors', '#d13212'),
         ],
         leftYAxis: {
           min: 0,
@@ -88,13 +88,7 @@ export class MonitoringDashboard extends Construct {
       // Bytes transferred
       const bytesWidget = new cloudwatch.GraphWidget({
         title: 'Bytes Transferred',
-        left: [
-          distribution.metric('BytesDownloaded', {
-            statistic: 'Sum',
-            period: cdk.Duration.minutes(5),
-            label: 'Downloaded',
-          }),
-        ],
+        left: [cfMetric('BytesDownloaded', 'Sum', 'Downloaded')],
         width: 8,
         height: 6,
       });

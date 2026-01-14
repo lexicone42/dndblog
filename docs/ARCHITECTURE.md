@@ -32,7 +32,7 @@ The platform is designed as a modular system that can evolve from a simple stati
 
 ## AWS Infrastructure
 
-### Phase 1 Components
+### Core Components
 
 | Service | Purpose | Configuration |
 |---------|---------|---------------|
@@ -41,6 +41,17 @@ The platform is designed as a modular system that can evolve from a simple stati
 | **Route53** | DNS management | A/AAAA records aliased to CloudFront |
 | **ACM** | SSL certificates | DNS-validated, auto-renewal |
 | **IAM** | GitHub Actions auth | OIDC federation, least privilege |
+
+### DM Notes API Components
+
+| Service | Purpose | Configuration |
+|---------|---------|---------------|
+| **API Gateway** | HTTP API | CORS, rate limiting (5 req/s) |
+| **Lambda** | API handlers | Node.js 20, 3 functions |
+| **S3** | Notes storage | dm-notes/ prefix, token auth |
+| **SSM** | Token storage | SecureString parameter |
+| **Bedrock** | AI review | Claude model for notes review |
+| **CloudWatch** | Monitoring | Alarms + dashboard |
 
 ### Security Architecture
 
@@ -202,15 +213,39 @@ See [PHASE2-DESIGN.md](PHASE2-DESIGN.md) for the planned evolution including:
 
 ## Monitoring and Observability
 
-### Current (Phase 1)
+### CloudWatch Alarms
+
+The platform includes proactive monitoring via CloudWatch alarms:
+
+| Alarm | Threshold | Purpose |
+|-------|-----------|---------|
+| CloudFront 5xx Errors | > 1% for 15 min | Origin/server problems |
+| CloudFront 4xx Errors | > 5% for 15 min | Broken links or attacks |
+| Lambda Errors (per function) | > 1 in 5 min | Function failures |
+
+### CloudWatch Dashboard
+
+A unified dashboard (`MonitoringDashboard` construct) displays:
+
+**CloudFront Metrics:**
+- Request count
+- Error rates (4xx, 5xx)
+- Bytes transferred
+
+**Lambda Metrics (per function):**
+- Invocations
+- Errors
+- Duration (average and max)
+- Throttles and concurrent executions
+
+### Other Observability
 
 - CloudFront access logs (optional, disabled by default)
-- CloudWatch metrics for distributions
 - GitHub Actions workflow history
+- Smoke tests post-deployment verification
 
-### Planned (Phase 2)
+### Planned Enhancements
 
-- CloudWatch dashboards
 - X-Ray tracing for API calls
-- CloudWatch Logs for Lambda
 - Cost monitoring alerts
+- Anomaly detection

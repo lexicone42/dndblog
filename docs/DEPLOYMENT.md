@@ -86,11 +86,15 @@ Options:
 # Build only
 ./scripts/build.sh
 
-# Deploy infrastructure only
+# Deploy static site infrastructure
 cd packages/infra
 cdk deploy StaticSiteStack \
   --context domainName=chronicles.mawframe.ninja \
   --context hostedZoneDomain=mawframe.ninja
+
+# Deploy DM Notes API (separate stack)
+cdk deploy DmNotesStack \
+  --context allowedOrigin=https://chronicles.mawframe.ninja
 
 # Sync to S3 only (after CDK deploy)
 aws s3 sync packages/site/dist/ s3://BUCKET-NAME --delete
@@ -99,6 +103,36 @@ aws s3 sync packages/site/dist/ s3://BUCKET-NAME --delete
 aws cloudfront create-invalidation \
   --distribution-id DISTRIBUTION-ID \
   --paths "/*"
+```
+
+### DM Notes API Setup
+
+After deploying `DmNotesStack`, configure the authentication token:
+
+```bash
+# Set the DM notes token (replace with your secret)
+aws ssm put-parameter \
+  --name "/dndblog/dm-notes-token" \
+  --value "your-secret-token-here" \
+  --type SecureString \
+  --overwrite
+
+# Optionally enable/disable AI review
+aws ssm put-parameter \
+  --name "/dndblog/ai-review-enabled" \
+  --value "true" \
+  --type String \
+  --overwrite
+```
+
+Set the API URL as an environment variable for site builds:
+```bash
+export PUBLIC_DM_NOTES_API_URL=https://xxx.execute-api.us-west-2.amazonaws.com
+```
+
+Or add to `.env.production` in `packages/site/`:
+```
+PUBLIC_DM_NOTES_API_URL=https://xxx.execute-api.us-west-2.amazonaws.com
 ```
 
 ## Automated Deployment (GitHub Actions)
@@ -110,8 +144,39 @@ Once configured, deployments happen automatically:
 
 ### Workflow Files
 
-- `.github/workflows/ci.yml` - Runs on PRs
-- `.github/workflows/deploy.yml` - Runs on push to main
+#### CI Workflow (`.github/workflows/ci.yml`)
+
+Runs on pull requests:
+1. Install dependencies
+2. Build all packages
+3. Run tests (site, content-pipeline, infra)
+4. TypeScript type checking
+5. CDK synth (validates templates compile)
+
+**CDK Synth OIDC:** The CI workflow uses a read-only role for CDK synth. This requires the `AWS_CI_ROLE_ARN` secret for synthesizing templates without deployment permissions.
+
+#### Deploy Workflow (`.github/workflows/deploy.yml`)
+
+Runs on push to main:
+1. Build site and infrastructure
+2. Deploy `StaticSiteStack` via CDK
+3. Deploy `DmNotesStack` via CDK (if changed)
+4. Sync site files to S3
+5. Invalidate CloudFront cache
+6. Run smoke tests for verification
+
+### Smoke Tests
+
+Post-deployment verification checks:
+- Homepage returns 200 OK
+- Key pages are accessible
+- Character sheets render correctly
+- Security headers are present
+
+```bash
+# Run locally against production
+PUBLIC_SITE_URL=https://chronicles.mawframe.ninja pnpm test:smoke
+```
 
 ## Troubleshooting
 

@@ -8,9 +8,14 @@ A modular static blog platform built with Astro and deployed to AWS, designed fo
 
 ## Overview
 
-**Phase 1 (Current):** Public static blog with markdown content, deployed to AWS with secure infrastructure.
+**Current Features:**
+- Public static blog with markdown content
+- D&D 5e 2024 character sheets with interactive components
+- DM session notes editor with S3 storage and AI review
+- CloudWatch monitoring with alarms and dashboards
+- PWA support for offline reading
 
-**Phase 2 (Future):** Authentication, private notes API, AI-powered summarization, private campaign feeds.
+**Coming Soon:** Enhanced content pipeline, private campaign feeds, AI summarization.
 
 ## Tech Stack
 
@@ -46,12 +51,47 @@ The site will be available at http://localhost:4321
 ### Build
 
 ```bash
-# Full build pipeline
+# Full build pipeline (7 steps)
 ./scripts/build.sh
 
-# Build site only
-cd packages/site && pnpm build
+# Individual builds
+cd packages/site && pnpm build        # Static site
+cd packages/infra && pnpm build       # CDK infrastructure
+cd packages/content-pipeline && pnpm build  # Content tools
 ```
+
+The `build.sh` script performs:
+1. Install dependencies
+2. Build content-pipeline
+3. Build site package
+4. Build infrastructure
+5. Run security audit
+6. Run all tests
+7. Synthesize CDK templates
+
+### Testing
+
+```bash
+# Run all tests
+pnpm test
+
+# Run tests with watch mode
+pnpm test:watch
+
+# Package-specific tests
+pnpm --filter site test              # Site components (61 tests)
+pnpm --filter content-pipeline test  # Content processing (61 tests)
+pnpm --filter infra test             # CDK constructs (20 tests)
+
+# E2E and smoke tests
+pnpm test:e2e                        # Full E2E with Playwright
+pnpm test:smoke                      # Quick deployment verification
+```
+
+**Test Coverage:**
+- **Site:** Character sheet components, utility functions, content validation
+- **Content-pipeline:** Markdown parsing, image processing, schema validation
+- **Infra:** CDK construct behavior, CloudFormation output verification
 
 ### Deploy
 
@@ -146,8 +186,10 @@ This project implements security best practices:
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) - System design and decisions
-- [Deployment](docs/DEPLOYMENT.md) - AWS deployment guide
+- [Architecture](docs/ARCHITECTURE.md) - System design and technical decisions
+- [Deployment](docs/DEPLOYMENT.md) - AWS deployment and CI/CD guide
+- [DM Notes API](docs/DM-NOTES-API.md) - Session notes API reference
+- [Character Sheet](docs/CHARACTER-SHEET.md) - Character sheet component system
 - [Phase 2 Design](docs/PHASE2-DESIGN.md) - Future features roadmap
 
 ## License

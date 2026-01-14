@@ -76,9 +76,48 @@ packages/
 
 1. Create a feature branch: `git checkout -b feature/your-feature`
 2. Make your changes
-3. Run checks: `pnpm typecheck && pnpm build`
-4. Commit with a descriptive message
-5. Push and open a pull request
+3. Run tests: `pnpm test`
+4. Run checks: `pnpm typecheck && pnpm build`
+5. Commit with a descriptive message
+6. Push and open a pull request
+
+#### Running Tests
+
+```bash
+# All tests
+pnpm test
+
+# Watch mode for TDD
+pnpm test:watch
+
+# Package-specific
+pnpm --filter site test              # Component tests
+pnpm --filter content-pipeline test  # Pipeline tests
+pnpm --filter infra test             # Infrastructure tests
+
+# E2E tests (requires built site)
+pnpm test:e2e
+pnpm test:smoke
+```
+
+#### Pre-commit Hooks
+
+The project uses [Husky](https://typicode.github.io/husky/) with [lint-staged](https://github.com/okonet/lint-staged) to run checks before commits.
+
+**What runs on commit:**
+- Forbidden files check (prevents committing `.env`, credentials, secrets)
+- TypeScript type checking on staged files
+- Prettier formatting
+
+**To bypass hooks (use sparingly):**
+```bash
+git commit --no-verify -m "Emergency fix"
+```
+
+**To re-enable hooks after clone:**
+```bash
+pnpm prepare
+```
 
 ## Writing Guidelines
 

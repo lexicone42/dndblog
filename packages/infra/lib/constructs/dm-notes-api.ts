@@ -371,6 +371,7 @@ Respond with valid JSON only:\`
         allowMethods: [
           apigateway.CorsHttpMethod.GET,
           apigateway.CorsHttpMethod.POST,
+          apigateway.CorsHttpMethod.DELETE,
           apigateway.CorsHttpMethod.OPTIONS,
         ],
         allowHeaders: ['Content-Type', 'X-DM-Token'],
@@ -466,6 +467,263 @@ Respond with valid JSON only:\`
         period: cdk.Duration.minutes(5),
       }),
       threshold: 3,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    // ==========================================================================
+    // Notes Browser Function - List, View, Delete notes
+    // ==========================================================================
+
+    const notesBrowserFunction = new lambda.Function(this, 'NotesBrowserFunction', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 512,
+      environment: {
+        BUCKET_NAME: this.bucket.bucketName,
+        TOKEN_PARAMETER_NAME: tokenParameterName,
+        ALLOWED_ORIGIN: props.allowedOrigin,
+        NOTES_PREFIX: 'dm-notes/',
+      },
+      code: lambda.Code.fromInline(`
+const { S3Client, ListObjectsV2Command, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
+
+const s3Client = new S3Client({});
+const ssmClient = new SSMClient({});
+
+let cachedToken = null;
+let tokenExpiry = 0;
+
+async function getToken() {
+  const now = Date.now();
+  if (cachedToken && now < tokenExpiry) {
+    return cachedToken;
+  }
+  const result = await ssmClient.send(new GetParameterCommand({
+    Name: process.env.TOKEN_PARAMETER_NAME,
+    WithDecryption: true,
+  }));
+  cachedToken = result.Parameter.Value;
+  tokenExpiry = now + 5 * 60 * 1000;
+  return cachedToken;
+}
+
+function parseYamlFrontmatter(content) {
+  const match = content.match(/^---\\n([\\s\\S]*?)\\n---/);
+  if (!match) return {};
+  const yaml = match[1];
+  const result = {};
+  yaml.split('\\n').forEach(line => {
+    const colonIndex = line.indexOf(':');
+    if (colonIndex > 0) {
+      const key = line.slice(0, colonIndex).trim();
+      let value = line.slice(colonIndex + 1).trim();
+      // Remove quotes
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+      // Parse booleans
+      if (value === 'true') value = true;
+      else if (value === 'false') value = false;
+      result[key] = value;
+    }
+  });
+  return result;
+}
+
+exports.handler = async (event) => {
+  const headers = {
+    'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN,
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+    'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
+    'Content-Type': 'application/json',
+  };
+
+  if (event.requestContext?.http?.method === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  try {
+    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
+    if (!providedToken) {
+      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Missing authentication token' }) };
+    }
+
+    const validToken = await getToken();
+    if (providedToken !== validToken) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'Invalid token' }) };
+    }
+
+    const method = event.requestContext?.http?.method;
+    const path = event.rawPath || '';
+    const keyParam = event.pathParameters?.key;
+
+    // GET /notes - List all notes
+    if (method === 'GET' && path === '/notes') {
+      const listCommand = new ListObjectsV2Command({
+        Bucket: process.env.BUCKET_NAME,
+        Prefix: process.env.NOTES_PREFIX,
+      });
+      const listResult = await s3Client.send(listCommand);
+      const objects = listResult.Contents || [];
+
+      // Fetch metadata for each note (parse YAML frontmatter)
+      const notes = await Promise.all(objects.map(async (obj) => {
+        try {
+          const getCommand = new GetObjectCommand({
+            Bucket: process.env.BUCKET_NAME,
+            Key: obj.Key,
+          });
+          const getResult = await s3Client.send(getCommand);
+          const content = await getResult.Body.transformToString();
+          const frontmatter = parseYamlFrontmatter(content);
+
+          return {
+            key: obj.Key,
+            title: frontmatter.title || obj.Key.split('/').pop().replace('.md', ''),
+            date: frontmatter.date || obj.LastModified?.toISOString().split('T')[0],
+            draft: frontmatter.draft !== false,
+            size: obj.Size,
+            lastModified: obj.LastModified?.toISOString(),
+          };
+        } catch (err) {
+          return {
+            key: obj.Key,
+            title: obj.Key.split('/').pop().replace('.md', ''),
+            date: obj.LastModified?.toISOString().split('T')[0],
+            draft: true,
+            size: obj.Size,
+            lastModified: obj.LastModified?.toISOString(),
+            error: 'Failed to parse metadata',
+          };
+        }
+      }));
+
+      // Sort by date descending (newest first)
+      notes.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ notes, count: notes.length }),
+      };
+    }
+
+    // GET /notes/{key} - Get specific note content
+    if (method === 'GET' && keyParam) {
+      const key = decodeURIComponent(keyParam);
+      // Security: validate key starts with notes prefix
+      if (!key.startsWith(process.env.NOTES_PREFIX)) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid key' }) };
+      }
+
+      const getCommand = new GetObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: key,
+      });
+      const result = await s3Client.send(getCommand);
+      const content = await result.Body.transformToString();
+      const frontmatter = parseYamlFrontmatter(content);
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          key,
+          content,
+          metadata: {
+            title: frontmatter.title,
+            date: frontmatter.date,
+            draft: frontmatter.draft,
+          },
+          size: result.ContentLength,
+          lastModified: result.LastModified?.toISOString(),
+        }),
+      };
+    }
+
+    // DELETE /notes/{key} - Delete a note
+    if (method === 'DELETE' && keyParam) {
+      const key = decodeURIComponent(keyParam);
+      // Security: validate key starts with notes prefix
+      if (!key.startsWith(process.env.NOTES_PREFIX)) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid key' }) };
+      }
+
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: key,
+      });
+      await s3Client.send(deleteCommand);
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, key, message: 'Note deleted successfully' }),
+      };
+    }
+
+    return { statusCode: 404, headers, body: JSON.stringify({ error: 'Not found' }) };
+
+  } catch (error) {
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Internal server error: ' + error.message }),
+    };
+  }
+};
+      `),
+    });
+
+    // Grant permissions to notes browser function
+    this.bucket.grantRead(notesBrowserFunction);
+    this.bucket.grantDelete(notesBrowserFunction);
+
+    // Grant SSM parameter read access
+    notesBrowserFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: tokenParameterName.replace(/^\//, ''),
+        }),
+      ],
+    }));
+
+    // Add notes browser routes
+    this.api.addRoutes({
+      path: '/notes',
+      methods: [apigateway.HttpMethod.GET],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'NotesListIntegration',
+        notesBrowserFunction
+      ),
+    });
+
+    this.api.addRoutes({
+      path: '/notes/{key+}',
+      methods: [apigateway.HttpMethod.GET, apigateway.HttpMethod.DELETE],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'NotesBrowserIntegration',
+        notesBrowserFunction
+      ),
+    });
+
+    // Notes Browser Function Alarm
+    new cloudwatch.Alarm(this, 'NotesBrowserFunctionErrors', {
+      alarmName: `${cdk.Names.uniqueId(this)}-notes-browser-errors`,
+      alarmDescription: 'DM Notes browser function errors',
+      metric: notesBrowserFunction.metricErrors({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 1,
       evaluationPeriods: 1,
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
