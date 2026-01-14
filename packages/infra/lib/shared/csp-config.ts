@@ -24,13 +24,14 @@ export const CSP_DIRECTIVES: Record<string, string[]> = {
   // JavaScript sources
   // - 'unsafe-inline': Required for Astro's scoped styles and inline scripts
   // - 'wasm-unsafe-eval': Required for Pagefind search (WebAssembly)
-  // - CDN sources: For EasyMDE and other external libraries
+  // - CDN sources: For EasyMDE, marked, highlight.js, dompurify and other libraries
   'script-src': [
     "'self'",
     "'unsafe-inline'",
     "'wasm-unsafe-eval'",
     'https://unpkg.com',
     'https://cdn.jsdelivr.net',
+    'https://cdnjs.cloudflare.com',
   ],
 
   // Stylesheet sources

@@ -1276,15 +1276,15 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       padding: var(--space-xs) var(--space-sm);
     }
 
-    /* CodeMirror dark mode text colors */
+    /* CodeMirror base text color - use theme variable */
     .editor-wrapper :global(.CodeMirror),
     .editor-wrapper :global(.CodeMirror-code),
     .editor-wrapper :global(.CodeMirror-line) {
-      color: #e8e6e3 !important;
+      color: var(--color-text) !important;
     }
 
     .editor-wrapper :global(.CodeMirror pre.CodeMirror-placeholder) {
-      color: #8b8685 !important;
+      color: var(--color-text-muted) !important;
     }
 
     .editor-wrapper :global(.CodeMirror-cursor) {
@@ -1292,14 +1292,14 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
     }
 
     .editor-wrapper :global(.CodeMirror-selected) {
-      background: rgba(200, 168, 108, 0.3) !important;
+      background: rgba(139, 69, 19, 0.2) !important;
     }
 
     .editor-wrapper :global(.CodeMirror-focused .CodeMirror-selected) {
-      background: rgba(200, 168, 108, 0.4) !important;
+      background: rgba(139, 69, 19, 0.3) !important;
     }
 
-    /* Markdown syntax highlighting in dark mode */
+    /* Markdown syntax highlighting - use theme variables */
     .editor-wrapper :global(.cm-header) {
       color: var(--color-gold) !important;
     }
@@ -1317,34 +1317,47 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
     }
 
     .editor-wrapper :global(.cm-strong) {
-      color: #f5f3f0 !important;
+      color: var(--color-text) !important;
       font-weight: bold;
     }
 
     .editor-wrapper :global(.cm-em) {
-      color: #d4d0cb !important;
+      color: var(--color-text-secondary) !important;
       font-style: italic;
     }
 
     .editor-wrapper :global(.cm-link) {
-      color: #7eb8da !important;
+      color: var(--color-link) !important;
     }
 
     .editor-wrapper :global(.cm-url) {
-      color: #8b8685 !important;
+      color: var(--color-text-muted) !important;
     }
 
     .editor-wrapper :global(.cm-quote) {
-      color: #b8a88a !important;
+      color: var(--color-accent) !important;
       font-style: italic;
     }
 
     .editor-wrapper :global(.cm-comment) {
-      color: #8b8685 !important;
+      color: var(--color-text-muted) !important;
     }
 
     .editor-wrapper :global(.cm-formatting) {
-      color: #6b6563 !important;
+      color: var(--color-text-muted) !important;
+    }
+
+    /* Dark mode specific adjustments for selection highlighting */
+    :root[data-theme="dark"] .editor-wrapper :global(.CodeMirror-selected),
+    :root[data-theme="dark"] .editor-wrapper :global(.CodeMirror-focused .CodeMirror-selected) {
+      background: rgba(200, 168, 108, 0.3) !important;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .editor-wrapper :global(.CodeMirror-selected),
+      :root:not([data-theme="light"]) .editor-wrapper :global(.CodeMirror-focused .CodeMirror-selected) {
+        background: rgba(200, 168, 108, 0.3) !important;
+      }
     }
 
     /* Fullscreen mode adjustments */
