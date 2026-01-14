@@ -34,6 +34,8 @@ function getReadingTime(content: string): number {
 }
 
 const readingTime = getReadingTime(post.body || '');
+const canonicalURL = new URL(`/blog/${post.id}/`, Astro.site);
+const wordCount = (post.body || '').split(/\s+/).length;
 
 const formattedPubDate = pubDate.toLocaleDateString('en-US', {
   year: 'numeric',
@@ -56,6 +58,47 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-US', {
   pubDate={pubDate}
   updatedDate={updatedDate}
 >
+  <!-- Schema.org JSON-LD for rich snippets and library catalogs -->
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": title,
+    "description": description,
+    "author": {
+      "@type": "Person",
+      "name": author || "Rudiger's Evocation of Events"
+    },
+    "datePublished": pubDate.toISOString(),
+    "dateModified": (updatedDate || pubDate).toISOString(),
+    "wordCount": wordCount,
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": canonicalURL.href
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Rudiger's Evocation of Events",
+      "logo": {
+        "@type": "ImageObject",
+        "url": new URL("/icons/icon-512.png", Astro.site).href
+      }
+    },
+    "keywords": tags?.join(", "),
+    "image": heroImage ? new URL(heroImage, Astro.site).href : undefined
+  })} />
+
+  <!-- Dublin Core metadata for library systems -->
+  <Fragment slot="head">
+    <meta name="DC.title" content={title} />
+    <meta name="DC.creator" content={author || "Rudiger's Evocation of Events"} />
+    <meta name="DC.date" content={pubDate.toISOString().split('T')[0]} />
+    <meta name="DC.description" content={description} />
+    <meta name="DC.type" content="Text" />
+    <meta name="DC.format" content="text/html" />
+    <meta name="DC.language" content="en" />
+    {tags?.map((tag) => <meta name="DC.subject" content={tag} />)}
+    <meta name="DCTERMS.modified" content={(updatedDate || pubDate).toISOString().split('T')[0]} />
+  </Fragment>
   <article class="post">
     <div class="container container--narrow">
       <header class="post__header">
@@ -112,7 +155,20 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-US', {
           </p>
         )}
 
-        <nav class="post__nav">
+        <!-- Citation helper for librarians and academics -->
+        <details class="post__citation">
+          <summary>Cite this post</summary>
+          <div class="post__citation-content">
+            <p class="post__citation-label">APA Format:</p>
+            <code class="post__citation-text">
+              {author || "Rudiger's Evocation of Events"}. ({pubDate.getFullYear()}, {pubDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}). {title}. <em>Rudiger's Evocation of Events</em>. {canonicalURL.href}
+            </code>
+            <p class="post__citation-label">Permalink:</p>
+            <code class="post__citation-text">{canonicalURL.href}</code>
+          </div>
+        </details>
+
+        <nav class="post__nav" aria-label="Post navigation">
           <a href="/blog" class="post__back">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -274,5 +330,73 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-US', {
   .post__back:hover {
     background-color: var(--color-bg-tertiary);
     color: var(--color-text);
+  }
+
+  /* Citation helper styles */
+  .post__citation {
+    margin-bottom: var(--space-lg);
+    padding: var(--space-md);
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+  }
+
+  .post__citation summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+  }
+
+  .post__citation summary:hover {
+    color: var(--color-accent);
+  }
+
+  .post__citation-content {
+    margin-top: var(--space-md);
+  }
+
+  .post__citation-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin: var(--space-sm) 0 var(--space-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .post__citation-label:first-child {
+    margin-top: 0;
+  }
+
+  .post__citation-text {
+    display: block;
+    font-size: var(--text-sm);
+    padding: var(--space-sm);
+    background-color: var(--color-bg);
+    border-radius: var(--radius-sm);
+    word-break: break-all;
+    white-space: pre-wrap;
+  }
+
+  /* Print styles for archival */
+  @media print {
+    .post__back,
+    .post__citation summary {
+      display: none;
+    }
+
+    .post__citation {
+      border: 1px solid #000;
+      break-inside: avoid;
+    }
+
+    .post__citation-content {
+      display: block !important;
+    }
+
+    .post__hero-image {
+      max-height: 300px;
+      object-fit: contain;
+    }
   }
 </style>
