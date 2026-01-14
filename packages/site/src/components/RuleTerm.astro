@@ -1,0 +1,207 @@
+---
+/**
+ * RuleTerm.astro
+ * A component that wraps a rules term and provides a tooltip with the definition.
+ * Used in character sheets to make rules clickable/hoverable for quick reference.
+ *
+ * Usage:
+ *   <RuleTerm term="Concentration" lookup={glossaryLookup}>Concentration</RuleTerm>
+ *   <RuleTerm term="Armor Class" lookup={glossaryLookup}>AC</RuleTerm>
+ */
+
+interface GlossaryEntry {
+  name: string;
+  slug: string;
+  description: string;
+  category?: string;
+}
+
+interface Props {
+  /** The glossary term name to look up (e.g., "Armor Class", "Concentration") */
+  term: string;
+  /** Lookup map of term name -> glossary data */
+  lookup: Record<string, GlossaryEntry>;
+  /** Optional: show as a link to the glossary page instead of tooltip */
+  asLink?: boolean;
+}
+
+const { term, lookup, asLink = false } = Astro.props;
+const entry = lookup[term];
+
+// If term not found in glossary, just render the slot content without tooltip
+const hasEntry = !!entry;
+---
+
+{hasEntry ? (
+  asLink ? (
+    <a href={`/glossary/${entry.slug}`} class="rule-term rule-term--link">
+      <slot />
+    </a>
+  ) : (
+    <span
+      class="rule-term"
+      data-term={term}
+      data-description={entry.description}
+      data-category={entry.category || ''}
+      tabindex="0"
+      role="button"
+      aria-label={`Learn about ${term}`}
+    >
+      <slot />
+      <span class="rule-term__tooltip" role="tooltip">
+        <span class="rule-term__tooltip-header">
+          <span class="rule-term__tooltip-name">{entry.name}</span>
+          {entry.category && (
+            <span class={`rule-term__tooltip-category category--${entry.category}`}>
+              {entry.category.replace('-', ' ')}
+            </span>
+          )}
+        </span>
+        <span class="rule-term__tooltip-description">{entry.description}</span>
+        <a href={`/glossary/${entry.slug}`} class="rule-term__tooltip-link">
+          Full definition
+        </a>
+      </span>
+    </span>
+  )
+) : (
+  <slot />
+)}
+
+<style>
+  .rule-term {
+    position: relative;
+    cursor: help;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: var(--color-text-muted);
+    text-underline-offset: 2px;
+  }
+
+  .rule-term--link {
+    cursor: pointer;
+    text-decoration-style: solid;
+    text-decoration-color: var(--color-accent);
+    color: inherit;
+  }
+
+  .rule-term--link:hover {
+    color: var(--color-accent);
+  }
+
+  .rule-term__tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 320px;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-fast), visibility var(--transition-fast);
+    pointer-events: none;
+    margin-bottom: var(--space-xs);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  /* Arrow */
+  .rule-term__tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--color-border);
+  }
+
+  .rule-term:hover .rule-term__tooltip,
+  .rule-term:focus .rule-term__tooltip {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .rule-term__tooltip-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+  }
+
+  .rule-term__tooltip-name {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .rule-term__tooltip-category {
+    font-size: var(--text-xs);
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    text-transform: capitalize;
+    font-weight: 500;
+  }
+
+  .category--condition {
+    background: var(--color-error);
+    color: white;
+  }
+
+  .category--action {
+    background: var(--color-success);
+    color: white;
+  }
+
+  .category--area-of-effect {
+    background: var(--color-warning);
+    color: var(--color-bg);
+  }
+
+  .category--hazard {
+    background: #6b21a8;
+    color: white;
+  }
+
+  .category--attitude {
+    background: var(--color-accent);
+    color: white;
+  }
+
+  .rule-term__tooltip-description {
+    color: var(--color-text-secondary);
+  }
+
+  .rule-term__tooltip-link {
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+    text-decoration: none;
+    align-self: flex-end;
+  }
+
+  .rule-term__tooltip-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Position adjustments for edge cases */
+  @media (max-width: 400px) {
+    .rule-term__tooltip {
+      left: 0;
+      transform: none;
+      max-width: 280px;
+    }
+
+    .rule-term__tooltip::after {
+      left: 20px;
+    }
+  }
+</style>

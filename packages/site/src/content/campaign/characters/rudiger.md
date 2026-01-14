@@ -92,7 +92,7 @@ spellcasting:
     - "Counterspell"
     - "Shield"
     - "Misty Step"
-    - "Melf's Acid Arrow"
+    - "Acid Arrow"
     - "Magic Missile"
 
 # Equipment

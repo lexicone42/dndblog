@@ -5,6 +5,15 @@
  * Supports both standard slots and Warlock Pact Magic.
  */
 
+import RuleTerm from '../RuleTerm.astro';
+
+interface GlossaryEntry {
+  name: string;
+  slug: string;
+  description: string;
+  category?: string;
+}
+
 interface SpellSlot {
   level: number;
   total: number;
@@ -31,9 +40,10 @@ interface Props {
     ritualCaster?: boolean;
   };
   spellLookup?: Record<string, { name: string; path: string; level: number; school: string }>;
+  glossaryLookup?: Record<string, GlossaryEntry>;
 }
 
-const { spellcasting, spellLookup = {} } = Astro.props;
+const { spellcasting, spellLookup = {}, glossaryLookup = {} } = Astro.props;
 
 if (!spellcasting) return;
 
@@ -100,7 +110,9 @@ const hasSpellcasting = ability || spellSlots.length > 0 || pactSlots || cantrip
       )}
       {ritualCaster && (
         <div class="spell-stat spell-stat--badge">
-          <span class="ritual-badge">Ritual Caster</span>
+          <span class="ritual-badge">
+            <RuleTerm term="Ritual" lookup={glossaryLookup}>Ritual Caster</RuleTerm>
+          </span>
         </div>
       )}
     </div>
@@ -148,7 +160,9 @@ const hasSpellcasting = ability || spellSlots.length > 0 || pactSlots || cantrip
     <!-- Cantrips -->
     {cantrips.length > 0 && (
       <div class="spell-list">
-        <h4 class="spell-subtitle">Cantrips</h4>
+        <h4 class="spell-subtitle">
+          <RuleTerm term="Cantrip" lookup={glossaryLookup}>Cantrips</RuleTerm>
+        </h4>
         <ul class="spells">
           {cantrips.map((spell) => {
             const spellData = spellLookup[spell];
@@ -169,7 +183,11 @@ const hasSpellcasting = ability || spellSlots.length > 0 || pactSlots || cantrip
     <!-- Prepared/Known Spells or Spellbook -->
     {spellList.length > 0 && (
       <div class="spell-list">
-        <h4 class="spell-subtitle">{spellListLabel}</h4>
+        <h4 class="spell-subtitle">
+          {preparedSpells.length > 0 ? (
+            <RuleTerm term="Prepared Spells" lookup={glossaryLookup}>Prepared Spells</RuleTerm>
+          ) : spellListLabel}
+        </h4>
         <ul class="spells">
           {spellList.map((spell) => {
             const spellData = spellLookup[spell];

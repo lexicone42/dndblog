@@ -117,9 +117,10 @@ interface Props {
   };
   itemLookup?: Record<string, { name: string; path: string; rarity?: string }>;
   spellLookup?: Record<string, { name: string; path: string; level: number; school: string }>;
+  glossaryLookup?: Record<string, { name: string; slug: string; description: string; category?: string }>;
 }
 
-const { character, itemLookup = {}, spellLookup = {} } = Astro.props;
+const { character, itemLookup = {}, spellLookup = {}, glossaryLookup = {} } = Astro.props;
 
 // Determine if we have enough data to show the character sheet
 const hasAbilityScores = character.abilityScores && Object.values(character.abilityScores).some(v => v !== undefined);
@@ -184,7 +185,7 @@ const proficiencyBonus = character.combat?.proficiencyBonus ??
         proficiencyBonus={proficiencyBonus}
       />
 
-      <CombatStatsPanel combat={character.combat} />
+      <CombatStatsPanel combat={character.combat} glossaryLookup={glossaryLookup} />
     </div>
 
     <!-- Skills Section -->
@@ -209,6 +210,7 @@ const proficiencyBonus = character.combat?.proficiencyBonus ??
         <SpellcastingSection
           spellcasting={character.spellcasting}
           spellLookup={spellLookup}
+          glossaryLookup={glossaryLookup}
         />
       )}
     </div>

@@ -4,6 +4,15 @@
  * Displays combat-relevant statistics: AC, HP bar, Speed, Initiative, Proficiency Bonus.
  */
 
+import RuleTerm from '../RuleTerm.astro';
+
+interface GlossaryEntry {
+  name: string;
+  slug: string;
+  description: string;
+  category?: string;
+}
+
 interface Props {
   combat?: {
     ac?: number;
@@ -15,9 +24,10 @@ interface Props {
     proficiencyBonus?: number;
     hitDice?: string;
   };
+  glossaryLookup?: Record<string, GlossaryEntry>;
 }
 
-const { combat } = Astro.props;
+const { combat, glossaryLookup = {} } = Astro.props;
 
 // Calculate HP percentage for the bar
 const hpPercent = combat?.maxHp && combat?.hp
@@ -48,7 +58,9 @@ function formatInitiative(init: number | undefined): string {
         <div class="ac-shield">
           <span class="ac-value">{combat.ac ?? '—'}</span>
         </div>
-        <span class="stat-label">Armor Class</span>
+        <span class="stat-label">
+          <RuleTerm term="Armor Class" lookup={glossaryLookup}>Armor Class</RuleTerm>
+        </span>
       </div>
 
       <!-- Hit Points -->
@@ -67,9 +79,13 @@ function formatInitiative(init: number | undefined): string {
             style={`width: ${hpPercent}%; background: ${getHpColor(hpPercent)}`}
           />
         </div>
-        <span class="stat-label">Hit Points</span>
+        <span class="stat-label">
+          <RuleTerm term="Hit Points" lookup={glossaryLookup}>Hit Points</RuleTerm>
+        </span>
         {combat.hitDice && (
-          <span class="hit-dice">Hit Dice: {combat.hitDice}</span>
+          <span class="hit-dice">
+            <RuleTerm term="Hit Point Dice" lookup={glossaryLookup}>Hit Dice</RuleTerm>: {combat.hitDice}
+          </span>
         )}
       </div>
 
@@ -77,19 +93,25 @@ function formatInitiative(init: number | undefined): string {
       <div class="stat-block">
         <span class="stat-value">{combat.speed ?? '—'}</span>
         <span class="stat-unit">ft</span>
-        <span class="stat-label">Speed</span>
+        <span class="stat-label">
+          <RuleTerm term="Speed" lookup={glossaryLookup}>Speed</RuleTerm>
+        </span>
       </div>
 
       <!-- Initiative -->
       <div class="stat-block">
         <span class="stat-value">{formatInitiative(combat.initiative)}</span>
-        <span class="stat-label">Initiative</span>
+        <span class="stat-label">
+          <RuleTerm term="Initiative" lookup={glossaryLookup}>Initiative</RuleTerm>
+        </span>
       </div>
 
       <!-- Proficiency Bonus -->
       <div class="stat-block">
         <span class="stat-value">+{combat.proficiencyBonus ?? 2}</span>
-        <span class="stat-label">Proficiency</span>
+        <span class="stat-label">
+          <RuleTerm term="Proficiency Bonus" lookup={glossaryLookup}>Proficiency</RuleTerm>
+        </span>
       </div>
     </div>
   </section>

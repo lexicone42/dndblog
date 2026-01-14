@@ -495,6 +495,22 @@ const spellCollection = defineCollection({
   }),
 });
 
+/**
+ * Rules Glossary collection for D&D 5e 2024 rule terms.
+ * Terms can be linked from character sheets for quick reference.
+ */
+const glossaryCollection = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/glossary' }),
+  schema: z.object({
+    name: z.string(),
+    slug: z.string(),
+    category: z.enum(['action', 'condition', 'area-of-effect', 'hazard', 'attitude']).optional(),
+    description: z.string(),
+    seeAlso: z.array(z.string()).default([]),
+    source: z.string().default('SRD 5.2'),
+  }),
+});
+
 export const collections = {
   blog: blogCollection,
   characters: characterCollection,
@@ -503,4 +519,5 @@ export const collections = {
   factions: factionCollection,
   items: itemCollection,
   spells: spellCollection,
+  glossary: glossaryCollection,
 };

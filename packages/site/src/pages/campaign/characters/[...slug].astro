@@ -5,7 +5,7 @@ import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
   // Fetch all collections in parallel
-  const [entries, characters, enemies, locations, factions, items, spells] = await Promise.all([
+  const [entries, characters, enemies, locations, factions, items, spells, glossary] = await Promise.all([
     getCollection('characters'),
     getCollection('characters'),
     getCollection('enemies'),
@@ -13,6 +13,7 @@ export async function getStaticPaths() {
     getCollection('factions'),
     getCollection('items'),
     getCollection('spells'),
+    getCollection('glossary'),
   ]);
 
   // Build entity lookup map for linking relationships
@@ -41,13 +42,22 @@ export async function getStaticPaths() {
     school: s.data.school,
   });
 
+  // Build glossary lookup for rules term tooltips
+  const glossaryLookup: Record<string, { name: string; slug: string; description: string; category?: string }> = {};
+  glossary.forEach(g => glossaryLookup[g.data.name] = {
+    name: g.data.name,
+    slug: g.data.slug,
+    description: g.data.description,
+    category: g.data.category,
+  });
+
   return entries.map(entry => ({
     params: { slug: entry.id },
-    props: { entry, entityLookup, itemLookup, spellLookup },
+    props: { entry, entityLookup, itemLookup, spellLookup, glossaryLookup },
   }));
 }
 
-const { entry, entityLookup, itemLookup, spellLookup } = Astro.props;
+const { entry, entityLookup, itemLookup, spellLookup, glossaryLookup } = Astro.props;
 const { Content } = await render(entry);
 
 const statusColors: Record<string, string> = {
@@ -120,6 +130,7 @@ const statusColors: Record<string, string> = {
         character={entry.data}
         itemLookup={itemLookup}
         spellLookup={spellLookup}
+        glossaryLookup={glossaryLookup}
       />
     )}
 

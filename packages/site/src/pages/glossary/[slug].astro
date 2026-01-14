@@ -1,0 +1,223 @@
+---
+/**
+ * Glossary Term Detail Page
+ * Displays full definition of a rules glossary term.
+ */
+
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('glossary');
+
+  return entries.map(entry => ({
+    params: { slug: entry.data.slug },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+// Category colors
+const categoryColors: Record<string, string> = {
+  condition: '#dc2626',
+  action: '#16a34a',
+  'area-of-effect': '#d97706',
+  hazard: '#6b21a8',
+  attitude: '#2563eb',
+};
+---
+
+<BaseLayout
+  title={`${entry.data.name} - Rules Glossary`}
+  description={entry.data.description}
+>
+  <article class="term-page">
+    <header class="term-header">
+      <nav class="breadcrumb">
+        <a href="/glossary">Rules Glossary</a>
+        <span class="breadcrumb__sep">/</span>
+        <span>{entry.data.name}</span>
+      </nav>
+
+      <div class="term-title-row">
+        <h1 class="term-title">{entry.data.name}</h1>
+        {entry.data.category && (
+          <span
+            class="term-category"
+            style={`--cat-color: ${categoryColors[entry.data.category] || 'var(--color-accent)'}`}
+          >
+            {entry.data.category.replace('-', ' ')}
+          </span>
+        )}
+      </div>
+    </header>
+
+    <div class="term-content">
+      <Content />
+    </div>
+
+    {entry.data.seeAlso && entry.data.seeAlso.length > 0 && (
+      <aside class="term-see-also">
+        <h2>See Also</h2>
+        <ul class="see-also-list">
+          {entry.data.seeAlso.map((ref: string) => (
+            <li>{ref}</li>
+          ))}
+        </ul>
+      </aside>
+    )}
+
+    <footer class="term-footer">
+      <a href="/glossary" class="back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Back to Glossary
+      </a>
+      <span class="term-source">{entry.data.source}</span>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style>
+  .term-page {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-lg);
+  }
+
+  .breadcrumb a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--color-accent);
+  }
+
+  .breadcrumb__sep {
+    color: var(--color-border);
+  }
+
+  .term-header {
+    margin-bottom: var(--space-xl);
+    padding-bottom: var(--space-lg);
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .term-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+
+  .term-title {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    margin: 0;
+    color: var(--color-text);
+  }
+
+  .term-category {
+    font-size: var(--text-sm);
+    padding: 4px 12px;
+    border-radius: var(--radius-md);
+    text-transform: capitalize;
+    font-weight: 600;
+    background: var(--cat-color, var(--color-accent));
+    color: white;
+  }
+
+  .term-content {
+    line-height: 1.8;
+    font-size: var(--text-md);
+  }
+
+  .term-content :global(h1) {
+    display: none;
+  }
+
+  .term-content :global(p) {
+    margin-bottom: var(--space-md);
+  }
+
+  .term-content :global(em) {
+    color: var(--color-text-muted);
+  }
+
+  .term-see-also {
+    margin-top: var(--space-xl);
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+  }
+
+  .term-see-also h2 {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    margin: 0 0 var(--space-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .see-also-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .see-also-list li {
+    background: var(--color-bg);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .term-footer {
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+  }
+
+  .back-link:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text);
+  }
+
+  .term-source {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+</style>
