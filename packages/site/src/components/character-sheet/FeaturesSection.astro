@@ -5,6 +5,15 @@
  * Supports resource tracking (uses per rest).
  */
 
+import RuleTerm from '../RuleTerm.astro';
+
+interface GlossaryEntry {
+  name: string;
+  slug: string;
+  description: string;
+  category?: string;
+}
+
 interface Feature {
   name: string;
   source: 'class' | 'subclass' | 'species' | 'background' | 'feat' | 'epic-boon' | 'item';
@@ -21,9 +30,10 @@ interface Props {
   features?: Feature[];
   className?: string;
   subclass?: string;
+  glossaryLookup?: Record<string, GlossaryEntry>;
 }
 
-const { features = [], className, subclass } = Astro.props;
+const { features = [], className, subclass, glossaryLookup = {} } = Astro.props;
 
 if (features.length === 0) return;
 
@@ -86,7 +96,15 @@ const rechargeLabels: Record<string, string> = {
                         </span>
                       ))}
                     </span>
-                    <span class="uses-recharge">{rechargeLabels[feat.uses.recharge]}</span>
+                    <span class="uses-recharge">
+                      {feat.uses.recharge === 'short-rest' ? (
+                        <RuleTerm term="Short Rest" lookup={glossaryLookup}>Short Rest</RuleTerm>
+                      ) : feat.uses.recharge === 'long-rest' ? (
+                        <RuleTerm term="Long Rest" lookup={glossaryLookup}>Long Rest</RuleTerm>
+                      ) : (
+                        rechargeLabels[feat.uses.recharge]
+                      )}
+                    </span>
                   </div>
                 )}
               </div>

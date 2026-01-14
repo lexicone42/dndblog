@@ -5,6 +5,15 @@
  * Uses ◇ (none), ◆ (proficient), ◆◆ (expertise) notation.
  */
 
+import RuleTerm from '../RuleTerm.astro';
+
+interface GlossaryEntry {
+  name: string;
+  slug: string;
+  description: string;
+  category?: string;
+}
+
 interface Skill {
   name: string;
   proficient?: boolean;
@@ -23,9 +32,10 @@ interface Props {
     cha?: number;
   };
   proficiencyBonus?: number;
+  glossaryLookup?: Record<string, GlossaryEntry>;
 }
 
-const { skills = [], abilityScores, proficiencyBonus = 2 } = Astro.props;
+const { skills = [], abilityScores, proficiencyBonus = 2, glossaryLookup = {} } = Astro.props;
 
 // Calculate modifier from ability score
 function getModifier(score: number | undefined): number {
@@ -99,7 +109,9 @@ const abilityAbbr: Record<string, string> = {
 ---
 
 <section class="skills-section">
-  <h3 class="skills-section__title">Skills</h3>
+  <h3 class="skills-section__title">
+    <RuleTerm term="Skill" lookup={glossaryLookup}>Skills</RuleTerm>
+  </h3>
 
   <div class="skills-grid">
     {allSkills.map(({ name, ability }) => {
@@ -107,8 +119,14 @@ const abilityAbbr: Record<string, string> = {
 
       return (
         <div class={`skill-row ${isProficient ? 'skill-row--proficient' : ''} ${hasExpertise ? 'skill-row--expertise' : ''}`}>
-          <span class="skill-proficiency" title={hasExpertise ? 'Expertise' : isProficient ? 'Proficient' : 'Not proficient'}>
-            {hasExpertise ? '◆◆' : isProficient ? '◆' : '◇'}
+          <span class="skill-proficiency">
+            {hasExpertise ? (
+              <RuleTerm term="Expertise" lookup={glossaryLookup}>◆◆</RuleTerm>
+            ) : isProficient ? (
+              <RuleTerm term="Proficiency" lookup={glossaryLookup}>◆</RuleTerm>
+            ) : (
+              <span title="Not proficient">◇</span>
+            )}
           </span>
           <span class="skill-bonus">{formatBonus(bonus)}</span>
           <span class="skill-name">{name}</span>

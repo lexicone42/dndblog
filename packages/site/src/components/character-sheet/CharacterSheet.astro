@@ -183,6 +183,7 @@ const proficiencyBonus = character.combat?.proficiencyBonus ??
         abilityScores={character.abilityScores}
         savingThrows={character.savingThrows}
         proficiencyBonus={proficiencyBonus}
+        glossaryLookup={glossaryLookup}
       />
 
       <CombatStatsPanel combat={character.combat} glossaryLookup={glossaryLookup} />
@@ -194,6 +195,7 @@ const proficiencyBonus = character.combat?.proficiencyBonus ??
         skills={character.skills}
         abilityScores={character.abilityScores}
         proficiencyBonus={proficiencyBonus}
+        glossaryLookup={glossaryLookup}
       />
     )}
 
@@ -221,6 +223,7 @@ const proficiencyBonus = character.combat?.proficiencyBonus ??
         features={character.features}
         className={character.class}
         subclass={character.subclass}
+        glossaryLookup={glossaryLookup}
       />
     )}
   </div>

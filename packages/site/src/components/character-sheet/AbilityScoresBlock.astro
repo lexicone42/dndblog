@@ -5,6 +5,15 @@
  * Uses 5e 2024 terminology.
  */
 
+import RuleTerm from '../RuleTerm.astro';
+
+interface GlossaryEntry {
+  name: string;
+  slug: string;
+  description: string;
+  category?: string;
+}
+
 interface Props {
   abilityScores?: {
     str?: number;
@@ -23,9 +32,10 @@ interface Props {
     cha?: boolean;
   };
   proficiencyBonus?: number;
+  glossaryLookup?: Record<string, GlossaryEntry>;
 }
 
-const { abilityScores, savingThrows, proficiencyBonus = 2 } = Astro.props;
+const { abilityScores, savingThrows, proficiencyBonus = 2, glossaryLookup = {} } = Astro.props;
 
 // Calculate modifier from ability score
 function getModifier(score: number | undefined): number {
@@ -57,7 +67,9 @@ const abilities = [
 
 {abilityScores && (
   <section class="ability-scores">
-    <h3 class="ability-scores__title">Ability Scores</h3>
+    <h3 class="ability-scores__title">
+      <RuleTerm term="Ability Score and Modifier" lookup={glossaryLookup}>Ability Scores</RuleTerm>
+    </h3>
     <div class="ability-scores__grid">
       {abilities.map(({ key, name, abbr }) => {
         const score = abilityScores[key];
@@ -71,7 +83,9 @@ const abilities = [
             <span class="ability-card__score">{score ?? '—'}</span>
             <span class="ability-card__modifier">{score ? formatModifier(mod) : '—'}</span>
             <div class={`ability-card__save ${isProficient ? 'ability-card__save--proficient' : ''}`}>
-              <span class="ability-card__save-label">Save</span>
+              <span class="ability-card__save-label">
+                <RuleTerm term="Saving Throw" lookup={glossaryLookup}>Save</RuleTerm>
+              </span>
               <span class="ability-card__save-value">
                 {isProficient && <span class="proficiency-dot" title="Proficient">●</span>}
                 {score ? formatModifier(saveBonus) : '—'}
