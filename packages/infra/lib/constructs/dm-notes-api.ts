@@ -172,11 +172,13 @@ exports.handler = async (event) => {
     const featureFlagParameterName = '/dndblog/ai-review-enabled';
 
     // Lambda function for AI review via Bedrock (Claude Sonnet 4)
+    // Reserved concurrency limits parallel invocations to prevent cost runaway
     const reviewFunction = new lambda.Function(this, 'ReviewFunction', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       timeout: cdk.Duration.seconds(60),
       memorySize: 512,
+      reservedConcurrentExecutions: 2, // Limit parallel invocations to control costs
       environment: {
         TOKEN_PARAMETER_NAME: tokenParameterName,
         FEATURE_FLAG_PARAMETER: featureFlagParameterName,
@@ -220,8 +222,8 @@ async function isFeatureEnabled() {
     }));
     cachedFeatureFlag = result.Parameter.Value === 'true';
   } catch (err) {
-    // If parameter doesn't exist, default to enabled
-    cachedFeatureFlag = true;
+    // If parameter doesn't exist, default to DISABLED for safety
+    cachedFeatureFlag = false;
   }
   featureFlagExpiry = now + 60 * 1000; // Cache for 1 minute
   return cachedFeatureFlag;
@@ -360,7 +362,7 @@ Respond with valid JSON only:\`
       ],
     }));
 
-    // HTTP API Gateway
+    // HTTP API Gateway with throttling to prevent abuse
     this.api = new apigateway.HttpApi(this, 'Api', {
       apiName: 'DmNotesApi',
       corsPreflight: {
@@ -374,6 +376,16 @@ Respond with valid JSON only:\`
         maxAge: cdk.Duration.hours(1),
       },
     });
+
+    // Add throttling to the default stage to prevent abuse
+    // 10 requests per second burst, 5 sustained rate per second
+    const defaultStage = this.api.defaultStage?.node.defaultChild as apigateway.CfnStage;
+    if (defaultStage) {
+      defaultStage.defaultRouteSettings = {
+        throttlingBurstLimit: 10,
+        throttlingRateLimit: 5,
+      };
+    }
 
     // Add upload-url route
     this.api.addRoutes({

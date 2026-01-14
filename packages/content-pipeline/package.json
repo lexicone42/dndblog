@@ -15,6 +15,7 @@
     "process": "tsx src/cli.ts process",
     "screenshots": "tsx src/cli.ts screenshots",
     "publish": "tsx src/cli.ts publish",
+    "build:knowledge": "tsx src/knowledge-builder.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
