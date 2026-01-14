@@ -1,0 +1,77 @@
+---
+interface Props {
+  status: string;
+  size?: 'sm' | 'md' | 'lg';
+}
+
+const { status, size = 'md' } = Astro.props;
+
+const statusColors: Record<string, string> = {
+  active: 'status-badge--active',
+  inactive: 'status-badge--inactive',
+  dead: 'status-badge--dead',
+  destroyed: 'status-badge--dead',
+  unknown: 'status-badge--unknown',
+  missing: 'status-badge--unknown',
+  transformed: 'status-badge--transformed',
+  dormant: 'status-badge--inactive',
+};
+
+const sizeClass = `status-badge--${size}`;
+const colorClass = statusColors[status] || 'status-badge--unknown';
+---
+
+<span class={`status-badge ${sizeClass} ${colorClass}`}>
+  {status}
+</span>
+
+<style>
+  .status-badge {
+    display: inline-block;
+    text-transform: uppercase;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+  }
+
+  /* Sizes */
+  .status-badge--sm {
+    font-size: var(--text-xs);
+    padding: 2px 6px;
+  }
+
+  .status-badge--md {
+    font-size: var(--text-sm);
+    padding: 4px 12px;
+  }
+
+  .status-badge--lg {
+    font-size: var(--text-base);
+    padding: 6px 16px;
+  }
+
+  /* Colors */
+  .status-badge--active {
+    background: var(--color-success);
+    color: white;
+  }
+
+  .status-badge--inactive {
+    background: var(--color-text-muted);
+    color: white;
+  }
+
+  .status-badge--dead {
+    background: var(--color-error);
+    color: white;
+  }
+
+  .status-badge--unknown {
+    background: var(--color-warning);
+    color: var(--color-bg);
+  }
+
+  .status-badge--transformed {
+    background: #7c3aed;
+    color: white;
+  }
+</style>

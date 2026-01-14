@@ -1,0 +1,70 @@
+---
+interface Props {
+  tags: string[];
+  linkPrefix?: string;  // e.g., "/blog/tag/" to make tags clickable
+  size?: 'sm' | 'md';
+}
+
+const { tags, linkPrefix, size = 'sm' } = Astro.props;
+const sizeClass = `tags-list--${size}`;
+---
+
+{tags.length > 0 && (
+  <ul class={`tags-list ${sizeClass}`}>
+    {tags.map((tag) => (
+      <li class="tag-item">
+        {linkPrefix ? (
+          <a href={`${linkPrefix}${tag}`} class="tag-link">
+            {tag}
+          </a>
+        ) : (
+          <span class="tag-text">{tag}</span>
+        )}
+      </li>
+    ))}
+  </ul>
+)}
+
+<style>
+  .tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .tag-item {
+    display: inline-block;
+  }
+
+  .tag-text,
+  .tag-link {
+    display: inline-block;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  /* Sizes */
+  .tags-list--sm .tag-text,
+  .tags-list--sm .tag-link {
+    padding: 2px 8px;
+    font-size: var(--text-xs);
+  }
+
+  .tags-list--md .tag-text,
+  .tags-list--md .tag-link {
+    padding: 4px 12px;
+    font-size: var(--text-sm);
+  }
+
+  /* Link hover */
+  .tag-link:hover {
+    background: var(--color-accent);
+    color: white;
+  }
+</style>

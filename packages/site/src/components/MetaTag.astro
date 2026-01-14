@@ -1,0 +1,55 @@
+---
+interface Props {
+  label: string;
+  variant?: 'default' | 'accent' | 'enemy' | 'pc' | 'npc' | 'boss';
+}
+
+const { label, variant = 'default' } = Astro.props;
+const variantClass = `meta-tag--${variant}`;
+---
+
+<span class={`meta-tag ${variantClass}`}>
+  {label}
+</span>
+
+<style>
+  .meta-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    text-transform: capitalize;
+    font-weight: 500;
+  }
+
+  .meta-tag--default {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    color: var(--color-accent);
+  }
+
+  .meta-tag--accent {
+    background: var(--color-accent);
+    color: white;
+  }
+
+  .meta-tag--enemy {
+    background: var(--color-error);
+    color: white;
+  }
+
+  .meta-tag--pc {
+    background: var(--color-accent);
+    color: white;
+  }
+
+  .meta-tag--npc {
+    background: var(--color-gold);
+    color: var(--color-bg);
+  }
+
+  .meta-tag--boss {
+    background: #dc2626;
+    color: white;
+  }
+</style>
