@@ -1,0 +1,434 @@
+---
+/**
+ * Spells Index Page
+ * Browse all spells with filtering by level, school, and class.
+ */
+
+import { getCollection } from 'astro:content';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+// Get all spells
+const allSpells = await getCollection('spells');
+
+// Sort alphabetically by name
+const sortedSpells = allSpells.sort((a, b) =>
+  a.data.name.localeCompare(b.data.name)
+);
+
+// Extract unique values for filters
+const schools = [...new Set(sortedSpells.map(s => s.data.school))].sort();
+const levels = [...new Set(sortedSpells.map(s => s.data.level))].sort((a, b) => a - b);
+const classes = [...new Set(sortedSpells.flatMap(s => s.data.classes || []))].sort();
+
+// School colors for badges
+const schoolColors: Record<string, string> = {
+  abjuration: '#3b82f6',
+  conjuration: '#f59e0b',
+  divination: '#8b5cf6',
+  enchantment: '#ec4899',
+  evocation: '#ef4444',
+  illusion: '#6366f1',
+  necromancy: '#1f2937',
+  transmutation: '#10b981',
+};
+
+// Format level display
+function formatLevel(level: number): string {
+  if (level === 0) return 'Cantrip';
+  if (level === 1) return '1st';
+  if (level === 2) return '2nd';
+  if (level === 3) return '3rd';
+  return `${level}th`;
+}
+---
+
+<BaseLayout
+  title="Spells - D&D Reference"
+  description="Browse all D&D 5e spells. Filter by level, school, and class."
+>
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-title">Spells</h1>
+      <p class="page-description">
+        {sortedSpells.length} spells from the SRD 5.2
+      </p>
+    </header>
+
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filter-group">
+        <label class="filter-label">Level</label>
+        <div class="filter-options" data-filter="level">
+          <button class="filter-btn active" data-value="all">All</button>
+          {levels.map(level => (
+            <button class="filter-btn" data-value={level}>
+              {formatLevel(level)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">School</label>
+        <div class="filter-options" data-filter="school">
+          <button class="filter-btn active" data-value="all">All</button>
+          {schools.map(school => (
+            <button
+              class="filter-btn"
+              data-value={school}
+              style={`--school-color: ${schoolColors[school]}`}
+            >
+              {school}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Class</label>
+        <div class="filter-options" data-filter="class">
+          <button class="filter-btn active" data-value="all">All</button>
+          {classes.map(cls => (
+            <button class="filter-btn" data-value={cls}>{cls}</button>
+          ))}
+        </div>
+      </div>
+
+      <div class="filter-group filter-group--search">
+        <label class="filter-label" for="spell-search">Search</label>
+        <input
+          type="text"
+          id="spell-search"
+          class="search-input"
+          placeholder="Search spells..."
+        />
+      </div>
+    </div>
+
+    <!-- Results count -->
+    <div class="results-count">
+      Showing <span id="visible-count">{sortedSpells.length}</span> of {sortedSpells.length} spells
+    </div>
+
+    <!-- Spells Table -->
+    <div class="spells-table-wrapper">
+      <table class="spells-table">
+        <thead>
+          <tr>
+            <th class="col-name">Name</th>
+            <th class="col-level">Level</th>
+            <th class="col-school">School</th>
+            <th class="col-time">Cast Time</th>
+            <th class="col-conc">C</th>
+            <th class="col-classes">Classes</th>
+          </tr>
+        </thead>
+        <tbody id="spells-body">
+          {sortedSpells.map(spell => (
+            <tr
+              class="spell-row"
+              data-level={spell.data.level}
+              data-school={spell.data.school}
+              data-classes={(spell.data.classes || []).join(',')}
+              data-name={spell.data.name.toLowerCase()}
+            >
+              <td class="col-name">
+                <a href={`/campaign/spells/${spell.id}`} class="spell-link">
+                  {spell.data.name}
+                  {spell.data.ritual && <span class="ritual-badge" title="Ritual">R</span>}
+                </a>
+              </td>
+              <td class="col-level">{formatLevel(spell.data.level)}</td>
+              <td class="col-school">
+                <span
+                  class="school-badge"
+                  style={`--school-color: ${schoolColors[spell.data.school]}`}
+                >
+                  {spell.data.school}
+                </span>
+              </td>
+              <td class="col-time">{spell.data.castingTime}</td>
+              <td class="col-conc">
+                {spell.data.concentration && <span class="conc-badge" title="Concentration">C</span>}
+              </td>
+              <td class="col-classes">
+                {(spell.data.classes || []).join(', ')}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  // Client-side filtering
+  const filters: Record<string, string> = {
+    level: 'all',
+    school: 'all',
+    class: 'all',
+  };
+  let searchTerm = '';
+
+  const rows = document.querySelectorAll('.spell-row') as NodeListOf<HTMLElement>;
+  const visibleCount = document.getElementById('visible-count');
+
+  function updateFilters() {
+    let count = 0;
+
+    rows.forEach(row => {
+      const level = row.dataset.level;
+      const school = row.dataset.school;
+      const classes = row.dataset.classes || '';
+      const name = row.dataset.name || '';
+
+      const matchesLevel = filters.level === 'all' || level === filters.level;
+      const matchesSchool = filters.school === 'all' || school === filters.school;
+      const matchesClass = filters.class === 'all' || classes.split(',').includes(filters.class);
+      const matchesSearch = !searchTerm || name.includes(searchTerm.toLowerCase());
+
+      if (matchesLevel && matchesSchool && matchesClass && matchesSearch) {
+        row.style.display = '';
+        count++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    if (visibleCount) {
+      visibleCount.textContent = String(count);
+    }
+  }
+
+  // Filter button handlers
+  document.querySelectorAll('.filter-options').forEach(group => {
+    const filterType = (group as HTMLElement).dataset.filter;
+
+    group.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Update active state
+        group.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Update filter
+        if (filterType) {
+          filters[filterType] = (btn as HTMLElement).dataset.value || 'all';
+        }
+        updateFilters();
+      });
+    });
+  });
+
+  // Search handler
+  const searchInput = document.getElementById('spell-search') as HTMLInputElement;
+  searchInput?.addEventListener('input', (e) => {
+    searchTerm = (e.target as HTMLInputElement).value;
+    updateFilters();
+  });
+</script>
+
+<style>
+  .page-header {
+    text-align: center;
+    padding: var(--space-xl) 0 var(--space-lg);
+  }
+
+  .page-title {
+    font-size: var(--text-3xl);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .page-description {
+    color: var(--color-text-secondary);
+    font-size: var(--text-lg);
+    margin: 0;
+  }
+
+  /* Filters */
+  .filters {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .filter-label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+  }
+
+  .filter-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .filter-btn {
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-transform: capitalize;
+  }
+
+  .filter-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .filter-btn.active {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+  }
+
+  .filter-group--search {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .search-input {
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    width: 100%;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  .results-count {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-md);
+  }
+
+  /* Table */
+  .spells-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .spells-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+
+  .spells-table th {
+    text-align: left;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-secondary);
+    border-bottom: 2px solid var(--color-border);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    font-size: var(--text-xs);
+    white-space: nowrap;
+  }
+
+  .spells-table td {
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+  }
+
+  .spell-row:hover {
+    background: var(--color-bg-secondary);
+  }
+
+  .col-level,
+  .col-conc {
+    text-align: center;
+    width: 60px;
+  }
+
+  .col-school {
+    width: 120px;
+  }
+
+  .col-time {
+    width: 100px;
+  }
+
+  .col-classes {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  .spell-link {
+    color: var(--color-text);
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .spell-link:hover {
+    color: var(--color-accent);
+  }
+
+  .ritual-badge {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    padding: 1px 4px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+  }
+
+  .school-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    text-transform: capitalize;
+    background: var(--school-color, var(--color-accent));
+    color: white;
+  }
+
+  .conc-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-warning);
+    color: var(--color-bg);
+    font-size: var(--text-xs);
+    font-weight: 700;
+  }
+
+  @media (max-width: 768px) {
+    .col-classes,
+    .col-time {
+      display: none;
+    }
+
+    .filters {
+      padding: var(--space-md);
+    }
+  }
+</style>
