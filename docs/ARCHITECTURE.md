@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the system architecture of the DnD Blog platform.
+This document describes the system architecture of the The Evocation of Events platform.
 
 ## Overview
 

@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide covers deploying the DnD Blog to AWS.
+This guide covers deploying the The Evocation of Events to AWS.
 
 ## Prerequisites
 

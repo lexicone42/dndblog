@@ -10,7 +10,7 @@ const program = new Command();
 
 program
   .name('content')
-  .description('Content pipeline CLI for the DnD Blog')
+  .description('Content pipeline CLI for the The Evocation of Events')
   .version('1.0.0');
 
 /**
