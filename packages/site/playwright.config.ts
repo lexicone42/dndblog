@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// When SITE_URL is set, we're testing against an external site (production)
+// and don't need to start a local server
+const isExternalSite = !!process.env.SITE_URL;
+
 /**
  * Playwright configuration for E2E and smoke testing.
  *
@@ -8,7 +12,7 @@ import { defineConfig, devices } from '@playwright/test';
  * - chromium: Full E2E tests in Chromium (local development)
  *
  * Usage:
- * - Smoke tests: pnpm test:smoke (uses SITE_URL env var)
+ * - Smoke tests: SITE_URL=https://example.com pnpm test:smoke
  * - E2E tests: pnpm test:e2e (runs against local dev server)
  */
 export default defineConfig({
@@ -44,11 +48,13 @@ export default defineConfig({
     },
   ],
 
-  // Local dev server for E2E tests (not smoke tests)
-  webServer: {
-    command: 'pnpm preview',
-    url: 'http://localhost:4321',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  // Local dev server for E2E tests only (not needed for smoke tests against external sites)
+  webServer: isExternalSite
+    ? undefined
+    : {
+        command: 'pnpm preview',
+        url: 'http://localhost:4321',
+        reuseExistingServer: !process.env.CI,
+        timeout: 120000,
+      },
 });
