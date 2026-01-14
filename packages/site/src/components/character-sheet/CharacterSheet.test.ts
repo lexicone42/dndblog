@@ -5,6 +5,17 @@ import AbilityScoresBlock from './AbilityScoresBlock.astro';
 import CombatStatsPanel from './CombatStatsPanel.astro';
 import EquipmentSection from './EquipmentSection.astro';
 
+/**
+ * Normalize HTML output for snapshot testing.
+ * Removes Astro debug attributes that contain environment-specific paths.
+ */
+function normalizeHtml(html: string): string {
+  return html
+    .replace(/\s*data-astro-source-file="[^"]*"/g, '')
+    .replace(/\s*data-astro-source-loc="[^"]*"/g, '')
+    .replace(/\s*data-astro-cid-[a-z0-9]+/g, '');
+}
+
 describe('CharacterSheet Components', () => {
   let container: AstroContainer;
 
@@ -51,7 +62,7 @@ describe('CharacterSheet Components', () => {
       expect(result).toContain('+4'); // INT mod
 
       // Snapshot for visual regression
-      expect(result).toMatchSnapshot();
+      expect(normalizeHtml(result)).toMatchSnapshot();
     });
 
     it('renders nothing when no ability scores provided', async () => {
@@ -97,7 +108,7 @@ describe('CharacterSheet Components', () => {
       expect(result).toContain('45'); // Current HP
       expect(result).toContain('52'); // Max HP
       expect(result).toContain('30'); // Speed
-      expect(result).toMatchSnapshot();
+      expect(normalizeHtml(result)).toMatchSnapshot();
     });
 
     it('renders nothing when no combat stats provided', async () => {
@@ -144,7 +155,7 @@ describe('CharacterSheet Components', () => {
       expect(result).toContain('150 GP');
       expect(result).toContain('20 SP');
 
-      expect(result).toMatchSnapshot();
+      expect(normalizeHtml(result)).toMatchSnapshot();
     });
 
     it('renders nothing when no equipment provided', async () => {
@@ -207,7 +218,7 @@ describe('CharacterSheet Components', () => {
       expect(result).toContain('Arcana');
       expect(result).toContain('History');
 
-      expect(result).toMatchSnapshot();
+      expect(normalizeHtml(result)).toMatchSnapshot();
     });
 
     it('renders nothing when character has no sheet data', async () => {
