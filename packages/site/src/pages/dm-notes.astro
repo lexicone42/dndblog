@@ -350,6 +350,9 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         .then(function(response) {
           if (!response.ok) {
             return response.json().then(function(err) {
+              if (err.disabled) {
+                throw new Error('AI Review is temporarily disabled. You can still publish your notes.');
+              }
               throw new Error(err.error || 'Review failed');
             });
           }

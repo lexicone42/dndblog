@@ -168,6 +168,9 @@ exports.handler = async (event) => {
       ],
     }));
 
+    // SSM parameter for feature flag
+    const featureFlagParameterName = '/dndblog/ai-review-enabled';
+
     // Lambda function for AI review via Bedrock (Claude Sonnet 4)
     const reviewFunction = new lambda.Function(this, 'ReviewFunction', {
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -176,6 +179,7 @@ exports.handler = async (event) => {
       memorySize: 512,
       environment: {
         TOKEN_PARAMETER_NAME: tokenParameterName,
+        FEATURE_FLAG_PARAMETER: featureFlagParameterName,
         ALLOWED_ORIGIN: props.allowedOrigin,
         BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
       },
@@ -188,6 +192,8 @@ const ssmClient = new SSMClient({});
 
 let cachedToken = null;
 let tokenExpiry = 0;
+let cachedFeatureFlag = null;
+let featureFlagExpiry = 0;
 
 async function getToken() {
   const now = Date.now();
@@ -201,6 +207,24 @@ async function getToken() {
   cachedToken = result.Parameter.Value;
   tokenExpiry = now + 5 * 60 * 1000;
   return cachedToken;
+}
+
+async function isFeatureEnabled() {
+  const now = Date.now();
+  if (cachedFeatureFlag !== null && now < featureFlagExpiry) {
+    return cachedFeatureFlag;
+  }
+  try {
+    const result = await ssmClient.send(new GetParameterCommand({
+      Name: process.env.FEATURE_FLAG_PARAMETER,
+    }));
+    cachedFeatureFlag = result.Parameter.Value === 'true';
+  } catch (err) {
+    // If parameter doesn't exist, default to enabled
+    cachedFeatureFlag = true;
+  }
+  featureFlagExpiry = now + 60 * 1000; // Cache for 1 minute
+  return cachedFeatureFlag;
 }
 
 exports.handler = async (event) => {
@@ -224,6 +248,16 @@ exports.handler = async (event) => {
     const validToken = await getToken();
     if (providedToken !== validToken) {
       return { statusCode: 403, headers, body: JSON.stringify({ error: 'Invalid token' }) };
+    }
+
+    // Check feature flag
+    const enabled = await isFeatureEnabled();
+    if (!enabled) {
+      return {
+        statusCode: 503,
+        headers,
+        body: JSON.stringify({ error: 'AI review is temporarily disabled', disabled: true }),
+      };
     }
 
     const body = JSON.parse(event.body || '{}');
@@ -317,6 +351,11 @@ Respond with valid JSON only:\`
           service: 'ssm',
           resource: 'parameter',
           resourceName: tokenParameterName.replace(/^\//, ''),
+        }),
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: featureFlagParameterName.replace(/^\//, ''),
         }),
       ],
     }));
