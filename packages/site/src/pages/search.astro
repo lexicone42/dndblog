@@ -114,43 +114,6 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     display: none !important;
   }
 
-  /* Style the clear button to match the site theme */
-  :global(.pagefind-ui__search-clear) {
-    right: var(--space-md) !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    width: 28px !important;
-    height: 28px !important;
-    padding: 0 !important;
-    background: var(--color-bg-tertiary) !important;
-    border: 1px solid var(--color-border) !important;
-    border-radius: var(--radius-sm) !important;
-    color: var(--color-text-secondary) !important;
-    cursor: pointer !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    transition: all var(--transition-fast) !important;
-  }
-
-  :global(.pagefind-ui__search-clear:hover) {
-    background: var(--color-accent) !important;
-    border-color: var(--color-accent) !important;
-    color: white !important;
-  }
-
-  :global(.pagefind-ui__search-clear::before) {
-    content: '×' !important;
-    font-size: 18px !important;
-    font-weight: 400 !important;
-    line-height: 1 !important;
-  }
-
-  /* Hide the default SVG icon inside clear button */
-  :global(.pagefind-ui__search-clear svg) {
-    display: none !important;
-  }
-
   :global(.pagefind-ui__search-input:focus) {
     border-color: var(--color-accent) !important;
     outline: none !important;
