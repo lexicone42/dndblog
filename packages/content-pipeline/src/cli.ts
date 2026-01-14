@@ -10,7 +10,7 @@ const program = new Command();
 
 program
   .name('content')
-  .description('Content pipeline CLI for the Rudiger's Evocation of Events')
+  .description("Content pipeline CLI for Rudiger's Evocation of Events")
   .version('1.0.0');
 
 /**
