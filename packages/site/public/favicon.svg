@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Background -->
+  <rect width="32" height="32" fill="#1a120b" rx="4"/>
+
+  <!-- Outer glow -->
+  <ellipse cx="16" cy="18" rx="10" ry="12" fill="#d4a943" opacity="0.3"/>
+
+  <!-- Fireball base (orange) -->
+  <path d="M16 28 C8 28 6 20 8 14 C10 8 14 6 16 4 C18 6 22 8 24 14 C26 20 24 28 16 28Z" fill="#ff6600"/>
+
+  <!-- Fireball middle (lighter orange) -->
+  <path d="M16 24 C10 24 9 18 10 14 C12 10 14 8 16 6 C18 8 20 10 22 14 C23 18 22 24 16 24Z" fill="#ff9933"/>
+
+  <!-- Fireball inner (yellow) -->
+  <path d="M16 20 C12 20 11 16 12 13 C13 10 15 9 16 8 C17 9 19 10 20 13 C21 16 20 20 16 20Z" fill="#ffcc00"/>
+
+  <!-- Fireball core (bright) -->
+  <ellipse cx="16" cy="14" rx="3" ry="4" fill="#fff8dc"/>
+
+  <!-- Highlight -->
+  <ellipse cx="14" cy="12" rx="1" ry="2" fill="#ffffff" opacity="0.8"/>
+</svg>

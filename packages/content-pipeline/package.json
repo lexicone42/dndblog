@@ -1,0 +1,31 @@
+{
+  "name": "@dndblog/content-pipeline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Content ingestion and processing pipeline for the blog",
+  "type": "module",
+  "bin": {
+    "content": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w",
+    "ingest": "tsx src/cli.ts ingest",
+    "process": "tsx src/cli.ts process",
+    "screenshots": "tsx src/cli.ts screenshots",
+    "publish": "tsx src/cli.ts publish",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "gray-matter": "^4.0.3",
+    "sharp": "^0.33.5",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

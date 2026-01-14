@@ -1,0 +1,231 @@
+---
+const currentPath = Astro.url.pathname;
+
+const navLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/blog', label: 'Blog' },
+];
+
+function isActive(href: string): boolean {
+  if (href === '/') {
+    return currentPath === '/';
+  }
+  return currentPath.startsWith(href);
+}
+---
+
+<header class="header">
+  <div class="container header__container">
+    <a href="/" class="header__logo" aria-label="Home">
+      <span class="header__logo-text">DnD Blog</span>
+    </a>
+
+    <nav class="header__nav" aria-label="Main navigation">
+      <ul class="header__nav-list">
+        {navLinks.map(({ href, label }) => (
+          <li>
+            <a
+              href={href}
+              class:list={['header__nav-link', { 'header__nav-link--active': isActive(href) }]}
+              aria-current={isActive(href) ? 'page' : undefined}
+            >
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <button
+      class="header__theme-toggle"
+      type="button"
+      aria-label="Toggle dark mode"
+      id="theme-toggle"
+    >
+      <svg
+        class="header__theme-icon header__theme-icon--light"
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
+      <svg
+        class="header__theme-icon header__theme-icon--dark"
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<style>
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background-color: var(--color-bg);
+    border-bottom: 2px solid var(--color-border);
+    height: var(--header-height);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .header__container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    gap: var(--space-md);
+  }
+
+  .header__logo {
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-xl);
+    color: var(--color-text);
+    letter-spacing: 0.02em;
+  }
+
+  .header__logo:hover {
+    color: var(--color-accent);
+  }
+
+  .header__nav-list {
+    display: flex;
+    list-style: none;
+    gap: var(--space-lg);
+    padding: 0;
+    margin: 0;
+  }
+
+  .header__nav-link {
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+  }
+
+  .header__nav-link:hover {
+    color: var(--color-text);
+    background-color: var(--color-bg-secondary);
+  }
+
+  .header__nav-link--active {
+    color: var(--color-accent);
+  }
+
+  .header__theme-toggle {
+    background: none;
+    border: none;
+    padding: var(--space-sm);
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+  }
+
+  .header__theme-toggle:hover {
+    color: var(--color-text);
+    background-color: var(--color-bg-secondary);
+  }
+
+  /* Show/hide icons based on color scheme */
+  .header__theme-icon--dark {
+    display: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .header__theme-icon--light {
+      display: none;
+    }
+    .header__theme-icon--dark {
+      display: block;
+    }
+  }
+
+  /* When manually set to dark */
+  :global([data-theme='dark']) .header__theme-icon--light {
+    display: none;
+  }
+  :global([data-theme='dark']) .header__theme-icon--dark {
+    display: block;
+  }
+
+  /* When manually set to light */
+  :global([data-theme='light']) .header__theme-icon--light {
+    display: block;
+  }
+  :global([data-theme='light']) .header__theme-icon--dark {
+    display: none;
+  }
+
+  @media (max-width: 640px) {
+    .header__nav-list {
+      gap: var(--space-md);
+    }
+  }
+</style>
+
+<script>
+  // Theme toggle functionality
+  const toggle = document.getElementById('theme-toggle');
+
+  function getThemePreference(): 'light' | 'dark' {
+    const stored = localStorage.getItem('theme');
+    if (stored === 'light' || stored === 'dark') {
+      return stored;
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function setTheme(theme: 'light' | 'dark') {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }
+
+  // Set initial theme
+  setTheme(getThemePreference());
+
+  toggle?.addEventListener('click', () => {
+    const current = getThemePreference();
+    setTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  // Listen for system preference changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!localStorage.getItem('theme')) {
+      setTheme(e.matches ? 'dark' : 'light');
+    }
+  });
+</script>

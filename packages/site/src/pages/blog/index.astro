@@ -1,0 +1,301 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '@layouts/BaseLayout.astro';
+import PostCard from '@components/PostCard.astro';
+
+const POSTS_PER_PAGE = 10;
+
+// Get all public, non-draft posts
+const allPosts = await getCollection('blog', ({ data }) => {
+  return !data.draft && data.visibility === 'public';
+});
+
+// Sort by date (newest first)
+const sortedPosts = allPosts.sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+// Get current page from URL
+const url = new URL(Astro.request.url);
+const currentPage = Number(url.searchParams.get('page')) || 1;
+
+// Pagination calculations
+const totalPosts = sortedPosts.length;
+const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
+const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+const endIndex = startIndex + POSTS_PER_PAGE;
+const paginatedPosts = sortedPosts.slice(startIndex, endIndex);
+
+// Calculate reading time (rough estimate: 200 words per minute)
+function getReadingTime(content: string): number {
+  const words = content.split(/\s+/).length;
+  return Math.ceil(words / 200);
+}
+
+// Collect all unique tags
+const allTags = [...new Set(sortedPosts.flatMap((post) => post.data.tags))].sort();
+---
+
+<BaseLayout
+  title="Blog - DnD Blog"
+  description="Browse all posts from our D&D blog. Campaign recaps, character spotlights, and more."
+>
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-title">All Posts</h1>
+      <p class="page-description">
+        {totalPosts} {totalPosts === 1 ? 'post' : 'posts'} about adventures, campaigns, and more
+      </p>
+    </header>
+
+    {allTags.length > 0 && (
+      <nav class="tags-nav" aria-label="Filter by tag">
+        <span class="tags-nav__label">Tags:</span>
+        <ul class="tags-nav__list">
+          {allTags.map((tag) => (
+            <li>
+              <a href={`/blog/tag/${tag}`} class="tags-nav__tag">
+                {tag}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )}
+
+    {paginatedPosts.length > 0 ? (
+      <>
+        <div class="posts-grid">
+          {paginatedPosts.map((post) => (
+            <PostCard
+              title={post.data.title}
+              description={post.data.description}
+              pubDate={post.data.pubDate}
+              slug={post.id}
+              heroImage={post.data.heroImage}
+              tags={post.data.tags}
+              readingTime={getReadingTime(post.body || '')}
+            />
+          ))}
+        </div>
+
+        {totalPages > 1 && (
+          <nav class="pagination" aria-label="Pagination">
+            <ul class="pagination__list">
+              {currentPage > 1 && (
+                <li>
+                  <a
+                    href={`/blog?page=${currentPage - 1}`}
+                    class="pagination__link pagination__link--prev"
+                    aria-label="Previous page"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Previous
+                  </a>
+                </li>
+              )}
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <li>
+                  <a
+                    href={`/blog?page=${page}`}
+                    class:list={[
+                      'pagination__link',
+                      'pagination__link--number',
+                      { 'pagination__link--active': page === currentPage },
+                    ]}
+                    aria-label={`Page ${page}`}
+                    aria-current={page === currentPage ? 'page' : undefined}
+                  >
+                    {page}
+                  </a>
+                </li>
+              ))}
+
+              {currentPage < totalPages && (
+                <li>
+                  <a
+                    href={`/blog?page=${currentPage + 1}`}
+                    class="pagination__link pagination__link--next"
+                    aria-label="Next page"
+                  >
+                    Next
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </a>
+                </li>
+              )}
+            </ul>
+          </nav>
+        )}
+      </>
+    ) : (
+      <p class="no-posts">No posts yet. Check back soon!</p>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header {
+    text-align: center;
+    padding: var(--space-xl) 0 var(--space-2xl);
+  }
+
+  .page-title {
+    font-size: var(--text-3xl);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .page-description {
+    color: var(--color-text-secondary);
+    font-size: var(--text-lg);
+    margin: 0;
+  }
+
+  .tags-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-xl);
+  }
+
+  .tags-nav__label {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+  }
+
+  .tags-nav__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .tags-nav__tag {
+    display: inline-block;
+    padding: var(--space-xs) var(--space-sm);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+  }
+
+  .tags-nav__tag:hover {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+  }
+
+  .posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-xl);
+  }
+
+  .pagination {
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .pagination__list {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-sm);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .pagination__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    background-color: var(--color-bg-secondary);
+    transition: all var(--transition-fast);
+  }
+
+  .pagination__link:hover {
+    color: var(--color-text);
+    background-color: var(--color-bg-tertiary);
+  }
+
+  .pagination__link--active {
+    background-color: var(--color-accent);
+    color: white;
+  }
+
+  .pagination__link--active:hover {
+    background-color: var(--color-accent-hover);
+    color: white;
+  }
+
+  .pagination__link--number {
+    min-width: 2.5rem;
+    justify-content: center;
+  }
+
+  .no-posts {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--text-lg);
+    padding: var(--space-3xl);
+  }
+
+  @media (max-width: 640px) {
+    .posts-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .pagination__link--prev,
+    .pagination__link--next {
+      padding: var(--space-sm);
+    }
+
+    .pagination__link--prev span,
+    .pagination__link--next span {
+      display: none;
+    }
+  }
+</style>

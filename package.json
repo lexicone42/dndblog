@@ -1,0 +1,23 @@
+{
+  "name": "dndblog",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Modular static blog platform with future RPG campaign extension",
+  "keywords": ["blog", "astro", "aws", "cdk", "static-site"],
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "./scripts/build.sh",
+    "deploy": "./scripts/deploy.sh",
+    "dev": "./scripts/dev.sh",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "audit": "pnpm audit --audit-level=high",
+    "clean": "pnpm -r clean"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

@@ -1,0 +1,24 @@
+{
+  "name": "@dndblog/site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Astro static blog site",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "typecheck": "astro check",
+    "clean": "rm -rf dist .astro"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.0",
+    "astro": "^5.0.0",
+    "easymde": "^2.20.0",
+    "marked": "^17.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

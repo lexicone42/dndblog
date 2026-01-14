@@ -1,0 +1,14 @@
+{
+  "sources": [
+    {
+      "name": "sample-content",
+      "path": "./sample-content",
+      "description": "Sample blog posts for development and testing"
+    }
+  ],
+  "defaults": {
+    "outputDir": "packages/site/src/content/blog",
+    "imageOutputDir": "packages/site/public/assets/images",
+    "originalsDir": "packages/site/public/assets/originals"
+  }
+}

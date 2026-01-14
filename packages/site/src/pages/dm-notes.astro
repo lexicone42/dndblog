@@ -1,0 +1,428 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+// Get API URL from environment variable
+const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
+---
+
+<BaseLayout
+  title="DM Notes - DnD Blog"
+  description="Private DM session notes editor"
+>
+  <!-- Load EasyMDE CSS in head via fragment -->
+  <Fragment slot="head">
+    <link rel="stylesheet" href="https://unpkg.com/easymde@2.18.0/dist/easymde.min.css" />
+  </Fragment>
+
+  <div class="dm-notes">
+    <div id="access-denied" class="access-denied">
+      <div class="access-denied__content">
+        <h1>Access Denied</h1>
+        <p>This page requires a valid access token.</p>
+        <p class="access-denied__hint">Add <code>?token=your-token</code> to the URL</p>
+      </div>
+    </div>
+
+    <div id="editor-container" class="editor-container" style="display: none;">
+      <header class="editor-header">
+        <h1>DM Session Notes</h1>
+        <div class="editor-header__actions">
+          <span id="save-status" class="save-status">Ready</span>
+          <button id="publish-btn" class="btn btn--primary">Publish to S3</button>
+        </div>
+      </header>
+
+      <div class="editor-meta">
+        <label>
+          Session Title:
+          <input type="text" id="session-title" placeholder="Session 10: The Next Adventure" />
+        </label>
+      </div>
+
+      <div class="editor-wrapper">
+        <textarea id="markdown-editor"></textarea>
+      </div>
+
+      <div id="publish-result" class="publish-result" style="display: none;"></div>
+    </div>
+  </div>
+
+  <!-- Store API URL in a data attribute -->
+  <div id="config" data-api-url={apiUrl} style="display: none;"></div>
+
+  <!-- Load EasyMDE from CDN -->
+  <script is:inline src="https://unpkg.com/easymde@2.18.0/dist/easymde.min.js"></script>
+
+  <script is:inline>
+    (function() {
+      var STORAGE_KEY = 'dm-notes-draft';
+      var TITLE_KEY = 'dm-notes-title';
+      var editor = null;
+      var saveTimeout = null;
+
+      function getToken() {
+        var params = new URLSearchParams(window.location.search);
+        return params.get('token');
+      }
+
+      function getApiUrl() {
+        var configEl = document.getElementById('config');
+        return configEl ? configEl.dataset.apiUrl : '';
+      }
+
+      function showEditor() {
+        document.getElementById('access-denied').style.display = 'none';
+        document.getElementById('editor-container').style.display = 'block';
+      }
+
+      function showAccessDenied() {
+        document.getElementById('access-denied').style.display = 'flex';
+        document.getElementById('editor-container').style.display = 'none';
+      }
+
+      function updateSaveStatus(status, isError) {
+        var el = document.getElementById('save-status');
+        el.textContent = status;
+        if (isError) {
+          el.classList.add('save-status--error');
+          el.classList.remove('save-status--success');
+        } else if (status.includes('Saved')) {
+          el.classList.add('save-status--success');
+          el.classList.remove('save-status--error');
+        } else {
+          el.classList.remove('save-status--error');
+          el.classList.remove('save-status--success');
+        }
+      }
+
+      function showPublishResult(message, isSuccess, details) {
+        var resultDiv = document.getElementById('publish-result');
+        resultDiv.style.display = 'block';
+        while (resultDiv.firstChild) {
+          resultDiv.removeChild(resultDiv.firstChild);
+        }
+        var msgP = document.createElement('p');
+        msgP.className = isSuccess ? 'success' : 'error';
+        msgP.textContent = message;
+        resultDiv.appendChild(msgP);
+        if (details && isSuccess) {
+          var detailsP = document.createElement('p');
+          detailsP.className = 'success-details';
+          detailsP.textContent = 'Saved as: ';
+          var codeEl = document.createElement('code');
+          codeEl.textContent = details;
+          detailsP.appendChild(codeEl);
+          resultDiv.appendChild(detailsP);
+        }
+      }
+
+      function saveDraft() {
+        if (!editor) return;
+        var content = editor.value();
+        var title = document.getElementById('session-title').value;
+        localStorage.setItem(STORAGE_KEY, content);
+        localStorage.setItem(TITLE_KEY, title);
+        updateSaveStatus('Draft saved', false);
+        setTimeout(function() { updateSaveStatus('Ready', false); }, 2000);
+      }
+
+      function loadDraft() {
+        var savedContent = localStorage.getItem(STORAGE_KEY);
+        var savedTitle = localStorage.getItem(TITLE_KEY);
+        if (savedContent && editor) {
+          editor.value(savedContent);
+        }
+        if (savedTitle) {
+          document.getElementById('session-title').value = savedTitle;
+        }
+      }
+
+      function debouncedSave() {
+        updateSaveStatus('Saving...', false);
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(saveDraft, 500);
+      }
+
+      function publishNotes() {
+        var token = getToken();
+        if (!token || !editor) return;
+
+        var publishBtn = document.getElementById('publish-btn');
+        var resultDiv = document.getElementById('publish-result');
+        var title = document.getElementById('session-title').value;
+        var content = editor.value();
+
+        if (!content.trim()) {
+          showPublishResult('Please write some notes before publishing.', false);
+          return;
+        }
+
+        publishBtn.disabled = true;
+        publishBtn.textContent = 'Publishing...';
+        resultDiv.style.display = 'none';
+
+        var timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        var filename = title
+          ? title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') + '-' + timestamp + '.md'
+          : 'session-' + timestamp + '.md';
+
+        var apiUrl = getApiUrl();
+        if (!apiUrl) {
+          showPublishResult('API URL not configured. Deploy the DmNotesStack first.', false);
+          publishBtn.disabled = false;
+          publishBtn.textContent = 'Publish to S3';
+          return;
+        }
+
+        fetch(apiUrl + '/upload-url?filename=' + encodeURIComponent(filename), {
+          method: 'GET',
+          headers: { 'X-DM-Token': token }
+        })
+        .then(function(response) {
+          if (!response.ok) {
+            return response.json().then(function(err) {
+              throw new Error(err.error || 'Failed to get upload URL');
+            });
+          }
+          return response.json();
+        })
+        .then(function(data) {
+          var fullContent = '---\ntitle: "' + (title || 'Session Notes') + '"\ndate: "' + new Date().toISOString() + '"\ndraft: true\n---\n\n' + content;
+          return fetch(data.uploadUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'text/markdown' },
+            body: fullContent
+          }).then(function(uploadResponse) {
+            if (!uploadResponse.ok) {
+              throw new Error('Failed to upload to S3');
+            }
+            return data.key;
+          });
+        })
+        .then(function(key) {
+          showPublishResult('Notes published successfully!', true, key);
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(TITLE_KEY);
+        })
+        .catch(function(error) {
+          console.error('Publish error:', error);
+          showPublishResult('Error: ' + error.message, false);
+        })
+        .finally(function() {
+          publishBtn.disabled = false;
+          publishBtn.textContent = 'Publish to S3';
+        });
+      }
+
+      function init() {
+        var token = getToken();
+        console.log('DM Notes init, token:', token ? 'present' : 'missing');
+
+        if (!token) {
+          showAccessDenied();
+          return;
+        }
+
+        showEditor();
+
+        var textarea = document.getElementById('markdown-editor');
+        console.log('EasyMDE available:', typeof EasyMDE !== 'undefined');
+        console.log('Textarea found:', !!textarea);
+
+        if (typeof EasyMDE !== 'undefined' && textarea) {
+          editor = new EasyMDE({
+            element: textarea,
+            autofocus: true,
+            spellChecker: false,
+            placeholder: 'Write your session notes here...\n\n## Session Summary\n\n## Key Events\n\n## NPCs Encountered\n\n## Loot & Rewards\n\n## Notes for Next Session',
+            toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', '|', 'preview', 'side-by-side', 'fullscreen', '|', 'guide'],
+            status: ['lines', 'words']
+          });
+          loadDraft();
+          editor.codemirror.on('change', debouncedSave);
+          console.log('EasyMDE initialized');
+        } else {
+          console.error('EasyMDE not loaded or textarea not found');
+        }
+
+        var titleInput = document.getElementById('session-title');
+        if (titleInput) {
+          titleInput.addEventListener('input', debouncedSave);
+        }
+
+        var publishBtn = document.getElementById('publish-btn');
+        if (publishBtn) {
+          publishBtn.addEventListener('click', publishNotes);
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+
+  <style>
+    .dm-notes {
+      min-height: 80vh;
+    }
+
+    .access-denied {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      text-align: center;
+    }
+
+    .access-denied__content h1 {
+      color: var(--color-accent);
+      font-family: var(--font-display);
+      margin-bottom: var(--space-md);
+    }
+
+    .access-denied__hint {
+      margin-top: var(--space-lg);
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+
+    .access-denied__hint code {
+      background: var(--color-bg-secondary);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+    }
+
+    .editor-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-lg);
+    }
+
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-lg);
+      flex-wrap: wrap;
+      gap: var(--space-md);
+    }
+
+    .editor-header h1 {
+      font-family: var(--font-display);
+      color: var(--color-gold);
+      margin: 0;
+    }
+
+    .editor-header__actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+
+    .save-status {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg-secondary);
+    }
+
+    .save-status--success {
+      color: var(--color-success, #22c55e);
+    }
+
+    .save-status--error {
+      color: var(--color-error, #ef4444);
+    }
+
+    .btn {
+      padding: var(--space-sm) var(--space-lg);
+      border: 2px solid var(--color-gold);
+      border-radius: var(--radius-md);
+      font-family: var(--font-display);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .btn--primary {
+      background: var(--color-gold);
+      color: var(--color-bg);
+    }
+
+    .btn--primary:hover:not(:disabled) {
+      background: var(--color-gold-light);
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .editor-meta {
+      margin-bottom: var(--space-lg);
+    }
+
+    .editor-meta label {
+      display: block;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .editor-meta input {
+      width: 100%;
+      margin-top: var(--space-xs);
+      padding: var(--space-sm) var(--space-md);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg-secondary);
+      color: var(--color-text);
+      font-size: var(--text-base);
+      font-family: var(--font-sans);
+    }
+
+    .editor-meta input:focus {
+      outline: none;
+      border-color: var(--color-gold);
+    }
+
+    .editor-wrapper {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .publish-result {
+      margin-top: var(--space-lg);
+      padding: var(--space-md);
+      border-radius: var(--radius-md);
+      background: var(--color-bg-secondary);
+    }
+
+    .publish-result .success {
+      color: var(--color-success, #22c55e);
+      margin: 0;
+    }
+
+    .publish-result .success-details {
+      margin-top: var(--space-sm);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+
+    .publish-result .success-details code {
+      background: var(--color-bg);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-sm);
+    }
+
+    .publish-result .error {
+      color: var(--color-error, #ef4444);
+      margin: 0;
+    }
+  </style>
+</BaseLayout>

@@ -1,0 +1,301 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import fs from 'node:fs';
+import path from 'node:path';
+import { marked } from 'marked';
+
+// Read all reference files at build time
+const referenceDir = path.join(process.cwd(), 'reference');
+const referenceFiles: { name: string; slug: string; content: string }[] = [];
+
+if (fs.existsSync(referenceDir)) {
+  const files = fs.readdirSync(referenceDir).filter(f => f.endsWith('.md'));
+
+  for (const file of files) {
+    const filePath = path.join(referenceDir, file);
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const name = file
+      .replace('.md', '')
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    referenceFiles.push({
+      name,
+      slug: file.replace('.md', ''),
+      content,
+    });
+  }
+}
+
+// Sort alphabetically
+referenceFiles.sort((a, b) => a.name.localeCompare(b.name));
+---
+
+<BaseLayout
+  title="Campaign Reference - DnD Blog"
+  description="Quick reference guide for characters, locations, factions, and items in our campaign"
+>
+  <div class="reference-page">
+    <header class="reference-header">
+      <h1>Campaign Reference</h1>
+      <p class="reference-subtitle">Quick lookup for campaign lore, characters, and world details</p>
+    </header>
+
+    <nav class="reference-nav">
+      <ul class="reference-nav__list">
+        {referenceFiles.map(file => (
+          <li>
+            <a href={`#${file.slug}`} class="reference-nav__link">{file.name}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <div class="reference-content">
+      {referenceFiles.map(file => (
+        <section id={file.slug} class="reference-section">
+          <div class="reference-section__content prose" set:html={marked(file.content)} />
+        </section>
+      ))}
+    </div>
+
+    {referenceFiles.length === 0 && (
+      <div class="reference-empty">
+        <p>No reference files found.</p>
+        <p class="reference-empty__hint">Add markdown files to the <code>reference/</code> directory.</p>
+      </div>
+    )}
+  </div>
+</BaseLayout>
+
+<script>
+  // Smooth scroll for anchor links
+  document.querySelectorAll('.reference-nav__link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetId = (e.target as HTMLAnchorElement).getAttribute('href')?.slice(1);
+      if (targetId) {
+        const target = document.getElementById(targetId);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Update URL without triggering scroll
+          history.pushState(null, '', `#${targetId}`);
+        }
+      }
+    });
+  });
+
+  // Highlight active section on scroll
+  const sections = document.querySelectorAll('.reference-section');
+  const navLinks = document.querySelectorAll('.reference-nav__link');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        navLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -80% 0px' });
+
+  sections.forEach(section => observer.observe(section));
+</script>
+
+<style>
+  .reference-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-lg);
+  }
+
+  .reference-header {
+    text-align: center;
+    margin-bottom: var(--space-2xl);
+    padding-bottom: var(--space-xl);
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .reference-header h1 {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    color: var(--color-gold);
+    margin-bottom: var(--space-sm);
+  }
+
+  .reference-subtitle {
+    color: var(--color-text-muted);
+    font-size: var(--text-lg);
+    font-style: italic;
+  }
+
+  .reference-nav {
+    position: sticky;
+    top: 80px;
+    background: var(--color-bg);
+    padding: var(--space-md) 0;
+    margin-bottom: var(--space-xl);
+    border-bottom: 1px solid var(--color-border);
+    z-index: 10;
+  }
+
+  .reference-nav__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    justify-content: center;
+  }
+
+  .reference-nav__link {
+    display: block;
+    padding: var(--space-xs) var(--space-md);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+  }
+
+  .reference-nav__link:hover,
+  .reference-nav__link.active {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+    background: var(--color-bg-secondary);
+  }
+
+  .reference-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xl);
+  }
+
+  .reference-section {
+    scroll-margin-top: 150px;
+  }
+
+  .reference-section__content {
+    background: var(--color-bg-secondary);
+    padding: var(--space-xl);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--color-border);
+  }
+
+  /* Prose styling for markdown content */
+  .reference-section__content :global(h1) {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    color: var(--color-gold);
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-sm);
+    border-bottom: 2px solid var(--color-gold);
+  }
+
+  .reference-section__content :global(h2) {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-accent);
+    margin-top: var(--space-xl);
+    margin-bottom: var(--space-md);
+  }
+
+  .reference-section__content :global(h3) {
+    font-size: var(--text-lg);
+    color: var(--color-text);
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-sm);
+  }
+
+  .reference-section__content :global(p) {
+    margin-bottom: var(--space-md);
+    line-height: 1.7;
+  }
+
+  .reference-section__content :global(ul),
+  .reference-section__content :global(ol) {
+    margin-bottom: var(--space-md);
+    padding-left: var(--space-lg);
+  }
+
+  .reference-section__content :global(li) {
+    margin-bottom: var(--space-xs);
+  }
+
+  .reference-section__content :global(strong) {
+    color: var(--color-gold);
+  }
+
+  .reference-section__content :global(code) {
+    background: var(--color-bg);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+
+  .reference-section__content :global(blockquote) {
+    border-left: 4px solid var(--color-gold);
+    padding-left: var(--space-md);
+    margin: var(--space-md) 0;
+    font-style: italic;
+    color: var(--color-text-muted);
+  }
+
+  .reference-section__content :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--space-md) 0;
+  }
+
+  .reference-section__content :global(th),
+  .reference-section__content :global(td) {
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border);
+    text-align: left;
+  }
+
+  .reference-section__content :global(th) {
+    background: var(--color-bg);
+    font-weight: 600;
+    color: var(--color-gold);
+  }
+
+  .reference-section__content :global(hr) {
+    border: none;
+    border-top: 2px solid var(--color-border);
+    margin: var(--space-xl) 0;
+  }
+
+  .reference-empty {
+    text-align: center;
+    padding: var(--space-3xl);
+    color: var(--color-text-muted);
+  }
+
+  .reference-empty__hint code {
+    background: var(--color-bg-secondary);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+  }
+
+  @media (max-width: 768px) {
+    .reference-nav {
+      position: relative;
+      top: 0;
+    }
+
+    .reference-nav__list {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .reference-section__content {
+      padding: var(--space-md);
+    }
+  }
+</style>

@@ -1,0 +1,192 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+// Get all session posts (sorted by pubDate, oldest first)
+const allPosts = await getCollection('blog', ({ data }) => {
+  return !data.draft && data.visibility === 'public';
+});
+
+const sessionPosts = allPosts
+  .filter(post => post.data.tags?.includes('session'))
+  .sort((a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf());
+
+// Format date helper
+function formatDate(date: Date): string {
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+---
+
+<BaseLayout
+  title="Session Chronicles - DnD Blog"
+  description="Follow our campaign from the beginning - all session recaps in order"
+>
+  <div class="sessions-page">
+    <header class="sessions-header">
+      <h1>Session Chronicles</h1>
+      <p class="sessions-subtitle">Follow the adventure from the beginning</p>
+    </header>
+
+    <div class="sessions-list">
+      {sessionPosts.map((post, index) => (
+        <a href={`/blog/${post.id}`} class="session-card">
+          <div class="session-card__number">{index + 1}</div>
+          <div class="session-card__content">
+            <h2 class="session-card__title">{post.data.title}</h2>
+            <p class="session-card__description">{post.data.description}</p>
+            <time class="session-card__date">{formatDate(post.data.pubDate)}</time>
+          </div>
+          <div class="session-card__arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+        </a>
+      ))}
+    </div>
+
+    {sessionPosts.length === 0 && (
+      <p class="no-sessions">No session posts yet. The adventure awaits!</p>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .sessions-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-lg);
+  }
+
+  .sessions-header {
+    text-align: center;
+    margin-bottom: var(--space-3xl);
+  }
+
+  .sessions-header h1 {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    color: var(--color-gold);
+    margin-bottom: var(--space-sm);
+  }
+
+  .sessions-subtitle {
+    color: var(--color-text-muted);
+    font-size: var(--text-lg);
+    font-style: italic;
+    font-family: var(--font-serif);
+  }
+
+  .sessions-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .session-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: var(--color-text);
+    transition: all var(--transition-fast);
+  }
+
+  .session-card:hover {
+    border-color: var(--color-gold);
+    transform: translateX(4px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .session-card__number {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-gold);
+    color: var(--color-bg);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 700;
+    border-radius: 50%;
+  }
+
+  .session-card__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .session-card__title {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-text);
+    margin: 0 0 var(--space-xs);
+    transition: color var(--transition-fast);
+  }
+
+  .session-card:hover .session-card__title {
+    color: var(--color-gold);
+  }
+
+  .session-card__description {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-xs);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .session-card__date {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .session-card__arrow {
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+    transition: all var(--transition-fast);
+  }
+
+  .session-card:hover .session-card__arrow {
+    color: var(--color-gold);
+    transform: translateX(4px);
+  }
+
+  .no-sessions {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--text-lg);
+    padding: var(--space-3xl);
+  }
+
+  @media (max-width: 640px) {
+    .session-card {
+      flex-wrap: wrap;
+      gap: var(--space-md);
+    }
+
+    .session-card__number {
+      width: 40px;
+      height: 40px;
+      font-size: var(--text-lg);
+    }
+
+    .session-card__arrow {
+      display: none;
+    }
+  }
+</style>
