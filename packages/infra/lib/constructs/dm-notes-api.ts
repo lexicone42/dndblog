@@ -32,6 +32,7 @@ export class DmNotesApi extends Construct {
     const tokenParameterName = props.tokenParameterName ?? '/dndblog/dm-notes-token';
 
     // S3 bucket for DM notes (private, encrypted)
+    // CORS allows direct browser uploads via presigned URLs
     this.bucket = new s3.Bucket(this, 'NotesBucket', {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
@@ -42,6 +43,14 @@ export class DmNotesApi extends Construct {
         {
           noncurrentVersionExpiration: cdk.Duration.days(30),
           abortIncompleteMultipartUploadAfter: cdk.Duration.days(7),
+        },
+      ],
+      cors: [
+        {
+          allowedMethods: [s3.HttpMethods.PUT, s3.HttpMethods.GET],
+          allowedOrigins: [props.allowedOrigin, 'http://localhost:*'],
+          allowedHeaders: ['*'],
+          maxAge: 3600,
         },
       ],
     });
@@ -84,9 +93,21 @@ async function getToken() {
   return cachedToken;
 }
 
+// Helper to get CORS origin (allows localhost for dev)
+function getCorsOrigin(event) {
+  const origin = event.headers?.origin || event.headers?.Origin || '';
+  const allowed = process.env.ALLOWED_ORIGIN;
+  // Allow localhost for development
+  if (origin.startsWith('http://localhost:')) {
+    return origin;
+  }
+  return allowed;
+}
+
 exports.handler = async (event) => {
+  const corsOrigin = getCorsOrigin(event);
   const headers = {
-    'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN,
+    'Access-Control-Allow-Origin': corsOrigin,
     'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Content-Type': 'application/json',
@@ -230,9 +251,20 @@ async function isFeatureEnabled() {
   return cachedFeatureFlag;
 }
 
+// Helper to get CORS origin (allows localhost for dev)
+function getCorsOrigin(event) {
+  const origin = event.headers?.origin || event.headers?.Origin || '';
+  const allowed = process.env.ALLOWED_ORIGIN;
+  if (origin.startsWith('http://localhost:')) {
+    return origin;
+  }
+  return allowed;
+}
+
 exports.handler = async (event) => {
+  const corsOrigin = getCorsOrigin(event);
   const headers = {
-    'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN,
+    'Access-Control-Allow-Origin': corsOrigin,
     'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json',
@@ -364,19 +396,11 @@ Respond with valid JSON only:\`
     }));
 
     // HTTP API Gateway with throttling to prevent abuse
+    // CORS is handled by Lambda functions to allow dynamic origins (localhost for dev)
     this.api = new apigateway.HttpApi(this, 'Api', {
       apiName: 'DmNotesApi',
-      corsPreflight: {
-        allowOrigins: [props.allowedOrigin],
-        allowMethods: [
-          apigateway.CorsHttpMethod.GET,
-          apigateway.CorsHttpMethod.POST,
-          apigateway.CorsHttpMethod.DELETE,
-          apigateway.CorsHttpMethod.OPTIONS,
-        ],
-        allowHeaders: ['Content-Type', 'X-DM-Token'],
-        maxAge: cdk.Duration.hours(1),
-      },
+      // Note: corsPreflight intentionally omitted - Lambda functions handle CORS
+      // This allows dynamic origin support (localhost:* for development)
     });
 
     // Add throttling to the default stage to prevent abuse
@@ -389,20 +413,20 @@ Respond with valid JSON only:\`
       };
     }
 
-    // Add upload-url route
+    // Add upload-url route (OPTIONS for CORS preflight)
     this.api.addRoutes({
       path: '/upload-url',
-      methods: [apigateway.HttpMethod.GET],
+      methods: [apigateway.HttpMethod.GET, apigateway.HttpMethod.OPTIONS],
       integration: new apigatewayIntegrations.HttpLambdaIntegration(
         'UploadUrlIntegration',
         uploadUrlFunction
       ),
     });
 
-    // Add review route
+    // Add review route (OPTIONS for CORS preflight)
     this.api.addRoutes({
       path: '/review',
-      methods: [apigateway.HttpMethod.POST],
+      methods: [apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
       integration: new apigatewayIntegrations.HttpLambdaIntegration(
         'ReviewIntegration',
         reviewFunction
@@ -534,9 +558,20 @@ function parseYamlFrontmatter(content) {
   return result;
 }
 
+// Helper to get CORS origin (allows localhost for dev)
+function getCorsOrigin(event) {
+  const origin = event.headers?.origin || event.headers?.Origin || '';
+  const allowed = process.env.ALLOWED_ORIGIN;
+  if (origin.startsWith('http://localhost:')) {
+    return origin;
+  }
+  return allowed;
+}
+
 exports.handler = async (event) => {
+  const corsOrigin = getCorsOrigin(event);
   const headers = {
-    'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN,
+    'Access-Control-Allow-Origin': corsOrigin,
     'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
     'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
     'Content-Type': 'application/json',
@@ -696,10 +731,10 @@ exports.handler = async (event) => {
       ],
     }));
 
-    // Add notes browser routes
+    // Add notes browser routes (OPTIONS for CORS preflight)
     this.api.addRoutes({
       path: '/notes',
-      methods: [apigateway.HttpMethod.GET],
+      methods: [apigateway.HttpMethod.GET, apigateway.HttpMethod.OPTIONS],
       integration: new apigatewayIntegrations.HttpLambdaIntegration(
         'NotesListIntegration',
         notesBrowserFunction
@@ -708,7 +743,7 @@ exports.handler = async (event) => {
 
     this.api.addRoutes({
       path: '/notes/{key+}',
-      methods: [apigateway.HttpMethod.GET, apigateway.HttpMethod.DELETE],
+      methods: [apigateway.HttpMethod.GET, apigateway.HttpMethod.DELETE, apigateway.HttpMethod.OPTIONS],
       integration: new apigatewayIntegrations.HttpLambdaIntegration(
         'NotesBrowserIntegration',
         notesBrowserFunction
