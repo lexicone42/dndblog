@@ -21,13 +21,33 @@ export async function getStaticPaths() {
   factions.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/factions/${e.id}` });
   items.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/items/${e.id}` });
 
+  // Build "used by" map: which characters have each item equipped
+  const usedByMap: Record<string, Array<{ id: string; name: string; path: string; slot?: string }>> = {};
+
+  characters.forEach(char => {
+    const equipped = char.data.equipment?.equipped || [];
+    equipped.forEach((eq: { item: string; slot?: string }) => {
+      if (eq.item) {
+        if (!usedByMap[eq.item]) {
+          usedByMap[eq.item] = [];
+        }
+        usedByMap[eq.item].push({
+          id: char.id,
+          name: char.data.name,
+          path: `/campaign/characters/${char.id}`,
+          slot: eq.slot,
+        });
+      }
+    });
+  });
+
   return entries.map(entry => ({
     params: { slug: entry.id },
-    props: { entry, entityLookup },
+    props: { entry, entityLookup, usedBy: usedByMap[entry.id] || [] },
   }));
 }
 
-const { entry, entityLookup } = Astro.props;
+const { entry, entityLookup, usedBy } = Astro.props;
 const { Content } = await render(entry);
 
 const statusColors: Record<string, string> = {
@@ -117,6 +137,24 @@ const rarityColors: Record<string, string> = {
             <li class="history-item">
               <span class="history-owner">{record.owner}</span>
               {record.method && <span class="history-method">({record.method})</span>}
+            </li>
+          ))}
+        </ul>
+      </aside>
+    )}
+
+    {usedBy.length > 0 && (
+      <aside class="entity-used-by">
+        <h2>Used By</h2>
+        <ul class="used-by-list">
+          {usedBy.map((user: { name: string; path: string; slot?: string }) => (
+            <li class="used-by-item">
+              <a href={user.path} class="used-by-link">
+                {user.name}
+              </a>
+              {user.slot && (
+                <span class="used-by-slot">{user.slot}</span>
+              )}
             </li>
           ))}
         </ul>
@@ -395,6 +433,60 @@ const rarityColors: Record<string, string> = {
     color: var(--color-text-muted);
     font-style: italic;
     margin-left: var(--space-xs);
+  }
+
+  .entity-used-by {
+    background: var(--color-bg-secondary);
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--color-accent);
+    margin-bottom: var(--space-xl);
+  }
+
+  .entity-used-by h2 {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-accent);
+    margin: 0 0 var(--space-md);
+  }
+
+  .used-by-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .used-by-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .used-by-link {
+    font-weight: 600;
+    color: var(--color-text);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  .used-by-link:hover {
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
+
+  .used-by-slot {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    background: var(--color-bg-tertiary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    text-transform: capitalize;
   }
 
   .entity-relationships {
