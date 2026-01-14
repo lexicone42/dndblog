@@ -15,6 +15,7 @@ import AccessDenied from '@components/dm-notes/AccessDenied.astro';
 import TabNavigation from '@components/dm-notes/TabNavigation.astro';
 import DMNotesEditor from '@components/dm-notes/DMNotesEditor.astro';
 import DMNotesBrowser from '@components/dm-notes/DMNotesBrowser.astro';
+import DMNotesGenerator from '@components/dm-notes/DMNotesGenerator.astro';
 import ViewNoteModal from '@components/dm-notes/ViewNoteModal.astro';
 import DeleteConfirmModal from '@components/dm-notes/DeleteConfirmModal.astro';
 import '@components/dm-notes/dm-notes-shared.css';
@@ -38,6 +39,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
     <TabNavigation />
     <DMNotesEditor />
     <DMNotesBrowser />
+    <DMNotesGenerator />
     <ViewNoteModal />
     <DeleteConfirmModal />
   </div>
@@ -468,6 +470,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
             document.getElementById('editor-container').style.display = tab === 'editor' ? 'block' : 'none';
             document.getElementById('browser-container').style.display = tab === 'browser' ? 'block' : 'none';
+            document.getElementById('generator-container').style.display = tab === 'generator' ? 'block' : 'none';
 
             if (tab === 'browser') {
               loadNotes();
@@ -826,6 +829,236 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         document.addEventListener('DOMContentLoaded', initBrowser);
       } else {
         initBrowser();
+      }
+    })();
+  </script>
+
+  <!-- Generator Script -->
+  <script is:inline>
+    (function() {
+      var currentResult = null;
+
+      function getToken() {
+        var params = new URLSearchParams(window.location.search);
+        return params.get('token');
+      }
+
+      function getApiUrl() {
+        var configEl = document.getElementById('config');
+        return configEl ? configEl.dataset.apiUrl : '';
+      }
+
+      function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function showLoading(show) {
+        document.getElementById('generator-loading').style.display = show ? 'flex' : 'none';
+      }
+
+      function showError(message) {
+        var errorEl = document.getElementById('generator-error');
+        if (message) {
+          errorEl.textContent = message;
+          errorEl.style.display = 'block';
+        } else {
+          errorEl.style.display = 'none';
+        }
+      }
+
+      function renderEntityPreview(result) {
+        var previewEl = document.getElementById('entity-card-preview');
+        var fm = result.frontmatter || {};
+
+        // Build entity type tag
+        var typeTag = '<span class="entity-tag entity-tag--type">' + escapeHtml(result.entityType || 'unknown') + '</span>';
+
+        // Build subtype tag
+        var subtypeTag = fm.subtype
+          ? '<span class="entity-tag">' + escapeHtml(fm.subtype) + '</span>'
+          : '';
+
+        // Build additional tags based on entity type
+        var detailTags = '';
+        if (result.entityType === 'character') {
+          if (fm.race) detailTags += '<span class="entity-tag">' + escapeHtml(fm.race) + '</span>';
+          if (fm.class) detailTags += '<span class="entity-tag">' + escapeHtml(fm.class) + '</span>';
+        } else if (result.entityType === 'enemy') {
+          if (fm.cr) detailTags += '<span class="entity-tag">CR ' + escapeHtml(fm.cr) + '</span>';
+          if (fm.creatureType) detailTags += '<span class="entity-tag">' + escapeHtml(fm.creatureType) + '</span>';
+        } else if (result.entityType === 'item') {
+          if (fm.rarity) detailTags += '<span class="entity-tag">' + escapeHtml(fm.rarity) + '</span>';
+          if (fm.attunement) detailTags += '<span class="entity-tag">attunement</span>';
+        }
+
+        // Build details section based on entity type
+        var detailsHtml = '';
+        if (result.entityType === 'character' && fm.equipment) {
+          var equipped = fm.equipment.equipped || [];
+          var currency = fm.equipment.currency || {};
+          var items = equipped.map(function(e) { return e.item; }).join(', ');
+          var coins = Object.entries(currency)
+            .filter(function(pair) { return pair[1] > 0; })
+            .map(function(pair) { return pair[1] + pair[0]; })
+            .join(' ');
+          if (items || coins) {
+            detailsHtml = '<dl class="entity-details">';
+            if (items) detailsHtml += '<dt>Equipment:</dt><dd>' + escapeHtml(items) + '</dd>';
+            if (coins) detailsHtml += '<dt>Currency:</dt><dd>' + escapeHtml(coins) + '</dd>';
+            detailsHtml += '</dl>';
+          }
+        } else if (result.entityType === 'faction' && fm.goals) {
+          var goals = Array.isArray(fm.goals) ? fm.goals.slice(0, 2).join(', ') : fm.goals;
+          if (goals) {
+            detailsHtml = '<dl class="entity-details"><dt>Goals:</dt><dd>' + escapeHtml(goals) + '</dd></dl>';
+          }
+        } else if (result.entityType === 'location' && fm.parentLocation) {
+          detailsHtml = '<dl class="entity-details"><dt>Located in:</dt><dd>' + escapeHtml(fm.parentLocation) + '</dd></dl>';
+        }
+
+        previewEl.innerHTML =
+          '<h3 class="entity-name">' + escapeHtml(fm.name || 'Unnamed Entity') + '</h3>' +
+          '<div class="entity-meta">' + typeTag + subtypeTag + detailTags + '</div>' +
+          '<p class="entity-description">' + escapeHtml(fm.description || result.markdown?.split('\n')[0] || 'No description') + '</p>' +
+          detailsHtml;
+      }
+
+      function renderConfidenceBadge(confidence) {
+        var badgeEl = document.getElementById('confidence-badge');
+        var level = confidence >= 80 ? 'high' : confidence >= 50 ? 'medium' : 'low';
+        badgeEl.textContent = 'Confidence: ' + confidence + '%';
+        badgeEl.className = 'confidence-badge confidence-badge--' + level;
+      }
+
+      function renderSuggestions(suggestions) {
+        var panel = document.getElementById('suggestions-panel');
+        var list = document.getElementById('suggestions-list');
+
+        if (!suggestions || suggestions.length === 0) {
+          panel.style.display = 'none';
+          return;
+        }
+
+        list.innerHTML = '';
+        suggestions.forEach(function(s) {
+          var li = document.createElement('li');
+          li.textContent = s;
+          list.appendChild(li);
+        });
+        panel.style.display = 'block';
+      }
+
+      async function generateEntity() {
+        var token = getToken();
+        var apiUrl = getApiUrl();
+
+        if (!token || !apiUrl) {
+          showError('Missing token or API configuration');
+          return;
+        }
+
+        var input = document.getElementById('entity-input').value.trim();
+        if (!input) {
+          showError('Please enter an entity description');
+          return;
+        }
+
+        var hint = document.getElementById('entity-type-hint').value || null;
+
+        var generateBtn = document.getElementById('generate-btn');
+        generateBtn.disabled = true;
+        showLoading(true);
+        showError(null);
+        document.getElementById('generator-preview').style.display = 'none';
+
+        try {
+          var response = await fetch(apiUrl + '/generate-entity', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-DM-Token': token
+            },
+            body: JSON.stringify({ input: input, hint: hint })
+          });
+
+          if (!response.ok) {
+            var errorData = await response.json().catch(function() { return {}; });
+            throw new Error(errorData.error || 'Generation failed');
+          }
+
+          var result = await response.json();
+          currentResult = result;
+
+          // Render preview
+          renderEntityPreview(result);
+          renderConfidenceBadge(result.confidence || 80);
+          renderSuggestions(result.suggestions);
+
+          // Populate YAML editor
+          document.getElementById('yaml-editor').value = result.fullContent || '';
+
+          document.getElementById('generator-preview').style.display = 'block';
+
+        } catch (error) {
+          showError('Error: ' + error.message);
+        } finally {
+          showLoading(false);
+          generateBtn.disabled = false;
+        }
+      }
+
+      function copyToClipboard() {
+        var content = document.getElementById('yaml-editor').value;
+        navigator.clipboard.writeText(content).then(function() {
+          var btn = document.getElementById('copy-btn');
+          var originalText = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(function() { btn.textContent = originalText; }, 2000);
+        }).catch(function(err) {
+          alert('Failed to copy: ' + err.message);
+        });
+      }
+
+      function downloadFile() {
+        if (!currentResult) return;
+
+        var content = document.getElementById('yaml-editor').value;
+        var slug = currentResult.slug || 'entity';
+        var filename = slug + '.md';
+
+        var blob = new Blob([content], { type: 'text/markdown' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function initGenerator() {
+        var token = getToken();
+        if (!token) return;
+
+        document.getElementById('generate-btn').addEventListener('click', generateEntity);
+        document.getElementById('regenerate-btn').addEventListener('click', generateEntity);
+        document.getElementById('copy-btn').addEventListener('click', copyToClipboard);
+        document.getElementById('download-btn').addEventListener('click', downloadFile);
+
+        // Allow Enter key to generate
+        document.getElementById('entity-input').addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' && e.ctrlKey) {
+            e.preventDefault();
+            generateEntity();
+          }
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initGenerator);
+      } else {
+        initGenerator();
       }
     })();
   </script>

@@ -1,13 +1,14 @@
 ---
 /**
  * Tab Navigation Component
- * Switches between Editor and Browser views.
+ * Switches between Editor, Browser, and Generator views.
  */
 ---
 
 <nav id="tab-navigation" class="tab-navigation" style="display: none;" role="tablist" aria-label="DM Notes sections">
   <button class="tab-btn tab-btn--active" data-tab="editor" role="tab" aria-selected="true" aria-controls="editor-container" id="tab-editor">Editor</button>
   <button class="tab-btn" data-tab="browser" role="tab" aria-selected="false" aria-controls="browser-container" id="tab-browser">Browser</button>
+  <button class="tab-btn" data-tab="generator" role="tab" aria-selected="false" aria-controls="generator-container" id="tab-generator">Generator</button>
 </nav>
 
 <style>

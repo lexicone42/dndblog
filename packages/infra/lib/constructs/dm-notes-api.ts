@@ -763,5 +763,365 @@ exports.handler = async (event) => {
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
     });
+
+    // ==========================================================================
+    // Entity Generator Function - AI-powered entity creation from natural language
+    // ==========================================================================
+
+    const generateEntityFunction = new lambda.Function(this, 'GenerateEntityFunction', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(90), // Longer timeout for complex generation
+      memorySize: 512,
+      reservedConcurrentExecutions: 2, // Limit parallel invocations to control costs
+      environment: {
+        TOKEN_PARAMETER_NAME: tokenParameterName,
+        ALLOWED_ORIGIN: props.allowedOrigin,
+        BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
+      },
+      code: lambda.Code.fromInline(`
+const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
+const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
+
+const bedrockClient = new BedrockRuntimeClient({});
+const ssmClient = new SSMClient({});
+
+let cachedToken = null;
+let tokenExpiry = 0;
+
+async function getToken() {
+  const now = Date.now();
+  if (cachedToken && now < tokenExpiry) {
+    return cachedToken;
+  }
+  const result = await ssmClient.send(new GetParameterCommand({
+    Name: process.env.TOKEN_PARAMETER_NAME,
+    WithDecryption: true,
+  }));
+  cachedToken = result.Parameter.Value;
+  tokenExpiry = now + 5 * 60 * 1000;
+  return cachedToken;
+}
+
+function getCorsOrigin(event) {
+  const origin = event.headers?.origin || event.headers?.Origin || '';
+  const allowed = process.env.ALLOWED_ORIGIN;
+  if (origin.startsWith('http://localhost:')) {
+    return origin;
+  }
+  return allowed;
+}
+
+// Slugify a name for file naming
+function slugify(name) {
+  return name.toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+// Entity schema definitions for the AI prompt
+const ENTITY_SCHEMAS = \`
+## ENTITY TYPES AND SCHEMAS
+
+### CHARACTER (subtype: pc | npc | deity | historical)
+Required: name, type: "character", subtype
+Common fields: race, class, level (1-20), background, alignment
+Equipment: { equipped: [{ slot, item, attuned }], currency: { pp, gp, ep, sp, cp } }
+Optional: faction, location, description, tags, relationships
+
+### ENEMY (subtype: boss | lieutenant | minion | creature | swarm | trap)
+Required: name, type: "enemy", subtype
+Common fields: baseMonster, cr (e.g. "1/4", "5", "mythic"), creatureType
+Optional: faction, lair, territory, customizations, tags, description
+
+### ITEM (subtype: weapon | armor | artifact | consumable | quest | treasure | tool | wondrous | vehicle | property)
+Required: name, type: "item", subtype
+Common fields: rarity (common|uncommon|rare|very-rare|legendary|artifact|unique)
+Optional: baseItem, attunement (boolean), properties [], currentOwner, description
+
+### LOCATION (subtype: plane | continent | region | city | town | village | dungeon | wilderness | building | room | landmark)
+Required: name, type: "location", subtype
+Common fields: parentLocation, climate, terrain, population
+Optional: controlledBy, pointsOfInterest [], secrets [], description
+
+### FACTION (subtype: cult | guild | government | military | religious | criminal | merchant | noble-house | adventuring-party | secret-society)
+Required: name, type: "faction", subtype
+Common fields: leader, headquarters, goals [], methods []
+Optional: allies [], enemies [], territory [], symbol, motto, description
+\`;
+
+const PARSING_RULES = \`
+## PARSING RULES
+
+1. CURRENCY PARSING:
+   - "2 gold" or "2gp" → { gp: 2 }
+   - "50 silver" or "50sp" → { sp: 50 }
+   - "10 platinum" → { pp: 10 }
+   - Multiple: "2gp 50sp" → { gp: 2, sp: 50 }
+
+2. EQUIPMENT PARSING:
+   - "scimitar" → { slot: "main-hand", item: "scimitar" }
+   - "leather armor" → { slot: "armor", item: "leather-armor" }
+   - "+1 longsword" → { slot: "main-hand", item: "longsword", properties: ["+1"] }
+
+3. NAME HANDLING:
+   - Capitalize properly: "gorok" → "Gorok"
+   - Handle titles: "chief gorok" → "Chief Gorok"
+
+4. ALIGNMENT INFERENCE:
+   - Negative descriptions → evil alignment (CE, NE, LE)
+   - "piece of shit", "vile", "cruel" → Chaotic Evil or Neutral Evil
+   - "noble", "kind", "heroic" → Good alignments
+
+5. STATUS:
+   - Default to "active" unless stated otherwise
+   - "dead", "deceased" → "dead"
+   - "missing", "lost" → "missing"
+
+6. ENTITY TYPE DETECTION:
+   - Creatures with CR/stats → enemy
+   - Named NPCs interacted with → character (npc)
+   - Places → location
+   - Organizations → faction
+   - Objects/gear → item
+\`;
+
+exports.handler = async (event) => {
+  const corsOrigin = getCorsOrigin(event);
+  const headers = {
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+  };
+
+  if (event.requestContext?.http?.method === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  try {
+    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
+    if (!providedToken) {
+      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Missing authentication token' }) };
+    }
+
+    const validToken = await getToken();
+    if (providedToken !== validToken) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'Invalid token' }) };
+    }
+
+    const body = JSON.parse(event.body || '{}');
+    const input = (body.input || '').trim();
+    const hint = body.hint || null;
+
+    if (!input) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'No input provided' }) };
+    }
+
+    if (input.length > 2000) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Input too long (max 2000 characters)' }) };
+    }
+
+    // Build the AI prompt
+    const systemPrompt = \`You are a D&D campaign assistant that converts natural language entity descriptions into structured YAML frontmatter for a campaign wiki.
+
+\${ENTITY_SCHEMAS}
+
+\${PARSING_RULES}
+
+Your task is to:
+1. Detect the entity type from the input (or use the provided hint)
+2. Extract all mentioned attributes into schema-compliant fields
+3. Infer reasonable defaults for unspecified fields
+4. Generate a brief markdown description
+
+Output valid JSON with this structure:
+{
+  "entityType": "character|enemy|item|location|faction",
+  "subtype": "the specific subtype",
+  "confidence": 0-100,
+  "frontmatter": { ... all YAML fields as a JSON object ... },
+  "markdown": "Brief markdown content for the entity page",
+  "slug": "kebab-case-name",
+  "suggestions": ["optional improvement suggestions"]
+}
+
+IMPORTANT:
+- frontmatter must include "type" and "subtype" fields
+- All field names use camelCase
+- Do not include null or undefined values
+- Tags should be lowercase kebab-case
+- Status defaults to "active"
+- Visibility defaults to "public"\`;
+
+    const userPrompt = hint
+      ? \`Entity type hint: \${hint}\\n\\nDescription: \${input}\`
+      : \`Description: \${input}\`;
+
+    const bedrockPayload = {
+      anthropic_version: 'bedrock-2023-05-31',
+      max_tokens: 2048,
+      temperature: 0.3,
+      messages: [
+        { role: 'user', content: userPrompt }
+      ],
+      system: systemPrompt
+    };
+
+    const command = new InvokeModelCommand({
+      modelId: process.env.BEDROCK_MODEL_ID,
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify(bedrockPayload),
+    });
+
+    const response = await bedrockClient.send(command);
+    const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+    const outputText = responseBody.content?.[0]?.text || '';
+
+    // Parse the AI response as JSON
+    let result;
+    try {
+      const jsonMatch = outputText.match(/\\{[\\s\\S]*\\}/);
+      if (jsonMatch) {
+        result = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('No JSON found in response');
+      }
+    } catch (parseErr) {
+      return {
+        statusCode: 422,
+        headers,
+        body: JSON.stringify({
+          error: 'Failed to parse AI response',
+          raw: outputText.substring(0, 500),
+        }),
+      };
+    }
+
+    // Generate the full markdown content with frontmatter
+    const yamlLines = ['---'];
+    function addYamlField(obj, indent = '') {
+      for (const [key, value] of Object.entries(obj)) {
+        if (value === null || value === undefined) continue;
+        if (Array.isArray(value)) {
+          if (value.length === 0) {
+            yamlLines.push(\`\${indent}\${key}: []\`);
+          } else if (typeof value[0] === 'object') {
+            yamlLines.push(\`\${indent}\${key}:\`);
+            value.forEach(item => {
+              const entries = Object.entries(item);
+              if (entries.length > 0) {
+                yamlLines.push(\`\${indent}  - \${entries[0][0]}: \${JSON.stringify(entries[0][1])}\`);
+                entries.slice(1).forEach(([k, v]) => {
+                  yamlLines.push(\`\${indent}    \${k}: \${JSON.stringify(v)}\`);
+                });
+              }
+            });
+          } else {
+            yamlLines.push(\`\${indent}\${key}:\`);
+            value.forEach(item => yamlLines.push(\`\${indent}  - \${JSON.stringify(item)}\`));
+          }
+        } else if (typeof value === 'object') {
+          yamlLines.push(\`\${indent}\${key}:\`);
+          addYamlField(value, indent + '  ');
+        } else if (typeof value === 'string' && (value.includes(':') || value.includes('#') || value.includes("'") || value.includes('"'))) {
+          yamlLines.push(\`\${indent}\${key}: "\${value.replace(/"/g, '\\\\"')}"\`);
+        } else if (typeof value === 'string') {
+          yamlLines.push(\`\${indent}\${key}: "\${value}"\`);
+        } else {
+          yamlLines.push(\`\${indent}\${key}: \${value}\`);
+        }
+      }
+    }
+    addYamlField(result.frontmatter || {});
+    yamlLines.push('---');
+
+    const fullContent = yamlLines.join('\\n') + '\\n\\n' + (result.markdown || '');
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        entityType: result.entityType,
+        subtype: result.subtype,
+        confidence: result.confidence || 80,
+        frontmatter: result.frontmatter,
+        markdown: result.markdown,
+        fullContent,
+        slug: result.slug || slugify(result.frontmatter?.name || 'entity'),
+        suggestions: result.suggestions || [],
+      }),
+    };
+
+  } catch (error) {
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Generation failed: ' + error.message }),
+    };
+  }
+};
+      `),
+    });
+
+    // Grant Bedrock permissions to generate entity function (Claude Sonnet 4)
+    generateEntityFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['bedrock:InvokeModel'],
+      resources: [
+        'arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0',
+        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-sonnet-4-20250514-v1:0',
+      ],
+    }));
+
+    // Grant SSM parameter read access to generate entity function
+    generateEntityFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: tokenParameterName.replace(/^\//, ''),
+        }),
+      ],
+    }));
+
+    // Add generate-entity route
+    this.api.addRoutes({
+      path: '/generate-entity',
+      methods: [apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'GenerateEntityIntegration',
+        generateEntityFunction
+      ),
+    });
+
+    // Generate Entity Function Alarms
+    new cloudwatch.Alarm(this, 'GenerateEntityFunctionErrors', {
+      alarmName: `${cdk.Names.uniqueId(this)}-generate-entity-errors`,
+      alarmDescription: 'DM Notes entity generator function errors',
+      metric: generateEntityFunction.metricErrors({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    new cloudwatch.Alarm(this, 'GenerateEntityFunctionDuration', {
+      alarmName: `${cdk.Names.uniqueId(this)}-generate-entity-duration`,
+      alarmDescription: 'DM Notes entity generator taking too long (approaching timeout)',
+      metric: generateEntityFunction.metricDuration({
+        statistic: 'Maximum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 70000, // 70 seconds (78% of 90s timeout)
+      evaluationPeriods: 2,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
   }
 }
