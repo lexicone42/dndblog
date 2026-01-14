@@ -36,6 +36,23 @@ jobs:
           aws-region: us-east-1
           role-session-name: github-actions-deploy
 
+      - name: Deploy DM Notes API
+        id: dm-notes
+        working-directory: packages/infra
+        run: |
+          npx cdk deploy DmNotesStack \
+            --require-approval never \
+            --outputs-file dm-notes-outputs.json \
+            --context domainName="${DOMAIN_NAME}" \
+            --context hostedZoneDomain="${HOSTED_ZONE_DOMAIN}"
+
+          # Extract API URL for site build
+          API_URL=$(jq -r '.DmNotesStack.ApiUrlOutput' dm-notes-outputs.json)
+          echo "api_url=$API_URL" >> "$GITHUB_OUTPUT"
+        env:
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          HOSTED_ZONE_DOMAIN: ${{ vars.HOSTED_ZONE_DOMAIN }}
+
       - name: Build content pipeline
         working-directory: packages/content-pipeline
         run: pnpm run build
@@ -45,6 +62,7 @@ jobs:
         run: pnpm run build
         env:
           SITE_URL: https://${{ vars.DOMAIN_NAME }}
+          PUBLIC_DM_NOTES_API_URL: ${{ steps.dm-notes.outputs.api_url }}
 
       - name: CDK deploy
         working-directory: packages/infra
