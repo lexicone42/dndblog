@@ -504,7 +504,7 @@ const glossaryCollection = defineCollection({
   schema: z.object({
     name: z.string(),
     slug: z.string(),
-    category: z.enum(['action', 'condition', 'area-of-effect', 'hazard', 'attitude']).optional(),
+    category: z.enum(['action', 'condition', 'area-of-effect', 'hazard', 'attitude', 'skill']).optional(),
     description: z.string(),
     seeAlso: z.array(z.string()).default([]),
     source: z.string().default('SRD 5.2'),

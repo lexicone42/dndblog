@@ -129,7 +129,9 @@ const abilityAbbr: Record<string, string> = {
             )}
           </span>
           <span class="skill-bonus">{formatBonus(bonus)}</span>
-          <span class="skill-name">{name}</span>
+          <span class="skill-name">
+            <RuleTerm term={name} lookup={glossaryLookup}>{name}</RuleTerm>
+          </span>
           <span class="skill-ability">({abilityAbbr[ability]})</span>
         </div>
       );

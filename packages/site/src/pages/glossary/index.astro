@@ -16,7 +16,7 @@ const sortedTerms = allTerms.sort((a, b) =>
 );
 
 // Category type
-type Category = 'action' | 'condition' | 'area-of-effect' | 'hazard' | 'attitude';
+type Category = 'action' | 'condition' | 'area-of-effect' | 'hazard' | 'attitude' | 'skill';
 
 // Extract unique categories (filter out undefined)
 const categories = [...new Set(
@@ -32,6 +32,7 @@ const categoryColors: Record<string, string> = {
   'area-of-effect': '#d97706',
   hazard: '#6b21a8',
   attitude: '#2563eb',
+  skill: '#0891b2', // Cyan for skills
 };
 
 function formatCategory(cat: string): string {
