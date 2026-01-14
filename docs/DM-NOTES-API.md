@@ -54,7 +54,7 @@ curl -H "X-DM-Token: your-token" https://api.../notes
 
 Or via URL parameter on the frontend:
 ```
-https://abstracts.lexicone.com/dm-notes?token=your-token
+https://chronicles.mawframe.ninja/dm-notes?token=your-token
 ```
 
 ## API Endpoints
@@ -248,14 +248,29 @@ This is appropriate for single-user DM access.
 
 ## CORS Configuration
 
+CORS is handled by each Lambda function to support dynamic origins (localhost for development):
+
 ```typescript
-corsPreflight: {
-  allowOrigins: [props.allowedOrigin],
-  allowMethods: [GET, POST, DELETE, OPTIONS],
-  allowHeaders: ['Content-Type', 'X-DM-Token'],
-  maxAge: cdk.Duration.days(1),
+// Lambda CORS helper
+function getCorsOrigin(event) {
+  const origin = event.headers?.origin || '';
+  const allowed = process.env.ALLOWED_ORIGIN;
+  // Allow localhost for development
+  if (origin.startsWith('http://localhost:')) {
+    return origin;
+  }
+  return allowed;
+}
+
+// Response headers include:
+{
+  'Access-Control-Allow-Origin': corsOrigin,
+  'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
 }
 ```
+
+Each route also accepts OPTIONS requests for preflight handling.
 
 ## CloudWatch Monitoring
 
@@ -274,10 +289,13 @@ Dashboard metrics available:
 
 1. **Token-based authentication:** All requests validated against SSM SecureString
 2. **Path validation:** Keys must start with `dm-notes/` prefix
-3. **CORS restrictions:** Only allowed origin can make requests
+3. **CORS restrictions:** Only allowed origin can make requests (plus localhost for dev)
 4. **Pre-signed URLs:** S3 upload URLs expire after 5 minutes
 5. **Rate limiting:** Prevents abuse via API Gateway throttling
 6. **XSS protection:** Frontend uses DOMPurify for markdown rendering
+7. **CSP compliance:** Site CSP must allow:
+   - `connect-src`: S3 (`*.s3.us-east-1.amazonaws.com`) and API Gateway (`*.execute-api.us-east-1.amazonaws.com`)
+   - `script-src`: CDNs for marked.js, highlight.js, dompurify (`cdnjs.cloudflare.com`, `unpkg.com`)
 
 ## Frontend Integration
 
