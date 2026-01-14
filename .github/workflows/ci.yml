@@ -55,8 +55,12 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
 
-      - name: Run tests
+      - name: Run site tests
         working-directory: packages/site
+        run: pnpm test
+
+      - name: Run infra tests
+        working-directory: packages/infra
         run: pnpm test
 
   build:

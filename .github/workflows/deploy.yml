@@ -126,31 +126,29 @@ jobs:
     runs-on: ubuntu-latest
     needs: deploy
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Install Playwright browsers
+        working-directory: packages/site
+        run: npx playwright install chromium
+
       - name: Wait for CDN propagation
         run: sleep 60
 
-      - name: Check site health
-        run: |
-          echo "Testing https://${DOMAIN_NAME}..."
-
-          # Test main page
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://${DOMAIN_NAME}")
-          if [ "$HTTP_STATUS" -eq 200 ]; then
-            echo "✓ Main page returned 200"
-          else
-            echo "✗ Main page returned $HTTP_STATUS"
-            exit 1
-          fi
-
-          # Test blog page
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://${DOMAIN_NAME}/blog")
-          if [ "$HTTP_STATUS" -eq 200 ]; then
-            echo "✓ Blog page returned 200"
-          else
-            echo "✗ Blog page returned $HTTP_STATUS"
-            exit 1
-          fi
-
-          echo "All smoke tests passed!"
+      - name: Run smoke tests
+        working-directory: packages/site
+        run: pnpm test:smoke
         env:
-          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          SITE_URL: https://${{ vars.DOMAIN_NAME }}
+
+      - name: Upload Playwright report on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: packages/site/playwright-report/
+          retention-days: 7

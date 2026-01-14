@@ -13,7 +13,15 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "audit": "pnpm audit --audit-level=high",
-    "clean": "pnpm -r clean"
+    "clean": "pnpm -r clean",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0"
+  },
+  "lint-staged": {
+    "*": "node scripts/check-forbidden-files.js"
   },
   "engines": {
     "node": ">=20.0.0",

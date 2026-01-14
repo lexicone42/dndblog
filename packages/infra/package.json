@@ -14,7 +14,9 @@
     "diff": "cdk diff",
     "destroy": "cdk destroy",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf cdk.out dist"
+    "clean": "rm -rf cdk.out dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "aws-cdk-lib": "^2.175.0",
@@ -24,6 +26,7 @@
     "@types/node": "^25.0.8",
     "aws-cdk": "^2.175.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.0"
   }
 }
