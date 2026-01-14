@@ -8,13 +8,23 @@ export async function getStaticPaths() {
     return import.meta.env.PROD ? !data.draft : true;
   });
 
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { post },
-  }));
+  // Get all entities to match with sessions
+  const characters = await getCollection('characters');
+  const enemies = await getCollection('enemies');
+
+  return posts.map((post) => {
+    // Find entities that first appeared in this session
+    const sessionCharacters = characters.filter(c => c.data.firstAppearance === post.id);
+    const sessionEnemies = enemies.filter(e => e.data.firstAppearance === post.id);
+
+    return {
+      params: { slug: post.id },
+      props: { post, sessionCharacters, sessionEnemies },
+    };
+  });
 }
 
-const { post } = Astro.props;
+const { post, sessionCharacters, sessionEnemies } = Astro.props;
 const { Content } = await render(post);
 
 const {
@@ -147,6 +157,57 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-US', {
       <div class="post__content prose">
         <Content />
       </div>
+
+      {(sessionCharacters.length > 0 || sessionEnemies.length > 0) && (
+        <aside class="session-entities">
+          <h2 class="session-entities__title">First Appearances</h2>
+          <p class="session-entities__subtitle">Entities introduced in this session</p>
+
+          {sessionCharacters.length > 0 && (
+            <div class="entity-group">
+              <h3 class="entity-group__title">Characters</h3>
+              <ul class="entity-list">
+                {sessionCharacters.map((char) => (
+                  <li class="entity-item">
+                    <a href={`/campaign/characters/${char.id}`} class="entity-link">
+                      <span class="entity-name">{char.data.name}</span>
+                      <span class={`entity-badge entity-badge--${char.data.subtype}`}>{char.data.subtype}</span>
+                      {char.data.status !== 'active' && (
+                        <span class={`entity-status entity-status--${char.data.status}`}>{char.data.status}</span>
+                      )}
+                    </a>
+                    {char.data.description && (
+                      <p class="entity-desc">{char.data.description}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {sessionEnemies.length > 0 && (
+            <div class="entity-group">
+              <h3 class="entity-group__title">Enemies</h3>
+              <ul class="entity-list">
+                {sessionEnemies.map((enemy) => (
+                  <li class="entity-item">
+                    <a href={`/campaign/enemies/${enemy.id}`} class="entity-link">
+                      <span class="entity-name">{enemy.data.name}</span>
+                      <span class={`entity-badge entity-badge--${enemy.data.subtype}`}>{enemy.data.subtype}</span>
+                      {enemy.data.status !== 'active' && (
+                        <span class={`entity-status entity-status--${enemy.data.status}`}>{enemy.data.status}</span>
+                      )}
+                    </a>
+                    {enemy.data.description && (
+                      <p class="entity-desc">{enemy.data.description}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </aside>
+      )}
 
       <footer class="post__footer">
         {updatedDate && (
@@ -296,6 +357,112 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-US', {
       margin-right: 0;
       border-radius: var(--radius-md);
     }
+  }
+
+  /* Session entities section */
+  .session-entities {
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    margin-bottom: var(--space-2xl);
+  }
+
+  .session-entities__title {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-xs);
+  }
+
+  .session-entities__subtitle {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-lg);
+  }
+
+  .entity-group {
+    margin-bottom: var(--space-lg);
+  }
+
+  .entity-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .entity-group__title {
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-sm);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .entity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .entity-item {
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .entity-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    text-decoration: none;
+    flex-wrap: wrap;
+  }
+
+  .entity-name {
+    font-weight: 600;
+    color: var(--color-text);
+    transition: color var(--transition-fast);
+  }
+
+  .entity-link:hover .entity-name {
+    color: var(--color-accent);
+  }
+
+  .entity-badge {
+    font-size: var(--text-xs);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .entity-badge--pc { background: var(--color-accent); color: white; }
+  .entity-badge--npc { background: var(--color-gold); color: var(--color-bg); }
+  .entity-badge--boss { background: #dc2626; color: white; }
+  .entity-badge--minion { background: #6b7280; color: white; }
+  .entity-badge--creature { background: #059669; color: white; }
+
+  .entity-status {
+    font-size: var(--text-xs);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+  }
+
+  .entity-status--dead { background: #7f1d1d; color: #fecaca; }
+  .entity-status--inactive { background: #374151; color: #d1d5db; }
+  .entity-status--transformed { background: #5b21b6; color: #ddd6fe; }
+  .entity-status--unknown { background: #854d0e; color: #fef3c7; }
+
+  .entity-desc {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: var(--space-xs) 0 0;
+    line-height: 1.5;
   }
 
   .post__footer {
