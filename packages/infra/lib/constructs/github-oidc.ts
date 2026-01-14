@@ -135,6 +135,16 @@ export class GithubOidc extends Construct {
       })
     );
 
+    // AssumeRole for CDK bootstrap roles (deploy, lookup, cfn-exec, publishing)
+    this.deployRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'CDKBootstrapRoleAssume',
+        effect: iam.Effect.ALLOW,
+        actions: ['sts:AssumeRole'],
+        resources: [`arn:aws:iam::${cdk.Stack.of(this).account}:role/cdk-*`],
+      })
+    );
+
     // CDK asset publishing permissions
     this.deployRole.addToPolicy(
       new iam.PolicyStatement({
