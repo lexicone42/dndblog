@@ -50,8 +50,9 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
   <!-- Store API URL in a data attribute -->
   <div id="config" data-api-url={apiUrl} style="display: none;"></div>
 
-  <!-- Load EasyMDE from CDN -->
+  <!-- Load EasyMDE and Turndown (for HTML-to-Markdown paste) from CDN -->
   <script is:inline src="https://unpkg.com/easymde@2.18.0/dist/easymde.min.js"></script>
+  <script is:inline src="https://unpkg.com/turndown@7.1.2/dist/turndown.js"></script>
 
   <script is:inline>
     (function() {
@@ -59,6 +60,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       var TITLE_KEY = 'dm-notes-title';
       var editor = null;
       var saveTimeout = null;
+      var turndownService = null;
 
       function getToken() {
         var params = new URLSearchParams(window.location.search);
@@ -230,17 +232,56 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         console.log('Textarea found:', !!textarea);
 
         if (typeof EasyMDE !== 'undefined' && textarea) {
+          // Initialize Turndown for HTML-to-Markdown conversion (Google Docs, Word paste)
+          if (typeof TurndownService !== 'undefined') {
+            turndownService = new TurndownService({
+              headingStyle: 'atx',
+              bulletListMarker: '-',
+              codeBlockStyle: 'fenced'
+            });
+            // Keep line breaks from Google Docs
+            turndownService.addRule('lineBreaks', {
+              filter: 'br',
+              replacement: function() { return '\n'; }
+            });
+          }
+
           editor = new EasyMDE({
             element: textarea,
             autofocus: true,
             spellChecker: false,
+            minHeight: '500px',
             placeholder: 'Write your session notes here...\n\n## Session Summary\n\n## Key Events\n\n## NPCs Encountered\n\n## Loot & Rewards\n\n## Notes for Next Session',
             toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', '|', 'preview', 'side-by-side', 'fullscreen', '|', 'guide'],
-            status: ['lines', 'words']
+            status: ['lines', 'words', 'cursor']
           });
           loadDraft();
           editor.codemirror.on('change', debouncedSave);
-          console.log('EasyMDE initialized');
+
+          // Handle paste from rich text editors (Google Docs, Word)
+          editor.codemirror.on('paste', function(cm, e) {
+            if (!turndownService) return;
+
+            var clipboardData = e.clipboardData || window.clipboardData;
+            if (!clipboardData) return;
+
+            var html = clipboardData.getData('text/html');
+            if (html && html.trim()) {
+              // Check if it's from a rich text source (has actual HTML tags beyond wrapper)
+              var hasRichContent = /<(p|div|span|h[1-6]|ul|ol|li|table|strong|em|b|i)[^>]*>/i.test(html);
+              if (hasRichContent) {
+                e.preventDefault();
+                var markdown = turndownService.turndown(html);
+                // Clean up excessive whitespace from conversion
+                markdown = markdown.replace(/\n{3,}/g, '\n\n').trim();
+                var doc = cm.getDoc();
+                doc.replaceSelection(markdown);
+                debouncedSave();
+              }
+            }
+          });
+
+          console.log('EasyMDE initialized with rich text paste support');
         } else {
           console.error('EasyMDE not loaded or textarea not found');
         }
@@ -394,6 +435,64 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
     .editor-wrapper {
       border-radius: var(--radius-md);
       overflow: hidden;
+    }
+
+    /* EasyMDE editor sizing for long documents */
+    .editor-wrapper :global(.EasyMDEContainer) {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editor-wrapper :global(.CodeMirror) {
+      min-height: 500px;
+      height: auto !important;
+      max-height: 70vh;
+      overflow-y: auto !important;
+      border: 2px solid var(--color-border);
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      background: var(--color-bg-secondary);
+      font-family: var(--font-mono);
+      font-size: var(--text-base);
+      line-height: 1.6;
+    }
+
+    .editor-wrapper :global(.CodeMirror-scroll) {
+      min-height: 500px;
+    }
+
+    /* Dark theme adjustments for EasyMDE */
+    .editor-wrapper :global(.editor-toolbar) {
+      background: var(--color-bg-secondary);
+      border: 2px solid var(--color-border);
+      border-bottom: none;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+    }
+
+    .editor-wrapper :global(.editor-toolbar button) {
+      color: var(--color-text) !important;
+    }
+
+    .editor-wrapper :global(.editor-toolbar button:hover),
+    .editor-wrapper :global(.editor-toolbar button.active) {
+      background: var(--color-gold) !important;
+      color: var(--color-bg) !important;
+    }
+
+    .editor-wrapper :global(.editor-statusbar) {
+      background: var(--color-bg-secondary);
+      border: 2px solid var(--color-border);
+      border-top: none;
+      color: var(--color-text-muted);
+      padding: var(--space-xs) var(--space-sm);
+    }
+
+    /* Fullscreen mode adjustments */
+    .editor-wrapper :global(.CodeMirror-fullscreen) {
+      max-height: 100vh !important;
+    }
+
+    .editor-wrapper :global(.editor-toolbar.fullscreen) {
+      z-index: 1001;
     }
 
     .publish-result {
