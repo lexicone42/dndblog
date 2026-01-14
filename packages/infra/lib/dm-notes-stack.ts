@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { DmNotesApi } from './constructs/dm-notes-api';
+import { DmNotesApi } from './constructs/dm-notes-api.js';
 
 export interface DmNotesStackProps extends cdk.StackProps {
   /**
