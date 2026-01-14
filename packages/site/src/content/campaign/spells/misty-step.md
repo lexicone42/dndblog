@@ -2,20 +2,28 @@
 name: "Misty Step"
 level: 2
 school: "conjuration"
-castingTime: "1 bonus action"
+castingTime: "Bonus Action"
 range: "Self"
-components: ["V"]
+components:
+  - "V"
 duration: "Instantaneous"
 concentration: false
 ritual: false
-description: |
-  Briefly surrounded by silvery mist, you teleport up to 30 feet to an unoccupied space that you can see.
-classes: ["Sorcerer", "Warlock", "Wizard"]
-source: "SRD 5.1"
+description: "Briefly surrounded by silvery mist, you teleport up to 30 feet to an unoccupied space you can see."
+classes:
+  - "Sorcerer"
+  - "Warlock"
+  - "Wizard"
+source: "SRD 5.2"
 ---
 
 # Misty Step
 
-*Level 2 Conjuration*
+*Level 2 conjuration*
 
-Briefly surrounded by silvery mist, you teleport up to 30 feet to an unoccupied space that you can see.
+**Casting Time:** Bonus Action
+**Range:** Self
+**Components:** V
+**Duration:** Instantaneous
+
+Briefly surrounded by silvery mist, you teleport up to 30 feet to an unoccupied space you can see.

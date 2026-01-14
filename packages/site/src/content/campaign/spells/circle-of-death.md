@@ -1,0 +1,35 @@
+---
+name: "Circle of Death"
+level: 6
+school: "necromancy"
+castingTime: "Action"
+range: "150 feet"
+components:
+  - "V"
+  - "S"
+  - "M"
+material: "the powder of a crushed black pearl worth 500+ GP"
+duration: "Instantaneous"
+concentration: false
+ritual: false
+description: "Negative energy ripples out in a 60-foot-radius Sphere from a point you choose within range. Each creature in that area makes a Constitution saving throw, taking 8d8 Necrotic damage on a failed save or half as much damage on a successful one."
+atHigherLevels: "The damage in- creases by 2d8 for each spell slot level above 6."
+classes:
+  - "Sorcerer"
+  - "Warlock"
+  - "Wizard"
+source: "SRD 5.2"
+---
+
+# Circle of Death
+
+*Level 6 necromancy*
+
+**Casting Time:** Action
+**Range:** 150 feet
+**Components:** V, S, M (the powder of a crushed black pearl worth 500+ GP)
+**Duration:** Instantaneous
+
+Negative energy ripples out in a 60-foot-radius Sphere from a point you choose within range. Each creature in that area makes a Constitution saving throw, taking 8d8 Necrotic damage on a failed save or half as much damage on a successful one.
+
+**At Higher Levels.** The damage in- creases by 2d8 for each spell slot level above 6.

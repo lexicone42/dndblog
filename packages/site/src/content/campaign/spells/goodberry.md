@@ -1,26 +1,31 @@
 ---
 name: "Goodberry"
 level: 1
-school: "transmutation"
-castingTime: "1 action"
-range: "Touch"
-components: ["V", "S", "M"]
-material: "A sprig of mistletoe."
-duration: "Instantaneous"
+school: "conjuration"
+castingTime: "Action"
+range: "Self"
+components:
+  - "V"
+  - "S"
+  - "M"
+material: "a sprig of mistletoe"
+duration: "24 hours"
 concentration: false
 ritual: false
-description: |
-  Up to ten berries appear in your hand and are infused with magic for the duration. A creature can use its action to eat one berry. Eating a berry restores 1 hit point, and the berry provides enough nourishment to sustain a creature for a day.
-
-  The berries lose their potency if they have not been consumed within 24 hours of the casting of this spell.
-classes: ["Druid", "Ranger"]
-source: "SRD 5.1"
+description: "Ten berries appear in your hand and are infused with magic for the duration. A creature can take a Bonus Action to eat one berry. Eating a berry restores 1 Hit Point, and the berry provides enough nourishment to sustain a creature for one day. Uneaten berries disappear when the spell ends."
+classes:
+  - "Druid"
+  - "Ranger"
+source: "SRD 5.2"
 ---
 
 # Goodberry
 
-*Level 1 Transmutation*
+*Level 1 conjuration*
 
-Up to ten berries appear in your hand and are infused with magic for the duration. A creature can use its action to eat one berry. Eating a berry restores 1 hit point, and the berry provides enough nourishment to sustain a creature for a day.
+**Casting Time:** Action
+**Range:** Self
+**Components:** V, S, M (a sprig of mistletoe)
+**Duration:** 24 hours
 
-The berries lose their potency if they have not been consumed within 24 hours of the casting of this spell.
+Ten berries appear in your hand and are infused with magic for the duration. A creature can take a Bonus Action to eat one berry. Eating a berry restores 1 Hit Point, and the berry provides enough nourishment to sustain a creature for one day. Uneaten berries disappear when the spell ends.

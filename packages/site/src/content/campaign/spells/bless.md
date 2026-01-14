@@ -2,25 +2,31 @@
 name: "Bless"
 level: 1
 school: "enchantment"
-castingTime: "1 action"
+castingTime: "Action"
 range: "30 feet"
-components: ["V", "S", "M"]
-material: "A sprinkling of holy water."
-duration: "Up to 1 minute"
+components:
+  - "V"
+  - "S"
+duration: "Instantaneous"
 concentration: true
 ritual: false
-description: |
-  You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target can roll a d4 and add the number rolled to the attack roll or saving throw.
-atHigherLevels: |
-  When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.
-classes: ["Cleric", "Paladin"]
-source: "SRD 5.1"
+description: "You bless up to three creatures within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target adds 1d4 to the attack roll or save. A creature that you can see within range makes a Constitution saving throw, taking 8d8 Necrotic damage on a failed save or hal..."
+atHigherLevels: "The damage in- creases by 1d8 for each spell slot level above 4."
+classes:
+  - "Cleric"
+  - "Paladin"
+source: "SRD 5.2"
 ---
 
 # Bless
 
-*Level 1 Enchantment*
+*Level 1 enchantment*
 
-You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target can roll a d4 and add the number rolled to the attack roll or saving throw.
+**Casting Time:** Action
+**Range:** 30 feet
+**Components:** V, S
+**Duration:** Instantaneous
 
-**At Higher Levels.** When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.
+You bless up to three creatures within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target adds 1d4 to the attack roll or save. A creature that you can see within range makes a Constitution saving throw, taking 8d8 Necrotic damage on a failed save or half as much damage on a successful one. A Plant creature automatically fails the save. Alternatively, target a nonmagical plant that isn’t a creature, such as a tree or shrub. It doesn’t make a save; it simply withers and dies.
+
+**At Higher Levels.** The damage in- creases by 1d8 for each spell slot level above 4.

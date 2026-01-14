@@ -2,29 +2,32 @@
 name: "Spirit Guardians"
 level: 3
 school: "conjuration"
-castingTime: "1 action"
+castingTime: "Action"
 range: "Self"
-components: ["V", "S", "M"]
-material: "A holy symbol."
-duration: "Up to 10 minutes"
+components:
+  - "V"
+  - "S"
+  - "M"
+material: "a prayer scroll"
+duration: "Concentration, up to 10 minutes"
 concentration: true
 ritual: false
-description: |
-  You call forth spirits to protect you. They flit around you to a distance of 15 feet for the duration. If you are good or neutral, their spectral form appears angelic or fey (your choice). If you are evil, they appear fiendish.
-
-  When you cast this spell, you can designate any number of creatures you can see to be unaffected by it. An affected creature's speed is halved in the area, and when the creature enters the area for the first time on a turn or starts its turn there, it must make a wisdom saving throw. On a failed save, the creature takes 3d8 radiant damage (if you are good or neutral) or 3d8 necrotic damage (if you are evil). On a successful save, the creature takes half as much damage.
-atHigherLevels: |
-  When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d8 for each slot level above 3rd.
-classes: ["Cleric"]
-source: "SRD 5.1"
+description: "Protective spirits flit around you in a 15-foot Emanation for the duration. If you are good or neutral, their spectral form appears angelic or fey (your choice). If you are evil, they appear fiendish. When you cast this spell, you can designate creatures to be unaffected by it. Any other creature’s ..."
+atHigherLevels: "The damage in- creases by 1d8 for each spell slot level above 3."
+classes:
+  - "Cleric"
+source: "SRD 5.2"
 ---
 
 # Spirit Guardians
 
-*Level 3 Conjuration*
+*Level 3 conjuration*
 
-You call forth spirits to protect you. They flit around you to a distance of 15 feet for the duration. If you are good or neutral, their spectral form appears angelic or fey (your choice). If you are evil, they appear fiendish.
+**Casting Time:** Action
+**Range:** Self
+**Components:** V, S, M (a prayer scroll)
+**Duration:** Concentration, up to 10 minutes
 
-When you cast this spell, you can designate any number of creatures you can see to be unaffected by it. An affected creature's speed is halved in the area, and when the creature enters the area for the first time on a turn or starts its turn there, it must make a wisdom saving throw. On a failed save, the creature takes 3d8 radiant damage (if you are good or neutral) or 3d8 necrotic damage (if you are evil). On a successful save, the creature takes half as much damage.
+Protective spirits flit around you in a 15-foot Emanation for the duration. If you are good or neutral, their spectral form appears angelic or fey (your choice). If you are evil, they appear fiendish. When you cast this spell, you can designate creatures to be unaffected by it. Any other creature’s Speed is halved in the Emanation, and whenever the Emanation enters a creature’s space and whenever  a creature enters the Emanation or ends its turn there, the creature must make a Wisdom saving throw. On a failed save, the creature takes 3d8 Radiant damage (if you are good or neutral) or 3d8 Necrotic damage (if you are evil). On a successful save, the creature takes half as much damage. A creature makes this save only once per turn.
 
-**At Higher Levels.** When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d8 for each slot level above 3rd.
+**At Higher Levels.** The damage in- creases by 1d8 for each spell slot level above 3.

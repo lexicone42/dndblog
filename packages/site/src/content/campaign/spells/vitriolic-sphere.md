@@ -1,0 +1,34 @@
+---
+name: "Vitriolic Sphere"
+level: 4
+school: "evocation"
+castingTime: "Action"
+range: "150 feet"
+components:
+  - "V"
+  - "S"
+  - "M"
+material: "a drop of bile"
+duration: "Instantaneous"
+concentration: false
+ritual: false
+description: "You point at a location within range, and a glowing, 1-foot-diameter ball of acid streaks there and explodes in a 20-foot-radius Sphere. Each creature in that area makes a Dexterity saving throw. On a failed save, a creature takes 10d4 Acid damage and another 5d4 Acid damage at the end of its next t..."
+atHigherLevels: "The initial dam- age increases by 2d4 for each spell slot level above 4."
+classes:
+  - "Sorcerer"
+  - "Wizard"
+source: "SRD 5.2"
+---
+
+# Vitriolic Sphere
+
+*Level 4 evocation*
+
+**Casting Time:** Action
+**Range:** 150 feet
+**Components:** V, S, M (a drop of bile)
+**Duration:** Instantaneous
+
+You point at a location within range, and a glowing, 1-foot-diameter ball of acid streaks there and explodes in a 20-foot-radius Sphere. Each creature in that area makes a Dexterity saving throw. On a failed save, a creature takes 10d4 Acid damage and another 5d4 Acid damage at the end of its next turn. On a successful save, a creature takes half the initial damage only.
+
+**At Higher Levels.** The initial dam- age increases by 2d4 for each spell slot level above 4.

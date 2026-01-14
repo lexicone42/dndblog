@@ -2,24 +2,30 @@
 name: "Sacred Flame"
 level: 0
 school: "evocation"
-castingTime: "1 action"
+castingTime: "Action"
 range: "60 feet"
-components: ["V", "S"]
+components:
+  - "V"
+  - "S"
 duration: "Instantaneous"
 concentration: false
 ritual: false
-description: |
-  Flame-like radiance descends on a creature that you can see within range. The target must succeed on a dexterity saving throw or take 1d8 radiant damage. The target gains no benefit from cover for this saving throw.
-
-  The spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8).
-classes: ["Cleric"]
-source: "SRD 5.1"
+description: "Flame-like radiance descends on a creature that you can see within range. The target must succeed on a Dexterity saving throw or take 1d8 Radiant damage. The target gains no benefit from Half Cover or Three-Quarters Cover for this save."
+atHigherLevels: "The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8)."
+classes:
+  - "Cleric"
+source: "SRD 5.2"
 ---
 
 # Sacred Flame
 
-*Cantrip Evocation*
+*Evocation cantrip*
 
-Flame-like radiance descends on a creature that you can see within range. The target must succeed on a dexterity saving throw or take 1d8 radiant damage. The target gains no benefit from cover for this saving throw.
+**Casting Time:** Action
+**Range:** 60 feet
+**Components:** V, S
+**Duration:** Instantaneous
 
-The spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8).
+Flame-like radiance descends on a creature that you can see within range. The target must succeed on a Dexterity saving throw or take 1d8 Radiant damage. The target gains no benefit from Half Cover or Three-Quarters Cover for this save.
+
+**Cantrip Upgrade.** The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).

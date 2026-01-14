@@ -2,29 +2,33 @@
 name: "Fireball"
 level: 3
 school: "evocation"
-castingTime: "1 action"
+castingTime: "Action"
 range: "150 feet"
-components: ["V", "S", "M"]
-material: "A tiny ball of bat guano and sulfur."
+components:
+  - "V"
+  - "S"
+  - "M"
+material: "a ball of bat guano and sulfur"
 duration: "Instantaneous"
 concentration: false
 ritual: false
-description: |
-  A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame. Each creature in a 20-foot-radius sphere centered on that point must make a dexterity saving throw. A target takes 8d6 fire damage on a failed save, or half as much damage on a successful one.
-
-  The fire spreads around corners. It ignites flammable objects in the area that aren't being worn or carried.
-atHigherLevels: |
-  When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.
-classes: ["Sorcerer", "Wizard"]
-source: "SRD 5.1"
+description: "A bright streak flashes from you to a point you choose within range and then blossoms with a low roar into a fiery explosion. Each creature in a 20-foot-radius Sphere centered on that point makes a Dexterity saving throw, taking 8d6 Fire damage on a failed save or half as much damage on a successful..."
+atHigherLevels: "The damage in- creases by 1d6 for each spell slot level above 3."
+classes:
+  - "Sorcerer"
+  - "Wizard"
+source: "SRD 5.2"
 ---
 
 # Fireball
 
-*Level 3 Evocation*
+*Level 3 evocation*
 
-A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame. Each creature in a 20-foot-radius sphere centered on that point must make a dexterity saving throw. A target takes 8d6 fire damage on a failed save, or half as much damage on a successful one.
+**Casting Time:** Action
+**Range:** 150 feet
+**Components:** V, S, M (a ball of bat guano and sulfur)
+**Duration:** Instantaneous
 
-The fire spreads around corners. It ignites flammable objects in the area that aren't being worn or carried.
+A bright streak flashes from you to a point you choose within range and then blossoms with a low roar into a fiery explosion. Each creature in a 20-foot-radius Sphere centered on that point makes a Dexterity saving throw, taking 8d6 Fire damage on a failed save or half as much damage on a successful one. Flammable objects in the area that aren’t being worn or carried start burning.
 
-**At Higher Levels.** When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd.
+**At Higher Levels.** The damage in- creases by 1d6 for each spell slot level above 3.

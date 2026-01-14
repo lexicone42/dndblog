@@ -2,28 +2,28 @@
 name: "Entangle"
 level: 1
 school: "conjuration"
-castingTime: "1 action"
+castingTime: "Action"
 range: "90 feet"
-components: ["V", "S"]
-duration: "Up to 1 minute"
+components:
+  - "V"
+  - "S"
+duration: "Concentration, up to 1 minute"
 concentration: true
 ritual: false
-description: |
-  Grasping weeds and vines sprout from the ground in a 20-foot square starting form a point within range. For the duration, these plants turn the ground in the area into difficult terrain.
-
-  A creature in the area when you cast the spell must succeed on a strength saving throw or be restrained by the entangling plants until the spell ends. A creature restrained by the plants can use its action to make a Strength check against your spell save DC. On a success, it frees itself.
-
-  When the spell ends, the conjured plants wilt away.
-classes: ["Druid"]
-source: "SRD 5.1"
+description: "Grasping plants sprout from the ground in a 20-foot square within range. For the duration, these plants turn the ground in the area into Difficult Terrain. They disappear when the spell ends. Each creature (other than you) in the area when you cast the spell must succeed on a Strength saving throw o..."
+classes:
+  - "Druid"
+  - "Ranger"
+source: "SRD 5.2"
 ---
 
 # Entangle
 
-*Level 1 Conjuration*
+*Level 1 conjuration*
 
-Grasping weeds and vines sprout from the ground in a 20-foot square starting form a point within range. For the duration, these plants turn the ground in the area into difficult terrain.
+**Casting Time:** Action
+**Range:** 90 feet
+**Components:** V, S
+**Duration:** Concentration, up to 1 minute
 
-A creature in the area when you cast the spell must succeed on a strength saving throw or be restrained by the entangling plants until the spell ends. A creature restrained by the plants can use its action to make a Strength check against your spell save DC. On a success, it frees itself.
-
-When the spell ends, the conjured plants wilt away.
+Grasping plants sprout from the ground in a 20-foot square within range. For the duration, these plants turn the ground in the area into Difficult Terrain. They disappear when the spell ends. Each creature (other than you) in the area when you cast the spell must succeed on a Strength saving throw or have the Restrained condition until the spell ends. A Restrained creature can take an action to make a Strength (Athletics) check against your spell save DC. On a success, it frees itself from the grasping plants and is no longer Restrained by them.

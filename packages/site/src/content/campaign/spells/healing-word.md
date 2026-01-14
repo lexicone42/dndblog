@@ -1,25 +1,32 @@
 ---
 name: "Healing Word"
 level: 1
-school: "evocation"
-castingTime: "1 bonus action"
+school: "abjuration"
+castingTime: "Bonus Action"
 range: "60 feet"
-components: ["V"]
+components:
+  - "V"
 duration: "Instantaneous"
 concentration: false
 ritual: false
-description: |
-  A creature of your choice that you can see within range regains hit points equal to 1d4 + your spellcasting ability modifier. This spell has no effect on undead or constructs.
-atHigherLevels: |
-  When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 1d4 for each slot level above 1st.
-classes: ["Bard", "Cleric", "Druid"]
-source: "SRD 5.1"
+description: "A creature of your choice that you can see within range regains Hit Points equal to 2d4 plus your spellcasting ability modifier."
+atHigherLevels: "The healing in- creases by 2d4 for each spell slot level above 1."
+classes:
+  - "Bard"
+  - "Cleric"
+  - "Druid"
+source: "SRD 5.2"
 ---
 
 # Healing Word
 
-*Level 1 Evocation*
+*Level 1 abjuration*
 
-A creature of your choice that you can see within range regains hit points equal to 1d4 + your spellcasting ability modifier. This spell has no effect on undead or constructs.
+**Casting Time:** Bonus Action
+**Range:** 60 feet
+**Components:** V
+**Duration:** Instantaneous
 
-**At Higher Levels.** When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 1d4 for each slot level above 1st.
+A creature of your choice that you can see within range regains Hit Points equal to 2d4 plus your spellcasting ability modifier.
+
+**At Higher Levels.** The healing in- creases by 2d4 for each spell slot level above 1.

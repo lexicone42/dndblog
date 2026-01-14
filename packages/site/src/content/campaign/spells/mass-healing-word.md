@@ -1,25 +1,31 @@
 ---
 name: "Mass Healing Word"
 level: 3
-school: "evocation"
-castingTime: "1 bonus action"
+school: "abjuration"
+castingTime: "Bonus Action"
 range: "60 feet"
-components: ["V"]
+components:
+  - "V"
 duration: "Instantaneous"
 concentration: false
 ritual: false
-description: |
-  As you call out words of restoration, up to six creatures of your choice that you can see within range regain hit points equal to 1d4 + your spellcasting ability modifier. This spell has no effect on undead or constructs.
-atHigherLevels: |
-  When you cast this spell using a spell slot of 4th level or higher, the healing increases by 1d4 for each slot level above 3rd.
-classes: ["Cleric"]
-source: "SRD 5.1"
+description: "Up to six creatures of your choice that you can see within range regain Hit Points equal to 2d4 plus your spellcasting ability modifier."
+atHigherLevels: "The healing in- creases by 1d4 for each spell slot level above 3."
+classes:
+  - "Bard"
+  - "Cleric"
+source: "SRD 5.2"
 ---
 
 # Mass Healing Word
 
-*Level 3 Evocation*
+*Level 3 abjuration*
 
-As you call out words of restoration, up to six creatures of your choice that you can see within range regain hit points equal to 1d4 + your spellcasting ability modifier. This spell has no effect on undead or constructs.
+**Casting Time:** Bonus Action
+**Range:** 60 feet
+**Components:** V
+**Duration:** Instantaneous
 
-**At Higher Levels.** When you cast this spell using a spell slot of 4th level or higher, the healing increases by 1d4 for each slot level above 3rd.
+Up to six creatures of your choice that you can see within range regain Hit Points equal to 2d4 plus your spellcasting ability modifier.
+
+**At Higher Levels.** The healing in- creases by 1d4 for each spell slot level above 3.
