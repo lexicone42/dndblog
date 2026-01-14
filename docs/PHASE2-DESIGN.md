@@ -1,6 +1,6 @@
 # Phase 2 Design: Private Campaign System
 
-This document outlines the planned features and architecture for Phase 2 of the The Evocation of Events platform.
+This document outlines the planned features and architecture for Phase 2 of the Rudiger's Evocation of Events platform.
 
 ## Overview
 

@@ -1,4 +1,4 @@
-# The Evocation of Events
+# Rudiger's Evocation of Events
 
 [![CI](https://github.com/bryanegan/dndblog/actions/workflows/ci.yml/badge.svg)](https://github.com/bryanegan/dndblog/actions/workflows/ci.yml)
 [![Deploy](https://github.com/bryanegan/dndblog/actions/workflows/deploy.yml/badge.svg)](https://github.com/bryanegan/dndblog/actions/workflows/deploy.yml)

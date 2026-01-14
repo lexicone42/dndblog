@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the system architecture of the The Evocation of Events platform.
+This document describes the system architecture of the Rudiger's Evocation of Events platform.
 
 ## Overview
 
