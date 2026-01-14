@@ -163,11 +163,31 @@ export class GithubOidc extends Construct {
       })
     );
 
-    // Add site bucket permissions if provided
+    // Site bucket permissions - grant access to StaticSiteStack buckets
+    // The bucket name is dynamically generated, so we use a pattern match
+    this.deployRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'SiteBucketAccess',
+        effect: iam.Effect.ALLOW,
+        actions: [
+          's3:PutObject',
+          's3:DeleteObject',
+          's3:GetObject',
+          's3:ListBucket',
+          's3:GetBucketLocation',
+        ],
+        resources: [
+          'arn:aws:s3:::staticsitestack-*',
+          'arn:aws:s3:::staticsitestack-*/*',
+        ],
+      })
+    );
+
+    // Add specific site bucket permissions if ARN is known
     if (siteBucketArn) {
       this.deployRole.addToPolicy(
         new iam.PolicyStatement({
-          sid: 'SiteBucketAccess',
+          sid: 'SpecificSiteBucketAccess',
           effect: iam.Effect.ALLOW,
           actions: [
             's3:PutObject',
@@ -181,11 +201,23 @@ export class GithubOidc extends Construct {
       );
     }
 
-    // Add CloudFront invalidation permissions if provided
+    // CloudFront invalidation permissions for all distributions in this account
+    this.deployRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'CloudFrontInvalidation',
+        effect: iam.Effect.ALLOW,
+        actions: ['cloudfront:CreateInvalidation', 'cloudfront:GetInvalidation'],
+        resources: [
+          `arn:aws:cloudfront::${cdk.Stack.of(this).account}:distribution/*`,
+        ],
+      })
+    );
+
+    // Add specific CloudFront permissions if distribution ID is known
     if (distributionId) {
       this.deployRole.addToPolicy(
         new iam.PolicyStatement({
-          sid: 'CloudFrontInvalidation',
+          sid: 'SpecificCloudFrontInvalidation',
           effect: iam.Effect.ALLOW,
           actions: ['cloudfront:CreateInvalidation', 'cloudfront:GetInvalidation'],
           resources: [
