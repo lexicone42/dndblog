@@ -1,6 +1,7 @@
 ---
 name: "Sphere"
 slug: "sphere"
+category: "area-of-effect"
 description: "An area of effect has a point of origin, a location from which the effect’s energy erupts. The rules for each shape specify how to position its point of origin...."
 source: "SRD 5.2"
 ---

@@ -1,0 +1,573 @@
+---
+/**
+ * Enemies Index Page
+ * Browse all enemies with filtering by type and status.
+ */
+
+import { getCollection } from 'astro:content';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+// Get all enemies
+const allEnemies = await getCollection('enemies');
+
+// Sort by subtype (bosses first), then alphabetically
+const subtypeOrder: Record<string, number> = {
+  boss: 0,
+  lieutenant: 1,
+  creature: 2,
+  minion: 3,
+  swarm: 4,
+  trap: 5,
+};
+
+const sortedEnemies = allEnemies.sort((a, b) => {
+  const orderA = subtypeOrder[a.data.subtype] ?? 99;
+  const orderB = subtypeOrder[b.data.subtype] ?? 99;
+  if (orderA !== orderB) return orderA - orderB;
+  return a.data.name.localeCompare(b.data.name);
+});
+
+// Extract unique values for filters
+const subtypes = [...new Set(sortedEnemies.map(e => e.data.subtype).filter(Boolean))].sort(
+  (a, b) => (subtypeOrder[a] ?? 99) - (subtypeOrder[b] ?? 99)
+);
+const statuses = [...new Set(sortedEnemies.map(e => e.data.status).filter(Boolean))].sort();
+
+// Group by subtype for display
+const bosses = sortedEnemies.filter(e => e.data.subtype === 'boss');
+const lieutenants = sortedEnemies.filter(e => e.data.subtype === 'lieutenant');
+const creatures = sortedEnemies.filter(e => e.data.subtype === 'creature');
+const minions = sortedEnemies.filter(e => e.data.subtype === 'minion');
+const others = sortedEnemies.filter(e => !['boss', 'lieutenant', 'creature', 'minion'].includes(e.data.subtype));
+
+// Subtype display info
+const subtypeInfo: Record<string, { name: string; description: string; color: string }> = {
+  boss: { name: 'Major Threats', description: 'Campaign-level antagonists', color: 'var(--color-error)' },
+  lieutenant: { name: 'Lieutenants', description: 'Powerful servants of greater evils', color: 'var(--color-warning)' },
+  creature: { name: 'Creatures', description: 'Dangerous beasts and monsters', color: '#8b5cf6' },
+  minion: { name: 'Minions', description: 'Lesser foes and pawns', color: 'var(--color-text-muted)' },
+};
+---
+
+<BaseLayout
+  title="Enemies - Campaign Reference"
+  description="Browse all enemies and threats in the campaign."
+>
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-title">Enemies & Threats</h1>
+      <p class="page-description">
+        {sortedEnemies.length} adversaries lurking in the campaign
+      </p>
+    </header>
+
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filter-group">
+        <label class="filter-label">Threat Level</label>
+        <div class="filter-options" data-filter="subtype">
+          <button class="filter-btn active" data-value="all">All</button>
+          {subtypes.map(subtype => (
+            <button class="filter-btn" data-value={subtype}>
+              {subtypeInfo[subtype]?.name || subtype}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Status</label>
+        <div class="filter-options" data-filter="status">
+          <button class="filter-btn active" data-value="all">All</button>
+          {statuses.map(status => (
+            <button class="filter-btn" data-value={status}>{status}</button>
+          ))}
+        </div>
+      </div>
+
+      <div class="filter-group filter-group--search">
+        <label class="filter-label" for="enemy-search">Search</label>
+        <input
+          type="text"
+          id="enemy-search"
+          class="search-input"
+          placeholder="Search enemies..."
+        />
+      </div>
+    </div>
+
+    <!-- Results count -->
+    <div class="results-count">
+      Showing <span id="visible-count">{sortedEnemies.length}</span> of {sortedEnemies.length} enemies
+    </div>
+
+    <!-- Major Threats (Bosses) -->
+    {bosses.length > 0 && (
+      <section class="enemy-section" data-section="boss">
+        <h2 class="section-title section-title--boss">
+          <span class="section-icon">☠️</span> Major Threats
+        </h2>
+        <p class="section-description">Campaign-level antagonists and world-ending dangers</p>
+        <div class="enemies-grid">
+          {bosses.map(enemy => (
+            <a
+              href={`/campaign/enemies/${enemy.id}`}
+              class="enemy-card enemy-card--boss"
+              data-subtype={enemy.data.subtype || ''}
+              data-status={enemy.data.status || ''}
+              data-name={enemy.data.name.toLowerCase()}
+            >
+              <div class="enemy-card__header">
+                <h3 class="enemy-name">{enemy.data.name}</h3>
+                <span class={`enemy-status status--${enemy.data.status}`}>
+                  {enemy.data.status}
+                </span>
+              </div>
+
+              {enemy.data.cr && (
+                <div class="enemy-card__meta">
+                  <span class="enemy-cr">CR {enemy.data.cr}</span>
+                  {enemy.data.creatureType && (
+                    <span class="enemy-type">{enemy.data.creatureType}</span>
+                  )}
+                </div>
+              )}
+
+              {enemy.data.description && (
+                <p class="enemy-description">{enemy.data.description.slice(0, 100)}...</p>
+              )}
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- Lieutenants -->
+    {lieutenants.length > 0 && (
+      <section class="enemy-section" data-section="lieutenant">
+        <h2 class="section-title section-title--lieutenant">
+          <span class="section-icon">⚔️</span> Lieutenants
+        </h2>
+        <p class="section-description">Powerful servants of greater evils</p>
+        <div class="enemies-grid">
+          {lieutenants.map(enemy => (
+            <a
+              href={`/campaign/enemies/${enemy.id}`}
+              class="enemy-card enemy-card--lieutenant"
+              data-subtype={enemy.data.subtype || ''}
+              data-status={enemy.data.status || ''}
+              data-name={enemy.data.name.toLowerCase()}
+            >
+              <div class="enemy-card__header">
+                <h3 class="enemy-name">{enemy.data.name}</h3>
+                <span class={`enemy-status status--${enemy.data.status}`}>
+                  {enemy.data.status}
+                </span>
+              </div>
+
+              {(enemy.data.cr || enemy.data.creatureType) && (
+                <div class="enemy-card__meta">
+                  {enemy.data.cr && <span class="enemy-cr">CR {enemy.data.cr}</span>}
+                  {enemy.data.creatureType && (
+                    <span class="enemy-type">{enemy.data.creatureType}</span>
+                  )}
+                </div>
+              )}
+
+              {enemy.data.description && (
+                <p class="enemy-description">{enemy.data.description.slice(0, 100)}...</p>
+              )}
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- Creatures -->
+    {creatures.length > 0 && (
+      <section class="enemy-section" data-section="creature">
+        <h2 class="section-title section-title--creature">
+          <span class="section-icon">🐉</span> Creatures
+        </h2>
+        <p class="section-description">Dangerous beasts and monsters</p>
+        <div class="enemies-grid">
+          {creatures.map(enemy => (
+            <a
+              href={`/campaign/enemies/${enemy.id}`}
+              class="enemy-card"
+              data-subtype={enemy.data.subtype || ''}
+              data-status={enemy.data.status || ''}
+              data-name={enemy.data.name.toLowerCase()}
+            >
+              <div class="enemy-card__header">
+                <h3 class="enemy-name">{enemy.data.name}</h3>
+                <span class={`enemy-status status--${enemy.data.status}`}>
+                  {enemy.data.status}
+                </span>
+              </div>
+
+              {(enemy.data.cr || enemy.data.creatureType) && (
+                <div class="enemy-card__meta">
+                  {enemy.data.cr && <span class="enemy-cr">CR {enemy.data.cr}</span>}
+                  {enemy.data.creatureType && (
+                    <span class="enemy-type">{enemy.data.creatureType}</span>
+                  )}
+                </div>
+              )}
+
+              {enemy.data.description && (
+                <p class="enemy-description">{enemy.data.description.slice(0, 100)}...</p>
+              )}
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- Minions & Others -->
+    {(minions.length > 0 || others.length > 0) && (
+      <section class="enemy-section" data-section="minion">
+        <h2 class="section-title section-title--minion">
+          <span class="section-icon">👥</span> Minions & Others
+        </h2>
+        <p class="section-description">Lesser foes and pawns</p>
+        <div class="enemies-grid">
+          {[...minions, ...others].map(enemy => (
+            <a
+              href={`/campaign/enemies/${enemy.id}`}
+              class="enemy-card"
+              data-subtype={enemy.data.subtype || ''}
+              data-status={enemy.data.status || ''}
+              data-name={enemy.data.name.toLowerCase()}
+            >
+              <div class="enemy-card__header">
+                <h3 class="enemy-name">{enemy.data.name}</h3>
+                <span class={`enemy-status status--${enemy.data.status}`}>
+                  {enemy.data.status}
+                </span>
+              </div>
+
+              {enemy.data.description && (
+                <p class="enemy-description">{enemy.data.description.slice(0, 100)}...</p>
+              )}
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+  </div>
+</BaseLayout>
+
+<script>
+  // Client-side filtering
+  const filters: Record<string, string> = {
+    subtype: 'all',
+    status: 'all',
+  };
+  let searchTerm = '';
+
+  const cards = document.querySelectorAll('.enemy-card') as NodeListOf<HTMLElement>;
+  const sections = document.querySelectorAll('.enemy-section') as NodeListOf<HTMLElement>;
+  const visibleCount = document.getElementById('visible-count');
+
+  function updateFilters() {
+    let count = 0;
+
+    cards.forEach(card => {
+      const subtype = card.dataset.subtype || '';
+      const status = card.dataset.status || '';
+      const name = card.dataset.name || '';
+
+      const matchesSubtype = filters.subtype === 'all' || subtype === filters.subtype;
+      const matchesStatus = filters.status === 'all' || status === filters.status;
+      const matchesSearch = !searchTerm || name.includes(searchTerm.toLowerCase());
+
+      if (matchesSubtype && matchesStatus && matchesSearch) {
+        card.style.display = '';
+        count++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    // Hide sections with no visible cards
+    sections.forEach(section => {
+      const visibleCards = section.querySelectorAll('.enemy-card:not([style*="display: none"])');
+      section.style.display = visibleCards.length > 0 ? '' : 'none';
+    });
+
+    if (visibleCount) {
+      visibleCount.textContent = String(count);
+    }
+  }
+
+  // Filter button handlers
+  document.querySelectorAll('.filter-options').forEach(group => {
+    const filterType = (group as HTMLElement).dataset.filter;
+
+    group.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        group.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (filterType) {
+          filters[filterType] = (btn as HTMLElement).dataset.value || 'all';
+        }
+        updateFilters();
+      });
+    });
+  });
+
+  // Search handler
+  const searchInput = document.getElementById('enemy-search') as HTMLInputElement;
+  searchInput?.addEventListener('input', (e) => {
+    searchTerm = (e.target as HTMLInputElement).value;
+    updateFilters();
+  });
+</script>
+
+<style>
+  .page-header {
+    text-align: center;
+    padding: var(--space-xl) 0 var(--space-lg);
+  }
+
+  .page-title {
+    font-size: var(--text-3xl);
+    margin: 0 0 var(--space-sm);
+    color: var(--color-error);
+  }
+
+  .page-description {
+    color: var(--color-text-secondary);
+    font-size: var(--text-lg);
+    margin: 0;
+  }
+
+  /* Filters */
+  .filters {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .filter-label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+  }
+
+  .filter-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .filter-btn {
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-transform: capitalize;
+  }
+
+  .filter-btn:hover {
+    border-color: var(--color-error);
+    color: var(--color-error);
+  }
+
+  .filter-btn.active {
+    background: var(--color-error);
+    border-color: var(--color-error);
+    color: white;
+  }
+
+  .filter-group--search {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .search-input {
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    width: 100%;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: var(--color-error);
+  }
+
+  .results-count {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-md);
+  }
+
+  /* Sections */
+  .enemy-section {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    margin: 0 0 var(--space-xs);
+    padding-bottom: var(--space-sm);
+    border-bottom: 2px solid currentColor;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .section-title--boss { color: var(--color-error); }
+  .section-title--lieutenant { color: var(--color-warning); }
+  .section-title--creature { color: #8b5cf6; }
+  .section-title--minion { color: var(--color-text-muted); }
+
+  .section-icon {
+    font-size: var(--text-lg);
+  }
+
+  .section-description {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-lg);
+    font-style: italic;
+  }
+
+  /* Enemies Grid */
+  .enemies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .enemy-card {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    text-decoration: none;
+    color: var(--color-text);
+    transition: all var(--transition-fast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .enemy-card:hover {
+    border-color: var(--color-error);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+  }
+
+  .enemy-card--boss {
+    border-color: var(--color-error);
+    border-width: 2px;
+    background: linear-gradient(
+      135deg,
+      var(--color-bg-secondary) 0%,
+      color-mix(in srgb, var(--color-error) 5%, var(--color-bg-secondary)) 100%
+    );
+  }
+
+  .enemy-card--lieutenant {
+    border-color: var(--color-warning);
+  }
+
+  .enemy-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .enemy-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    margin: 0;
+    color: var(--color-error);
+  }
+
+  .enemy-card--boss .enemy-name {
+    color: var(--color-error);
+    font-size: var(--text-xl);
+  }
+
+  .enemy-card--lieutenant .enemy-name {
+    color: var(--color-warning);
+  }
+
+  .enemy-status {
+    font-size: var(--text-xs);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .status--active { background: var(--color-error); color: white; }
+  .status--inactive { background: var(--color-text-muted); color: white; }
+  .status--dead { background: #666; color: white; text-decoration: line-through; }
+  .status--destroyed { background: #333; color: white; }
+  .status--unknown { background: var(--color-warning); color: var(--color-bg); }
+  .status--dormant { background: #4b5563; color: white; }
+
+  .enemy-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .enemy-cr {
+    background: var(--color-error);
+    color: white;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    font-weight: 700;
+  }
+
+  .enemy-type {
+    background: var(--color-bg-tertiary);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: capitalize;
+  }
+
+  .enemy-description {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 640px) {
+    .enemies-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

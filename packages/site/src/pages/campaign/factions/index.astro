@@ -1,0 +1,508 @@
+---
+/**
+ * Factions Index Page
+ * Browse all factions with filtering by type and status.
+ */
+
+import { getCollection } from 'astro:content';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+// Get all factions
+const allFactions = await getCollection('factions');
+
+// Sort alphabetically by name
+const sortedFactions = allFactions.sort((a, b) =>
+  a.data.name.localeCompare(b.data.name)
+);
+
+// Extract unique values for filters
+const subtypes = [...new Set(sortedFactions.map(f => f.data.subtype).filter(Boolean))].sort();
+const statuses = [...new Set(sortedFactions.map(f => f.data.status).filter(Boolean))].sort();
+
+// Group by status for display
+const activeFactions = sortedFactions.filter(f => f.data.status === 'active');
+const inactiveFactions = sortedFactions.filter(f => f.data.status !== 'active');
+
+// Subtype display info
+const subtypeInfo: Record<string, { icon: string; color: string }> = {
+  cult: { icon: '🕯️', color: '#dc2626' },
+  guild: { icon: '⚒️', color: '#d97706' },
+  government: { icon: '🏛️', color: '#2563eb' },
+  military: { icon: '⚔️', color: '#16a34a' },
+  religious: { icon: '✝️', color: '#8b5cf6' },
+  criminal: { icon: '🗡️', color: '#6b7280' },
+  merchant: { icon: '💰', color: '#d4a943' },
+  'noble-house': { icon: '👑', color: '#ec4899' },
+  'adventuring-party': { icon: '🎒', color: '#06b6d4' },
+  'secret-society': { icon: '🔮', color: '#4f46e5' },
+};
+
+function formatSubtype(subtype: string): string {
+  return subtype.replace(/-/g, ' ');
+}
+---
+
+<BaseLayout
+  title="Factions - Campaign Reference"
+  description="Browse all factions and organizations in the campaign."
+>
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-title">Factions & Organizations</h1>
+      <p class="page-description">
+        {sortedFactions.length} organizations shaping the world
+      </p>
+    </header>
+
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filter-group">
+        <label class="filter-label">Type</label>
+        <div class="filter-options" data-filter="subtype">
+          <button class="filter-btn active" data-value="all">All</button>
+          {subtypes.map(subtype => (
+            <button class="filter-btn" data-value={subtype}>
+              {subtypeInfo[subtype]?.icon} {formatSubtype(subtype)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Status</label>
+        <div class="filter-options" data-filter="status">
+          <button class="filter-btn active" data-value="all">All</button>
+          {statuses.map(status => (
+            <button class="filter-btn" data-value={status}>{status}</button>
+          ))}
+        </div>
+      </div>
+
+      <div class="filter-group filter-group--search">
+        <label class="filter-label" for="faction-search">Search</label>
+        <input
+          type="text"
+          id="faction-search"
+          class="search-input"
+          placeholder="Search factions..."
+        />
+      </div>
+    </div>
+
+    <!-- Results count -->
+    <div class="results-count">
+      Showing <span id="visible-count">{sortedFactions.length}</span> of {sortedFactions.length} factions
+    </div>
+
+    <!-- Active Factions -->
+    {activeFactions.length > 0 && (
+      <section class="faction-section" data-section="active">
+        <h2 class="section-title">
+          <span class="section-icon">🌟</span> Active Factions
+        </h2>
+        <p class="section-description">Currently operating organizations</p>
+        <div class="factions-grid">
+          {activeFactions.map(faction => (
+            <a
+              href={`/campaign/factions/${faction.id}`}
+              class="faction-card faction-card--active"
+              data-subtype={faction.data.subtype || ''}
+              data-status={faction.data.status || ''}
+              data-name={faction.data.name.toLowerCase()}
+            >
+              <div class="faction-card__header">
+                <span class="faction-icon" style={`color: ${subtypeInfo[faction.data.subtype]?.color || 'var(--color-text-muted)'}`}>
+                  {subtypeInfo[faction.data.subtype]?.icon || '🏴'}
+                </span>
+                <div class="faction-card__title">
+                  <h3 class="faction-name">{faction.data.name}</h3>
+                  <span class="faction-type">{formatSubtype(faction.data.subtype)}</span>
+                </div>
+                <span class={`faction-status status--${faction.data.status}`}>
+                  {faction.data.status}
+                </span>
+              </div>
+
+              {(faction.data.leader || faction.data.headquarters) && (
+                <div class="faction-card__meta">
+                  {faction.data.leader && (
+                    <span class="faction-leader">👤 {faction.data.leader}</span>
+                  )}
+                  {faction.data.headquarters && (
+                    <span class="faction-hq">📍 {faction.data.headquarters}</span>
+                  )}
+                </div>
+              )}
+
+              {faction.data.description && (
+                <p class="faction-description">{faction.data.description.slice(0, 120)}...</p>
+              )}
+
+              {faction.data.motto && (
+                <p class="faction-motto">"{faction.data.motto}"</p>
+              )}
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- Inactive/Historical Factions -->
+    {inactiveFactions.length > 0 && (
+      <section class="faction-section" data-section="inactive">
+        <h2 class="section-title section-title--inactive">
+          <span class="section-icon">📜</span> Historical & Inactive
+        </h2>
+        <p class="section-description">Defunct, fallen, or historical organizations</p>
+        <div class="factions-grid">
+          {inactiveFactions.map(faction => (
+            <a
+              href={`/campaign/factions/${faction.id}`}
+              class="faction-card"
+              data-subtype={faction.data.subtype || ''}
+              data-status={faction.data.status || ''}
+              data-name={faction.data.name.toLowerCase()}
+            >
+              <div class="faction-card__header">
+                <span class="faction-icon" style={`color: ${subtypeInfo[faction.data.subtype]?.color || 'var(--color-text-muted)'}`}>
+                  {subtypeInfo[faction.data.subtype]?.icon || '🏴'}
+                </span>
+                <div class="faction-card__title">
+                  <h3 class="faction-name">{faction.data.name}</h3>
+                  <span class="faction-type">{formatSubtype(faction.data.subtype)}</span>
+                </div>
+                <span class={`faction-status status--${faction.data.status}`}>
+                  {faction.data.status}
+                </span>
+              </div>
+
+              {faction.data.description && (
+                <p class="faction-description">{faction.data.description.slice(0, 120)}...</p>
+              )}
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+  </div>
+</BaseLayout>
+
+<script>
+  // Client-side filtering
+  const filters: Record<string, string> = {
+    subtype: 'all',
+    status: 'all',
+  };
+  let searchTerm = '';
+
+  const cards = document.querySelectorAll('.faction-card') as NodeListOf<HTMLElement>;
+  const sections = document.querySelectorAll('.faction-section') as NodeListOf<HTMLElement>;
+  const visibleCount = document.getElementById('visible-count');
+
+  function updateFilters() {
+    let count = 0;
+
+    cards.forEach(card => {
+      const subtype = card.dataset.subtype || '';
+      const status = card.dataset.status || '';
+      const name = card.dataset.name || '';
+
+      const matchesSubtype = filters.subtype === 'all' || subtype === filters.subtype;
+      const matchesStatus = filters.status === 'all' || status === filters.status;
+      const matchesSearch = !searchTerm || name.includes(searchTerm.toLowerCase());
+
+      if (matchesSubtype && matchesStatus && matchesSearch) {
+        card.style.display = '';
+        count++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    // Hide sections with no visible cards
+    sections.forEach(section => {
+      const visibleCards = section.querySelectorAll('.faction-card:not([style*="display: none"])');
+      section.style.display = visibleCards.length > 0 ? '' : 'none';
+    });
+
+    if (visibleCount) {
+      visibleCount.textContent = String(count);
+    }
+  }
+
+  // Filter button handlers
+  document.querySelectorAll('.filter-options').forEach(group => {
+    const filterType = (group as HTMLElement).dataset.filter;
+
+    group.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        group.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (filterType) {
+          filters[filterType] = (btn as HTMLElement).dataset.value || 'all';
+        }
+        updateFilters();
+      });
+    });
+  });
+
+  // Search handler
+  const searchInput = document.getElementById('faction-search') as HTMLInputElement;
+  searchInput?.addEventListener('input', (e) => {
+    searchTerm = (e.target as HTMLInputElement).value;
+    updateFilters();
+  });
+</script>
+
+<style>
+  .page-header {
+    text-align: center;
+    padding: var(--space-xl) 0 var(--space-lg);
+  }
+
+  .page-title {
+    font-size: var(--text-3xl);
+    margin: 0 0 var(--space-sm);
+    color: var(--color-accent);
+  }
+
+  .page-description {
+    color: var(--color-text-secondary);
+    font-size: var(--text-lg);
+    margin: 0;
+  }
+
+  /* Filters */
+  .filters {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .filter-label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+  }
+
+  .filter-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .filter-btn {
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-transform: capitalize;
+  }
+
+  .filter-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .filter-btn.active {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+  }
+
+  .filter-group--search {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .search-input {
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    width: 100%;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  .results-count {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-md);
+  }
+
+  /* Sections */
+  .faction-section {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-xs);
+    padding-bottom: var(--space-sm);
+    border-bottom: 2px solid var(--color-gold);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .section-title--inactive {
+    color: var(--color-text-muted);
+    border-color: var(--color-text-muted);
+  }
+
+  .section-icon {
+    font-size: var(--text-lg);
+  }
+
+  .section-description {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-lg);
+    font-style: italic;
+  }
+
+  /* Factions Grid */
+  .factions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .faction-card {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    text-decoration: none;
+    color: var(--color-text);
+    transition: all var(--transition-fast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .faction-card:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .faction-card--active {
+    border-color: var(--color-gold);
+    border-width: 2px;
+  }
+
+  .faction-card--active:hover {
+    border-color: var(--color-gold);
+  }
+
+  .faction-card__header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+  }
+
+  .faction-icon {
+    font-size: var(--text-2xl);
+    line-height: 1;
+  }
+
+  .faction-card__title {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .faction-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    margin: 0;
+    color: var(--color-accent);
+  }
+
+  .faction-card--active .faction-name {
+    color: var(--color-gold);
+  }
+
+  .faction-type {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: capitalize;
+  }
+
+  .faction-status {
+    font-size: var(--text-xs);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .status--active { background: var(--color-success); color: white; }
+  .status--inactive { background: var(--color-text-muted); color: white; }
+  .status--unknown { background: var(--color-warning); color: var(--color-bg); }
+  .status--destroyed { background: #333; color: white; }
+
+  .faction-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .faction-leader,
+  .faction-hq {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .faction-description {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .faction-motto {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    font-style: italic;
+    margin: 0;
+    padding-top: var(--space-xs);
+    border-top: 1px solid var(--color-border);
+  }
+
+  @media (max-width: 640px) {
+    .factions-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
