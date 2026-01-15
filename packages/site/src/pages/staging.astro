@@ -1,0 +1,1304 @@
+---
+/**
+ * Entity Staging Page
+ *
+ * Manage staged entities organized by feature branches.
+ * Features:
+ * - Branch sidebar: Create, select, delete staging branches
+ * - Entity grid: View, edit, delete entities within a branch
+ * - Integration with Entity Generator (save to staging)
+ * - Future: Publish to GitHub feature branches
+ *
+ * Token-gated access (same pattern as dm-notes)
+ *
+ * Security note: All user content is rendered via textContent for XSS safety.
+ * Never use innerHTML with user-provided data.
+ */
+import BaseLayout from '@layouts/BaseLayout.astro';
+import '@components/dm-notes/dm-notes-shared.css';
+
+// Get API URL from environment variable
+const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
+---
+
+<BaseLayout
+  title="Entity Staging - Rudiger's Evocation of Events"
+  description="Manage staged entities for your campaign"
+>
+  <div class="staging-page">
+    <!-- Access Denied (shown when no token) -->
+    <div id="access-denied" class="access-denied">
+      <div class="access-denied__content">
+        <h1>Access Denied</h1>
+        <p>This page requires DM authentication.</p>
+        <p class="access-denied__hint">Add <code>?token=YOUR_TOKEN</code> to the URL</p>
+      </div>
+    </div>
+
+    <!-- Main Content (hidden until authenticated) -->
+    <div id="staging-content" class="staging-content" style="display: none;">
+      <header class="staging-header">
+        <h1>Entity Staging</h1>
+        <p class="staging-subtitle">Manage your staged entities before publishing to the campaign wiki</p>
+      </header>
+
+      <div class="staging-layout">
+        <!-- Branch Sidebar -->
+        <aside class="branch-sidebar">
+          <div class="sidebar-header">
+            <h2>Branches</h2>
+            <button id="new-branch-btn" class="btn btn--primary btn--sm">+ New</button>
+          </div>
+          <div id="branch-list" class="branch-list">
+            <div class="branch-loading">Loading branches...</div>
+          </div>
+        </aside>
+
+        <!-- Entity Grid -->
+        <main class="entity-main">
+          <div id="no-branch-selected" class="empty-state">
+            <div class="empty-state__icon">📂</div>
+            <h3>Select a Branch</h3>
+            <p>Choose a branch from the sidebar to view its entities, or create a new one.</p>
+          </div>
+
+          <div id="branch-detail" class="branch-detail" style="display: none;">
+            <div class="branch-detail__header">
+              <div class="branch-detail__info">
+                <h2 id="branch-title">Branch Name</h2>
+                <p id="branch-description" class="branch-description">Description</p>
+                <div class="branch-meta">
+                  <span id="branch-entity-count" class="meta-item">0 entities</span>
+                  <span id="branch-status" class="meta-item status-badge">draft</span>
+                </div>
+              </div>
+              <div class="branch-detail__actions">
+                <button id="publish-branch-btn" class="btn btn--primary" disabled title="Coming soon">
+                  Publish to GitHub
+                </button>
+                <button id="delete-branch-btn" class="btn btn--danger btn--sm">Delete Branch</button>
+              </div>
+            </div>
+
+            <div id="entity-grid" class="entity-grid">
+              <!-- Entities will be rendered here -->
+            </div>
+
+            <div id="no-entities" class="empty-state" style="display: none;">
+              <div class="empty-state__icon">✨</div>
+              <h3>No Entities Yet</h3>
+              <p>Use the <a href="/dm-notes" class="link">Entity Generator</a> to create entities and save them to this branch.</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- New Branch Modal -->
+    <div id="new-branch-modal" class="modal" style="display: none;">
+      <div class="modal__backdrop"></div>
+      <div class="modal__content">
+        <div class="modal__header">
+          <h2>Create New Branch</h2>
+          <button class="modal__close" data-close-modal>&times;</button>
+        </div>
+        <form id="new-branch-form" class="modal__body">
+          <div class="form-group">
+            <label for="branch-name-input">Branch Name</label>
+            <input type="text" id="branch-name-input" placeholder="session-15-prep" required pattern="[a-z0-9-]+" />
+            <span class="form-hint">Lowercase letters, numbers, and hyphens only</span>
+          </div>
+          <div class="form-group">
+            <label for="branch-display-name">Display Name</label>
+            <input type="text" id="branch-display-name" placeholder="Session 15 Prep" />
+          </div>
+          <div class="form-group">
+            <label for="branch-desc-input">Description</label>
+            <textarea id="branch-desc-input" placeholder="NPCs and items for upcoming session" rows="2"></textarea>
+          </div>
+        </form>
+        <div class="modal__footer">
+          <button class="btn btn--secondary" data-close-modal>Cancel</button>
+          <button id="create-branch-btn" class="btn btn--primary">Create Branch</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Entity Modal -->
+    <div id="edit-entity-modal" class="modal" style="display: none;">
+      <div class="modal__backdrop"></div>
+      <div class="modal__content modal__content--wide">
+        <div class="modal__header">
+          <h2 id="edit-entity-title">Edit Entity</h2>
+          <button class="modal__close" data-close-modal>&times;</button>
+        </div>
+        <div class="modal__body">
+          <div class="edit-entity-layout">
+            <div class="edit-entity-preview">
+              <h3>Preview</h3>
+              <div id="edit-entity-preview-content" class="entity-card-preview"></div>
+            </div>
+            <div class="edit-entity-editor">
+              <h3>Content (Frontmatter + Markdown)</h3>
+              <textarea id="edit-entity-content" class="yaml-editor" rows="20"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button class="btn btn--secondary" data-close-modal>Cancel</button>
+          <button id="save-entity-btn" class="btn btn--primary">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div id="delete-confirm-modal" class="modal" style="display: none;">
+      <div class="modal__backdrop"></div>
+      <div class="modal__content modal__content--sm">
+        <div class="modal__header">
+          <h2>Confirm Delete</h2>
+          <button class="modal__close" data-close-modal>&times;</button>
+        </div>
+        <div class="modal__body">
+          <p id="delete-confirm-message">Are you sure you want to delete this?</p>
+        </div>
+        <div class="modal__footer">
+          <button class="btn btn--secondary" data-close-modal>Cancel</button>
+          <button id="confirm-delete-btn" class="btn btn--danger">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Store API URL in a data attribute -->
+  <div id="config" data-api-url={apiUrl} style="display: none;"></div>
+
+  <!-- Main Script -->
+  <script is:inline>
+    (function() {
+      var currentBranch = null;
+      var allBranches = [];
+      var currentEntities = [];
+      var editingEntity = null;
+      var deleteTarget = null; // { type: 'branch' | 'entity', ... }
+
+      function getToken() {
+        var params = new URLSearchParams(window.location.search);
+        return params.get('token');
+      }
+
+      function getApiUrl() {
+        var configEl = document.getElementById('config');
+        return configEl ? configEl.dataset.apiUrl : '';
+      }
+
+      function showContent() {
+        document.getElementById('access-denied').style.display = 'none';
+        document.getElementById('staging-content').style.display = 'block';
+      }
+
+      function showAccessDenied() {
+        document.getElementById('access-denied').style.display = 'flex';
+        document.getElementById('staging-content').style.display = 'none';
+      }
+
+      // Modal helpers
+      function openModal(id) {
+        document.getElementById(id).style.display = 'flex';
+      }
+
+      function closeAllModals() {
+        document.querySelectorAll('.modal').forEach(function(m) {
+          m.style.display = 'none';
+        });
+        editingEntity = null;
+        deleteTarget = null;
+      }
+
+      // ===========================================
+      // Branch Operations
+      // ===========================================
+
+      async function loadBranches() {
+        var token = getToken();
+        var apiUrl = getApiUrl();
+        var listEl = document.getElementById('branch-list');
+
+        listEl.textContent = '';
+        var loadingDiv = document.createElement('div');
+        loadingDiv.className = 'branch-loading';
+        loadingDiv.textContent = 'Loading...';
+        listEl.appendChild(loadingDiv);
+
+        try {
+          var response = await fetch(apiUrl + '/staging/branches', {
+            headers: { 'X-DM-Token': token }
+          });
+
+          if (!response.ok) throw new Error('Failed to load branches');
+
+          var data = await response.json();
+          allBranches = data.branches || [];
+          renderBranchList();
+
+        } catch (error) {
+          console.error('Error loading branches:', error);
+          listEl.textContent = '';
+          var errorDiv = document.createElement('div');
+          errorDiv.className = 'branch-error';
+          errorDiv.textContent = 'Failed to load branches';
+          listEl.appendChild(errorDiv);
+        }
+      }
+
+      function renderBranchList() {
+        var listEl = document.getElementById('branch-list');
+        listEl.textContent = '';
+
+        if (allBranches.length === 0) {
+          var emptyDiv = document.createElement('div');
+          emptyDiv.className = 'branch-empty';
+          emptyDiv.textContent = 'No branches yet. Create one to get started!';
+          listEl.appendChild(emptyDiv);
+          return;
+        }
+
+        allBranches.forEach(function(branch) {
+          var item = document.createElement('button');
+          item.className = 'branch-item' + (currentBranch === branch.name ? ' branch-item--active' : '');
+          item.dataset.branch = branch.name;
+
+          var nameSpan = document.createElement('span');
+          nameSpan.className = 'branch-item__name';
+          nameSpan.textContent = branch.displayName || branch.name;
+
+          var countSpan = document.createElement('span');
+          countSpan.className = 'branch-item__count';
+          countSpan.textContent = String(branch.entityCount || 0);
+
+          item.appendChild(nameSpan);
+          item.appendChild(countSpan);
+
+          item.addEventListener('click', function() {
+            selectBranch(branch.name);
+          });
+          listEl.appendChild(item);
+        });
+      }
+
+      async function selectBranch(branchName) {
+        var token = getToken();
+        var apiUrl = getApiUrl();
+
+        currentBranch = branchName;
+        renderBranchList(); // Update active state
+
+        document.getElementById('no-branch-selected').style.display = 'none';
+        document.getElementById('branch-detail').style.display = 'block';
+
+        // Show loading state
+        var gridEl = document.getElementById('entity-grid');
+        gridEl.textContent = '';
+        var loadingDiv = document.createElement('div');
+        loadingDiv.className = 'loading-grid';
+        loadingDiv.textContent = 'Loading entities...';
+        gridEl.appendChild(loadingDiv);
+        document.getElementById('no-entities').style.display = 'none';
+
+        try {
+          var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(branchName), {
+            headers: { 'X-DM-Token': token }
+          });
+
+          if (!response.ok) throw new Error('Failed to load branch');
+
+          var data = await response.json();
+          currentEntities = data.entities || [];
+
+          // Update header
+          document.getElementById('branch-title').textContent = data.displayName || data.name;
+          document.getElementById('branch-description').textContent = data.description || '';
+          document.getElementById('branch-entity-count').textContent = currentEntities.length + ' entities';
+          document.getElementById('branch-status').textContent = data.status || 'draft';
+          document.getElementById('branch-status').className = 'meta-item status-badge status-badge--' + (data.status || 'draft');
+
+          renderEntityGrid();
+
+        } catch (error) {
+          console.error('Error loading branch:', error);
+          gridEl.textContent = '';
+          var errorDiv = document.createElement('div');
+          errorDiv.className = 'error-message';
+          errorDiv.textContent = 'Failed to load branch';
+          gridEl.appendChild(errorDiv);
+        }
+      }
+
+      async function createBranch() {
+        var token = getToken();
+        var apiUrl = getApiUrl();
+
+        var name = document.getElementById('branch-name-input').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+        var displayName = document.getElementById('branch-display-name').value.trim() || name;
+        var description = document.getElementById('branch-desc-input').value.trim();
+
+        if (!name) {
+          alert('Branch name is required');
+          return;
+        }
+
+        var btn = document.getElementById('create-branch-btn');
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+
+        try {
+          var response = await fetch(apiUrl + '/staging/branches', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-DM-Token': token
+            },
+            body: JSON.stringify({ name: name, displayName: displayName, description: description })
+          });
+
+          if (!response.ok) {
+            var errorData = await response.json().catch(function() { return {}; });
+            throw new Error(errorData.error || 'Failed to create branch');
+          }
+
+          closeAllModals();
+          document.getElementById('new-branch-form').reset();
+          await loadBranches();
+          selectBranch(name);
+
+        } catch (error) {
+          alert('Error: ' + error.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Create Branch';
+        }
+      }
+
+      async function deleteBranch() {
+        if (!deleteTarget || deleteTarget.type !== 'branch') return;
+
+        var token = getToken();
+        var apiUrl = getApiUrl();
+        var branchName = deleteTarget.name;
+
+        var btn = document.getElementById('confirm-delete-btn');
+        btn.disabled = true;
+        btn.textContent = 'Deleting...';
+
+        try {
+          var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(branchName), {
+            method: 'DELETE',
+            headers: { 'X-DM-Token': token }
+          });
+
+          if (!response.ok) throw new Error('Failed to delete branch');
+
+          closeAllModals();
+          currentBranch = null;
+          document.getElementById('branch-detail').style.display = 'none';
+          document.getElementById('no-branch-selected').style.display = 'block';
+          await loadBranches();
+
+        } catch (error) {
+          alert('Error: ' + error.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Delete';
+        }
+      }
+
+      // ===========================================
+      // Entity Operations
+      // ===========================================
+
+      function renderEntityGrid() {
+        var gridEl = document.getElementById('entity-grid');
+        var emptyEl = document.getElementById('no-entities');
+
+        gridEl.textContent = '';
+
+        if (currentEntities.length === 0) {
+          emptyEl.style.display = 'block';
+          return;
+        }
+
+        emptyEl.style.display = 'none';
+
+        currentEntities.forEach(function(entity) {
+          var card = document.createElement('article');
+          card.className = 'entity-card';
+          card.dataset.type = entity.entityType;
+          card.dataset.slug = entity.slug;
+
+          var fm = entity.frontmatter || {};
+
+          // Build card header
+          var header = document.createElement('div');
+          header.className = 'entity-card__header';
+
+          var name = document.createElement('h3');
+          name.className = 'entity-card__name';
+          name.textContent = fm.name || entity.slug;
+
+          var tags = document.createElement('div');
+          tags.className = 'entity-card__tags';
+
+          var typeTag = document.createElement('span');
+          typeTag.className = 'entity-tag entity-tag--type';
+          typeTag.textContent = entity.entityType;
+          tags.appendChild(typeTag);
+
+          if (fm.subtype) {
+            var subtypeTag = document.createElement('span');
+            subtypeTag.className = 'entity-tag entity-tag--subtype';
+            subtypeTag.textContent = fm.subtype;
+            tags.appendChild(subtypeTag);
+          }
+
+          header.appendChild(name);
+          header.appendChild(tags);
+
+          // Build description
+          var desc = document.createElement('p');
+          desc.className = 'entity-card__desc';
+          desc.textContent = fm.description || '';
+
+          // Build actions
+          var actions = document.createElement('div');
+          actions.className = 'entity-card__actions';
+
+          var editBtn = document.createElement('button');
+          editBtn.className = 'btn btn--secondary btn--sm';
+          editBtn.textContent = 'Edit';
+          editBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openEditEntityModal(entity);
+          });
+
+          var deleteBtn = document.createElement('button');
+          deleteBtn.className = 'btn btn--danger btn--sm';
+          deleteBtn.textContent = 'Delete';
+          deleteBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            confirmDeleteEntity(entity);
+          });
+
+          actions.appendChild(editBtn);
+          actions.appendChild(deleteBtn);
+
+          card.appendChild(header);
+          card.appendChild(desc);
+          card.appendChild(actions);
+
+          gridEl.appendChild(card);
+        });
+      }
+
+      function openEditEntityModal(entity) {
+        editingEntity = entity;
+        document.getElementById('edit-entity-title').textContent = 'Edit: ' + (entity.frontmatter?.name || entity.slug);
+        document.getElementById('edit-entity-content').value = entity.fullContent || '';
+        renderEditPreview();
+        openModal('edit-entity-modal');
+      }
+
+      function renderEditPreview() {
+        var content = document.getElementById('edit-entity-content').value;
+        var previewEl = document.getElementById('edit-entity-preview-content');
+        previewEl.textContent = '';
+
+        // Parse frontmatter for preview
+        var match = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+        if (!match) {
+          var errorP = document.createElement('p');
+          errorP.className = 'preview-error';
+          errorP.textContent = 'Invalid format - missing frontmatter';
+          previewEl.appendChild(errorP);
+          return;
+        }
+
+        try {
+          var yamlStr = match[1];
+          var markdown = match[2];
+
+          // Simple YAML parsing for preview (extract key fields)
+          var name = (yamlStr.match(/name:\s*"?([^"\n]+)"?/) || [])[1] || 'Unnamed';
+          var type = (yamlStr.match(/type:\s*"?([^"\n]+)"?/) || [])[1] || 'unknown';
+          var subtype = (yamlStr.match(/subtype:\s*"?([^"\n]+)"?/) || [])[1] || '';
+          var description = (yamlStr.match(/description:\s*"?([^"\n]+)"?/) || [])[1] || '';
+
+          var h3 = document.createElement('h3');
+          h3.textContent = name;
+          previewEl.appendChild(h3);
+
+          var tagsDiv = document.createElement('div');
+          tagsDiv.className = 'preview-tags';
+
+          var typeSpan = document.createElement('span');
+          typeSpan.className = 'entity-tag entity-tag--type';
+          typeSpan.textContent = type;
+          tagsDiv.appendChild(typeSpan);
+
+          if (subtype) {
+            var subtypeSpan = document.createElement('span');
+            subtypeSpan.className = 'entity-tag entity-tag--subtype';
+            subtypeSpan.textContent = subtype;
+            tagsDiv.appendChild(subtypeSpan);
+          }
+          previewEl.appendChild(tagsDiv);
+
+          var descP = document.createElement('p');
+          descP.textContent = description;
+          previewEl.appendChild(descP);
+
+          var mdPreview = document.createElement('div');
+          mdPreview.className = 'preview-markdown';
+          mdPreview.textContent = markdown.substring(0, 500) + (markdown.length > 500 ? '...' : '');
+          previewEl.appendChild(mdPreview);
+
+        } catch (e) {
+          var errorP = document.createElement('p');
+          errorP.className = 'preview-error';
+          errorP.textContent = 'Error parsing content';
+          previewEl.appendChild(errorP);
+        }
+      }
+
+      async function saveEntity() {
+        if (!editingEntity || !currentBranch) return;
+
+        var token = getToken();
+        var apiUrl = getApiUrl();
+        var content = document.getElementById('edit-entity-content').value;
+
+        var btn = document.getElementById('save-entity-btn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        try {
+          // Parse content to extract updated frontmatter
+          var match = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+          if (!match) throw new Error('Invalid format - missing frontmatter');
+
+          var yamlStr = match[1];
+          var markdown = match[2];
+
+          // Extract key fields from YAML
+          var name = (yamlStr.match(/name:\s*"?([^"\n]+)"?/) || [])[1] || editingEntity.frontmatter?.name;
+          var type = (yamlStr.match(/type:\s*"?([^"\n]+)"?/) || [])[1] || editingEntity.entityType;
+          var subtype = (yamlStr.match(/subtype:\s*"?([^"\n]+)"?/) || [])[1] || editingEntity.frontmatter?.subtype;
+          var description = (yamlStr.match(/description:\s*"?([^"\n]+)"?/) || [])[1] || '';
+
+          var updatedEntity = Object.assign({}, editingEntity, {
+            fullContent: content,
+            markdown: markdown,
+            frontmatter: Object.assign({}, editingEntity.frontmatter, {
+              name: name,
+              type: type,
+              subtype: subtype,
+              description: description
+            })
+          });
+
+          var response = await fetch(
+            apiUrl + '/staging/branches/' + encodeURIComponent(currentBranch) +
+            '/entities/' + encodeURIComponent(editingEntity.entityType) +
+            '/' + encodeURIComponent(editingEntity.slug),
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-DM-Token': token
+              },
+              body: JSON.stringify(updatedEntity)
+            }
+          );
+
+          if (!response.ok) throw new Error('Failed to save entity');
+
+          closeAllModals();
+          await selectBranch(currentBranch); // Reload
+
+        } catch (error) {
+          alert('Error: ' + error.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Save Changes';
+        }
+      }
+
+      function confirmDeleteEntity(entity) {
+        deleteTarget = { type: 'entity', entityType: entity.entityType, slug: entity.slug, name: entity.frontmatter?.name || entity.slug };
+        document.getElementById('delete-confirm-message').textContent =
+          'Are you sure you want to delete "' + deleteTarget.name + '"? This cannot be undone.';
+        openModal('delete-confirm-modal');
+      }
+
+      async function deleteEntity() {
+        if (!deleteTarget || deleteTarget.type !== 'entity' || !currentBranch) return;
+
+        var token = getToken();
+        var apiUrl = getApiUrl();
+
+        var btn = document.getElementById('confirm-delete-btn');
+        btn.disabled = true;
+        btn.textContent = 'Deleting...';
+
+        try {
+          var response = await fetch(
+            apiUrl + '/staging/branches/' + encodeURIComponent(currentBranch) +
+            '/entities/' + encodeURIComponent(deleteTarget.entityType) +
+            '/' + encodeURIComponent(deleteTarget.slug),
+            {
+              method: 'DELETE',
+              headers: { 'X-DM-Token': token }
+            }
+          );
+
+          if (!response.ok) throw new Error('Failed to delete entity');
+
+          closeAllModals();
+          await selectBranch(currentBranch); // Reload
+          await loadBranches(); // Update count
+
+        } catch (error) {
+          alert('Error: ' + error.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Delete';
+        }
+      }
+
+      // ===========================================
+      // Event Handlers
+      // ===========================================
+
+      function initEventHandlers() {
+        // New branch button
+        document.getElementById('new-branch-btn').addEventListener('click', function() {
+          openModal('new-branch-modal');
+        });
+
+        // Create branch button
+        document.getElementById('create-branch-btn').addEventListener('click', createBranch);
+
+        // Delete branch button
+        document.getElementById('delete-branch-btn').addEventListener('click', function() {
+          if (!currentBranch) return;
+          var branch = allBranches.find(function(b) { return b.name === currentBranch; });
+          deleteTarget = { type: 'branch', name: currentBranch, displayName: branch?.displayName || currentBranch };
+          document.getElementById('delete-confirm-message').textContent =
+            'Are you sure you want to delete branch "' + deleteTarget.displayName + '" and all its entities? This cannot be undone.';
+          openModal('delete-confirm-modal');
+        });
+
+        // Save entity button
+        document.getElementById('save-entity-btn').addEventListener('click', saveEntity);
+
+        // Confirm delete button
+        document.getElementById('confirm-delete-btn').addEventListener('click', function() {
+          if (deleteTarget?.type === 'branch') {
+            deleteBranch();
+          } else if (deleteTarget?.type === 'entity') {
+            deleteEntity();
+          }
+        });
+
+        // Edit entity content preview update
+        document.getElementById('edit-entity-content').addEventListener('input', function() {
+          clearTimeout(this._previewTimeout);
+          this._previewTimeout = setTimeout(renderEditPreview, 300);
+        });
+
+        // Modal close handlers
+        document.querySelectorAll('[data-close-modal]').forEach(function(btn) {
+          btn.addEventListener('click', closeAllModals);
+        });
+
+        document.querySelectorAll('.modal__backdrop').forEach(function(backdrop) {
+          backdrop.addEventListener('click', closeAllModals);
+        });
+
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') closeAllModals();
+        });
+
+        // Form submit on enter
+        document.getElementById('branch-name-input').addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            createBranch();
+          }
+        });
+      }
+
+      // ===========================================
+      // Initialization
+      // ===========================================
+
+      function init() {
+        var token = getToken();
+        if (!token) {
+          showAccessDenied();
+          return;
+        }
+
+        showContent();
+        initEventHandlers();
+        loadBranches();
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+
+  <style>
+    /* ===========================================
+       Staging Page Layout
+       =========================================== */
+    .staging-page {
+      min-height: 80vh;
+    }
+
+    .access-denied {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      text-align: center;
+    }
+
+    .access-denied__content h1 {
+      font-family: var(--font-display);
+      color: var(--color-gold);
+      margin-bottom: var(--space-md);
+    }
+
+    .access-denied__hint {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin-top: var(--space-md);
+    }
+
+    .access-denied__hint code {
+      background: var(--color-bg-secondary);
+      padding: 2px var(--space-xs);
+      border-radius: var(--radius-sm);
+    }
+
+    .staging-content {
+      padding: var(--space-lg) 0;
+    }
+
+    .staging-header {
+      margin-bottom: var(--space-xl);
+    }
+
+    .staging-header h1 {
+      font-family: var(--font-display);
+      color: var(--color-gold);
+      margin: 0 0 var(--space-xs);
+    }
+
+    .staging-subtitle {
+      color: var(--color-text-muted);
+      margin: 0;
+    }
+
+    /* ===========================================
+       Two-Panel Layout
+       =========================================== */
+    .staging-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: var(--space-xl);
+      min-height: 60vh;
+    }
+
+    @media (max-width: 768px) {
+      .staging-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ===========================================
+       Branch Sidebar
+       =========================================== */
+    .branch-sidebar {
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-md);
+      height: fit-content;
+      position: sticky;
+      top: var(--space-lg);
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-md);
+      padding-bottom: var(--space-sm);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .sidebar-header h2 {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      margin: 0;
+      color: var(--color-gold);
+    }
+
+    .btn--sm {
+      padding: var(--space-xs) var(--space-sm);
+      font-size: var(--text-xs);
+    }
+
+    .branch-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .branch-loading,
+    .branch-empty,
+    .branch-error {
+      padding: var(--space-md);
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+
+    .branch-error {
+      color: var(--color-error);
+    }
+
+    .branch-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-sm) var(--space-md);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-align: left;
+      width: 100%;
+    }
+
+    .branch-item:hover {
+      background: var(--color-bg-tertiary);
+      border-color: var(--color-border);
+    }
+
+    .branch-item--active {
+      background: var(--color-bg-tertiary);
+      border-color: var(--color-gold);
+    }
+
+    .branch-item__name {
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .branch-item__count {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      background: var(--color-bg-secondary);
+      padding: 2px var(--space-xs);
+      border-radius: var(--radius-sm);
+    }
+
+    /* ===========================================
+       Entity Main Area
+       =========================================== */
+    .entity-main {
+      min-height: 400px;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-2xl);
+      text-align: center;
+      color: var(--color-text-muted);
+    }
+
+    .empty-state__icon {
+      font-size: 3rem;
+      margin-bottom: var(--space-md);
+      opacity: 0.5;
+    }
+
+    .empty-state h3 {
+      font-family: var(--font-display);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-sm);
+    }
+
+    .empty-state p {
+      margin: 0;
+    }
+
+    .empty-state .link {
+      color: var(--color-gold);
+      text-decoration: underline;
+    }
+
+    /* ===========================================
+       Branch Detail
+       =========================================== */
+    .branch-detail__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-lg);
+      padding-bottom: var(--space-md);
+      border-bottom: 1px solid var(--color-border);
+      gap: var(--space-md);
+      flex-wrap: wrap;
+    }
+
+    .branch-detail__info h2 {
+      font-family: var(--font-display);
+      color: var(--color-gold);
+      margin: 0 0 var(--space-xs);
+    }
+
+    .branch-description {
+      color: var(--color-text-muted);
+      margin: 0 0 var(--space-sm);
+      font-size: var(--text-sm);
+    }
+
+    .branch-meta {
+      display: flex;
+      gap: var(--space-sm);
+      align-items: center;
+    }
+
+    .meta-item {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+    }
+
+    .status-badge {
+      padding: 2px var(--space-xs);
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-badge--draft {
+      background: rgba(234, 179, 8, 0.2);
+      color: var(--color-warning, #eab308);
+    }
+
+    .status-badge--published {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--color-success, #22c55e);
+    }
+
+    .branch-detail__actions {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+    }
+
+    /* ===========================================
+       Entity Grid
+       =========================================== */
+    .entity-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--space-md);
+    }
+
+    .loading-grid,
+    .error-message {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: var(--space-xl);
+      color: var(--color-text-muted);
+    }
+
+    .error-message {
+      color: var(--color-error);
+    }
+
+    .entity-card {
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-md);
+      transition: all var(--transition-fast);
+    }
+
+    .entity-card:hover {
+      border-color: var(--color-gold);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .entity-card__header {
+      margin-bottom: var(--space-sm);
+    }
+
+    .entity-card__name {
+      font-family: var(--font-display);
+      color: var(--color-gold);
+      margin: 0 0 var(--space-xs);
+      font-size: var(--text-lg);
+    }
+
+    .entity-card__tags {
+      display: flex;
+      gap: var(--space-xs);
+      flex-wrap: wrap;
+    }
+
+    .entity-tag {
+      font-size: var(--text-xs);
+      padding: 2px var(--space-xs);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg-tertiary);
+      color: var(--color-text-secondary);
+    }
+
+    .entity-tag--type {
+      background: rgba(200, 168, 108, 0.2);
+      color: var(--color-gold);
+      font-weight: 600;
+    }
+
+    .entity-tag--subtype {
+      background: rgba(147, 197, 253, 0.2);
+      color: var(--color-accent, #93c5fd);
+    }
+
+    .entity-card__desc {
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+      margin: 0 0 var(--space-md);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .entity-card__actions {
+      display: flex;
+      gap: var(--space-xs);
+    }
+
+    /* ===========================================
+       Modals
+       =========================================== */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal__backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    .modal__content {
+      position: relative;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow: auto;
+    }
+
+    .modal__content--wide {
+      max-width: 900px;
+    }
+
+    .modal__content--sm {
+      max-width: 400px;
+    }
+
+    .modal__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-md) var(--space-lg);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .modal__header h2 {
+      font-family: var(--font-display);
+      color: var(--color-gold);
+      margin: 0;
+      font-size: var(--text-lg);
+    }
+
+    .modal__close {
+      background: none;
+      border: none;
+      font-size: var(--text-2xl);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .modal__close:hover {
+      color: var(--color-text);
+    }
+
+    .modal__body {
+      padding: var(--space-lg);
+    }
+
+    .modal__footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--space-sm);
+      padding: var(--space-md) var(--space-lg);
+      border-top: 1px solid var(--color-border);
+    }
+
+    /* ===========================================
+       Form Styles
+       =========================================== */
+    .form-group {
+      margin-bottom: var(--space-md);
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: var(--space-xs);
+      color: var(--color-text);
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: var(--space-sm);
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      color: var(--color-text);
+      font-size: var(--text-base);
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--color-gold);
+    }
+
+    .form-hint {
+      display: block;
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: var(--space-xs);
+    }
+
+    /* ===========================================
+       Edit Entity Modal
+       =========================================== */
+    .edit-entity-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-lg);
+    }
+
+    @media (max-width: 768px) {
+      .edit-entity-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .edit-entity-preview h3,
+    .edit-entity-editor h3 {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      margin: 0 0 var(--space-sm);
+      text-transform: uppercase;
+    }
+
+    .entity-card-preview {
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      min-height: 200px;
+    }
+
+    .entity-card-preview h3 {
+      font-family: var(--font-display);
+      color: var(--color-gold);
+      margin: 0 0 var(--space-sm);
+    }
+
+    .preview-tags {
+      display: flex;
+      gap: var(--space-xs);
+      margin-bottom: var(--space-sm);
+    }
+
+    .preview-markdown {
+      margin-top: var(--space-md);
+      padding-top: var(--space-md);
+      border-top: 1px solid var(--color-border);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      white-space: pre-wrap;
+    }
+
+    .preview-error {
+      color: var(--color-error);
+    }
+
+    .yaml-editor {
+      width: 100%;
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      padding: var(--space-md);
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      color: var(--color-text);
+      resize: vertical;
+    }
+
+    .yaml-editor:focus {
+      outline: none;
+      border-color: var(--color-gold);
+    }
+  </style>
+</BaseLayout>
