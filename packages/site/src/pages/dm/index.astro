@@ -6,6 +6,8 @@
  */
 
 import BaseLayout from '@layouts/BaseLayout.astro';
+
+const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 ---
 
 <BaseLayout
@@ -115,6 +117,20 @@ import BaseLayout from '@layouts/BaseLayout.astro';
         </div>
       </div>
 
+      <!-- Pending Player Drafts Section -->
+      <section class="drafts-section">
+        <h2 class="section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+          </svg>
+          Pending Player Updates
+        </h2>
+        <div id="drafts-list" class="drafts-list">
+          <p class="drafts-loading">Loading pending drafts...</p>
+        </div>
+      </section>
+
       <footer class="dashboard-footer">
         <button id="logout-btn" class="logout-btn">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -129,20 +145,23 @@ import BaseLayout from '@layouts/BaseLayout.astro';
   </div>
 </BaseLayout>
 
-<script is:inline>
+<script is:inline define:vars={{ apiUrl }}>
   (function() {
     var TOKEN_KEY = 'dm-token';
+    var API_URL = apiUrl;
     var authGate = document.getElementById('auth-gate');
     var dashboardContent = document.getElementById('dashboard-content');
     var authForm = document.getElementById('auth-form');
     var authError = document.getElementById('auth-error');
     var tokenInput = document.getElementById('dm-token');
     var logoutBtn = document.getElementById('logout-btn');
+    var draftsList = document.getElementById('drafts-list');
 
     function checkAuth() {
       var token = localStorage.getItem(TOKEN_KEY);
       if (token) {
         showDashboard();
+        loadPendingDrafts();
       }
     }
 
@@ -156,6 +175,123 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       dashboardContent.style.display = 'none';
     }
 
+    async function loadPendingDrafts() {
+      var token = localStorage.getItem(TOKEN_KEY);
+      if (!token || !API_URL) {
+        renderNoDrafts();
+        return;
+      }
+
+      try {
+        var response = await fetch(API_URL + '/player/drafts', {
+          method: 'GET',
+          headers: {
+            'X-DM-Token': token,
+          },
+        });
+
+        if (!response.ok) {
+          if (response.status === 403) {
+            renderNoDrafts('Invalid DM token');
+          } else {
+            renderNoDrafts('Error loading drafts');
+          }
+          return;
+        }
+
+        var data = await response.json();
+        renderDrafts(data.drafts || []);
+      } catch (error) {
+        console.error('Error loading drafts:', error);
+        renderNoDrafts('Error loading drafts');
+      }
+    }
+
+    function renderNoDrafts(message) {
+      while (draftsList.firstChild) {
+        draftsList.removeChild(draftsList.firstChild);
+      }
+      var p = document.createElement('p');
+      p.className = 'drafts-empty';
+      p.textContent = message || 'No pending player updates';
+      draftsList.appendChild(p);
+    }
+
+    function renderDrafts(drafts) {
+      while (draftsList.firstChild) {
+        draftsList.removeChild(draftsList.firstChild);
+      }
+
+      if (drafts.length === 0) {
+        renderNoDrafts();
+        return;
+      }
+
+      drafts.forEach(function(draft) {
+        var card = document.createElement('div');
+        card.className = 'draft-card';
+
+        var header = document.createElement('div');
+        header.className = 'draft-header';
+
+        var name = document.createElement('h3');
+        name.className = 'draft-name';
+        name.textContent = draft.characterSlug;
+        header.appendChild(name);
+
+        var time = document.createElement('span');
+        time.className = 'draft-time';
+        time.textContent = new Date(draft.savedAt).toLocaleString();
+        header.appendChild(time);
+
+        card.appendChild(header);
+
+        // Show changes summary
+        var changes = document.createElement('div');
+        changes.className = 'draft-changes';
+
+        if (draft.combat) {
+          var hpLine = document.createElement('div');
+          hpLine.className = 'draft-change';
+          hpLine.textContent = 'HP: ' + draft.combat.hp + (draft.combat.tempHp ? ' (+' + draft.combat.tempHp + ' temp)' : '');
+          changes.appendChild(hpLine);
+        }
+
+        if (draft.activeConditions && draft.activeConditions.length > 0) {
+          var condLine = document.createElement('div');
+          condLine.className = 'draft-change';
+          condLine.textContent = 'Conditions: ' + draft.activeConditions.map(function(c) { return c.name; }).join(', ');
+          changes.appendChild(condLine);
+        }
+
+        if (draft.spellSlots) {
+          var slotsUsed = draft.spellSlots.filter(function(s) { return s.expended > 0; }).length;
+          if (slotsUsed > 0) {
+            var slotLine = document.createElement('div');
+            slotLine.className = 'draft-change';
+            slotLine.textContent = 'Spell slots expended: ' + slotsUsed + ' levels';
+            changes.appendChild(slotLine);
+          }
+        }
+
+        card.appendChild(changes);
+
+        // Action buttons (placeholder for now - approve/reject coming later)
+        var actions = document.createElement('div');
+        actions.className = 'draft-actions';
+
+        var viewLink = document.createElement('a');
+        viewLink.href = '/player/session/' + draft.characterSlug;
+        viewLink.className = 'draft-btn draft-btn--view';
+        viewLink.textContent = 'View Session Tracker';
+        viewLink.target = '_blank';
+        actions.appendChild(viewLink);
+
+        card.appendChild(actions);
+        draftsList.appendChild(card);
+      });
+    }
+
     authForm.addEventListener('submit', function(e) {
       e.preventDefault();
       var token = tokenInput.value.trim();
@@ -166,6 +302,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
         localStorage.setItem(TOKEN_KEY, token);
         authError.style.display = 'none';
         showDashboard();
+        loadPendingDrafts();
       }
     });
 
@@ -413,6 +550,125 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     color: var(--color-error);
   }
 
+  /* Drafts Section */
+  .drafts-section {
+    margin-top: var(--space-2xl);
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-lg);
+    padding-bottom: var(--space-sm);
+    border-bottom: 2px solid var(--color-gold);
+  }
+
+  .drafts-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .drafts-loading,
+  .drafts-empty {
+    text-align: center;
+    padding: var(--space-xl);
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  .draft-card {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  .draft-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+  }
+
+  .draft-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0;
+    text-transform: capitalize;
+  }
+
+  .draft-time {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .draft-changes {
+    margin-bottom: var(--space-md);
+  }
+
+  .draft-change {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    padding: var(--space-xs) 0;
+  }
+
+  .draft-actions {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+  }
+
+  .draft-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .draft-btn--view {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+
+  .draft-btn--view:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .draft-btn--approve {
+    background: var(--color-success, #10b981);
+    color: white;
+    border: none;
+  }
+
+  .draft-btn--approve:hover {
+    background: #059669;
+  }
+
+  .draft-btn--reject {
+    background: transparent;
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
+  }
+
+  .draft-btn--reject:hover {
+    background: var(--color-error);
+    color: white;
+  }
+
   @media (max-width: 640px) {
     .tool-card {
       flex-direction: column;
@@ -425,6 +681,20 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
     .auth-form {
       flex-direction: column;
+    }
+
+    .draft-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-xs);
+    }
+
+    .draft-actions {
+      flex-direction: column;
+    }
+
+    .draft-btn {
+      justify-content: center;
     }
   }
 </style>

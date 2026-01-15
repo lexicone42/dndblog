@@ -2577,6 +2577,166 @@ exports.handler = async (event) => {
     });
 
     // ==========================================================================
+    // Character Token Validation Endpoint
+    // ==========================================================================
+    //
+    // Validates per-player tokens and returns which character they can edit.
+    // Tokens stored as /dndblog/player-token/{character-slug}
+    //
+    // ==========================================================================
+
+    const validateCharacterTokenFunction = new lambda.Function(this, 'ValidateCharacterTokenFunction', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: {
+        ALLOWED_ORIGIN: props.allowedOrigin,
+      },
+      code: lambda.Code.fromInline(`
+const { SSMClient, GetParametersByPathCommand } = require('@aws-sdk/client-ssm');
+
+const ssmClient = new SSMClient({});
+
+// Cache character tokens for 5 minutes
+let cachedTokens = null;
+let tokenExpiry = 0;
+
+async function getCharacterTokens() {
+  const now = Date.now();
+  if (cachedTokens && now < tokenExpiry) {
+    return cachedTokens;
+  }
+
+  const tokens = {};
+  let nextToken = undefined;
+
+  do {
+    const result = await ssmClient.send(new GetParametersByPathCommand({
+      Path: '/dndblog/player-token',
+      WithDecryption: true,
+      NextToken: nextToken,
+    }));
+
+    for (const param of result.Parameters || []) {
+      // Extract character slug from parameter name: /dndblog/player-token/{slug}
+      const slug = param.Name.split('/').pop();
+      tokens[param.Value] = slug;
+    }
+
+    nextToken = result.NextToken;
+  } while (nextToken);
+
+  cachedTokens = tokens;
+  tokenExpiry = now + 5 * 60 * 1000;
+  return tokens;
+}
+
+function getCorsOrigin(event) {
+  const origin = event.headers?.origin || event.headers?.Origin || '';
+  const allowed = process.env.ALLOWED_ORIGIN;
+  if (origin.startsWith('http://localhost:')) {
+    return origin;
+  }
+  return allowed;
+}
+
+exports.handler = async (event) => {
+  const corsOrigin = getCorsOrigin(event);
+  const headers = {
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Headers': 'Content-Type, X-Player-Token',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+  };
+
+  // Handle CORS preflight
+  if (event.requestContext?.http?.method === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  try {
+    const providedToken = event.headers?.['x-player-token'] || event.headers?.['X-Player-Token'];
+
+    if (!providedToken) {
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({ valid: false, error: 'Missing player token' }),
+      };
+    }
+
+    const tokens = await getCharacterTokens();
+    const characterSlug = tokens[providedToken];
+
+    if (!characterSlug) {
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({ valid: false, error: 'Invalid player token' }),
+      };
+    }
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ valid: true, characterSlug }),
+    };
+
+  } catch (error) {
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ valid: false, error: 'Internal server error' }),
+    };
+  }
+};
+      `),
+    });
+
+    // Grant SSM parameter list/read access for all player tokens
+    validateCharacterTokenFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParametersByPath'],
+      resources: [
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: 'dndblog/player-token',
+        }),
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: 'dndblog/player-token/*',
+        }),
+      ],
+    }));
+
+    // Add character token validation route
+    this.api.addRoutes({
+      path: '/validate-character-token',
+      methods: [apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'ValidateCharacterTokenIntegration',
+        validateCharacterTokenFunction
+      ),
+    });
+
+    // Character Token Validation Function Alarm
+    new cloudwatch.Alarm(this, 'ValidateCharacterTokenFunctionErrors', {
+      alarmName: `${cdk.Names.uniqueId(this)}-validate-character-token-errors`,
+      alarmDescription: 'Character token validation function errors',
+      metric: validateCharacterTokenFunction.metricErrors({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    // ==========================================================================
     // DM Token Validation Endpoint
     // ==========================================================================
     //
@@ -2706,6 +2866,295 @@ exports.handler = async (event) => {
       alarmName: `${cdk.Names.uniqueId(this)}-validate-dm-token-errors`,
       alarmDescription: 'DM token validation function errors',
       metric: validateDmTokenFunction.metricErrors({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    // ==========================================================================
+    // Player Draft Endpoints
+    // ==========================================================================
+    //
+    // Allows players to save/load/delete their session tracker drafts.
+    // Drafts are stored in S3 under players/drafts/{character-slug}.json
+    // Authorization is via per-player tokens stored in SSM.
+    //
+    // Endpoints:
+    // - PUT /player/drafts/{slug}  - Save draft (requires matching player token)
+    // - GET /player/drafts/{slug}  - Load draft (requires matching player token)
+    // - DELETE /player/drafts/{slug} - Discard draft (requires matching player token)
+    // - GET /player/drafts - List all drafts (DM token required)
+    //
+    // ==========================================================================
+
+    const playerDraftFunction = new lambda.Function(this, 'PlayerDraftFunction', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+      environment: {
+        BUCKET_NAME: this.bucket.bucketName,
+        DM_TOKEN_PARAMETER_NAME: tokenParameterName,
+        ALLOWED_ORIGIN: props.allowedOrigin,
+      },
+      code: lambda.Code.fromInline(`
+const { SSMClient, GetParametersByPathCommand, GetParameterCommand } = require('@aws-sdk/client-ssm');
+const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
+
+const ssmClient = new SSMClient({});
+const s3Client = new S3Client({});
+
+// Token caches
+let cachedPlayerTokens = null;
+let playerTokenExpiry = 0;
+let cachedDmToken = null;
+let dmTokenExpiry = 0;
+
+async function getPlayerTokens() {
+  const now = Date.now();
+  if (cachedPlayerTokens && now < playerTokenExpiry) {
+    return cachedPlayerTokens;
+  }
+
+  const tokens = {};
+  let nextToken = undefined;
+
+  do {
+    const result = await ssmClient.send(new GetParametersByPathCommand({
+      Path: '/dndblog/player-token',
+      WithDecryption: true,
+      NextToken: nextToken,
+    }));
+
+    for (const param of result.Parameters || []) {
+      const slug = param.Name.split('/').pop();
+      tokens[param.Value] = slug;
+    }
+
+    nextToken = result.NextToken;
+  } while (nextToken);
+
+  cachedPlayerTokens = tokens;
+  playerTokenExpiry = now + 5 * 60 * 1000;
+  return tokens;
+}
+
+async function getDmToken() {
+  const now = Date.now();
+  if (cachedDmToken && now < dmTokenExpiry) {
+    return cachedDmToken;
+  }
+
+  const result = await ssmClient.send(new GetParameterCommand({
+    Name: process.env.DM_TOKEN_PARAMETER_NAME,
+    WithDecryption: true,
+  }));
+
+  cachedDmToken = result.Parameter.Value;
+  dmTokenExpiry = now + 5 * 60 * 1000;
+  return cachedDmToken;
+}
+
+function getCorsOrigin(event) {
+  const origin = event.headers?.origin || event.headers?.Origin || '';
+  const allowed = process.env.ALLOWED_ORIGIN;
+  if (origin.startsWith('http://localhost:')) {
+    return origin;
+  }
+  return allowed;
+}
+
+exports.handler = async (event) => {
+  const corsOrigin = getCorsOrigin(event);
+  const headers = {
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Headers': 'Content-Type, X-Player-Token, X-DM-Token',
+    'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
+    'Content-Type': 'application/json',
+  };
+
+  // Handle CORS preflight
+  if (event.requestContext?.http?.method === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  const method = event.requestContext?.http?.method || event.httpMethod;
+  const path = event.rawPath || event.path || '';
+
+  try {
+    // List all drafts (DM only)
+    if (method === 'GET' && path === '/player/drafts') {
+      const dmToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
+      const validDmToken = await getDmToken();
+
+      if (dmToken !== validDmToken) {
+        return { statusCode: 403, headers, body: JSON.stringify({ error: 'Invalid DM token' }) };
+      }
+
+      const listResult = await s3Client.send(new ListObjectsV2Command({
+        Bucket: process.env.BUCKET_NAME,
+        Prefix: 'players/drafts/',
+      }));
+
+      const drafts = [];
+      for (const obj of listResult.Contents || []) {
+        const slug = obj.Key.replace('players/drafts/', '').replace('.json', '');
+        const getResult = await s3Client.send(new GetObjectCommand({
+          Bucket: process.env.BUCKET_NAME,
+          Key: obj.Key,
+        }));
+        const body = await getResult.Body.transformToString();
+        const draft = JSON.parse(body);
+        drafts.push({
+          characterSlug: slug,
+          savedAt: draft.savedAt || obj.LastModified,
+          ...draft,
+        });
+      }
+
+      return { statusCode: 200, headers, body: JSON.stringify({ drafts }) };
+    }
+
+    // Extract slug from path
+    const slugMatch = path.match(/\\/player\\/drafts\\/([^/]+)/);
+    if (!slugMatch) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid path' }) };
+    }
+    const slug = slugMatch[1];
+
+    // Validate player token
+    const playerToken = event.headers?.['x-player-token'] || event.headers?.['X-Player-Token'];
+    const tokens = await getPlayerTokens();
+    const authorizedSlug = tokens[playerToken];
+
+    if (!authorizedSlug || authorizedSlug !== slug) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'Not authorized for this character' }) };
+    }
+
+    const s3Key = \`players/drafts/\${slug}.json\`;
+
+    if (method === 'GET') {
+      // Load draft
+      try {
+        const result = await s3Client.send(new GetObjectCommand({
+          Bucket: process.env.BUCKET_NAME,
+          Key: s3Key,
+        }));
+        const body = await result.Body.transformToString();
+        return { statusCode: 200, headers, body };
+      } catch (err) {
+        if (err.name === 'NoSuchKey') {
+          return { statusCode: 404, headers, body: JSON.stringify({ error: 'No draft found' }) };
+        }
+        throw err;
+      }
+    }
+
+    if (method === 'PUT') {
+      // Save draft
+      const body = JSON.parse(event.body || '{}');
+      body.savedAt = new Date().toISOString();
+      body.savedBy = slug;
+
+      await s3Client.send(new PutObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: s3Key,
+        Body: JSON.stringify(body, null, 2),
+        ContentType: 'application/json',
+      }));
+
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, savedAt: body.savedAt }) };
+    }
+
+    if (method === 'DELETE') {
+      // Delete draft
+      await s3Client.send(new DeleteObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: s3Key,
+      }));
+
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+    }
+
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+
+  } catch (error) {
+    console.error('Player draft error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Internal server error' }),
+    };
+  }
+};
+      `),
+    });
+
+    // Grant S3 permissions
+    this.bucket.grantReadWrite(playerDraftFunction);
+
+    // Grant SSM permissions for token validation
+    playerDraftFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParametersByPath'],
+      resources: [
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: 'dndblog/player-token',
+        }),
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: 'dndblog/player-token/*',
+        }),
+      ],
+    }));
+
+    // Grant SSM read for DM token (for listing all drafts)
+    playerDraftFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: tokenParameterName.replace(/^\//, ''),
+        }),
+      ],
+    }));
+
+    // Add player draft routes
+    this.api.addRoutes({
+      path: '/player/drafts',
+      methods: [apigateway.HttpMethod.GET, apigateway.HttpMethod.OPTIONS],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'PlayerDraftsListIntegration',
+        playerDraftFunction
+      ),
+    });
+
+    this.api.addRoutes({
+      path: '/player/drafts/{slug}',
+      methods: [
+        apigateway.HttpMethod.GET,
+        apigateway.HttpMethod.PUT,
+        apigateway.HttpMethod.DELETE,
+        apigateway.HttpMethod.OPTIONS,
+      ],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'PlayerDraftIntegration',
+        playerDraftFunction
+      ),
+    });
+
+    // Player Draft Function Alarm
+    new cloudwatch.Alarm(this, 'PlayerDraftFunctionErrors', {
+      alarmName: `${cdk.Names.uniqueId(this)}-player-draft-errors`,
+      alarmDescription: 'Player draft function errors',
+      metric: playerDraftFunction.metricErrors({
         statistic: 'Sum',
         period: cdk.Duration.minutes(5),
       }),

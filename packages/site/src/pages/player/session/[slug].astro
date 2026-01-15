@@ -1,0 +1,1503 @@
+---
+/**
+ * Session Tracker Page
+ * Allows players to track HP, spell slots, and conditions during a session.
+ * Requires per-character token validation.
+ */
+
+import { getCollection, type CollectionEntry } from 'astro:content';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+// Generate static paths for all PC characters
+export async function getStaticPaths() {
+  const characters = await getCollection('characters');
+  // Only create pages for PC characters (players)
+  const pcCharacters = characters.filter((c: CollectionEntry<'characters'>) => c.data.subtype === 'pc');
+  return pcCharacters.map((character: CollectionEntry<'characters'>) => ({
+    params: { slug: character.id },
+    props: { character },
+  }));
+}
+
+type Props = {
+  character: CollectionEntry<'characters'>;
+};
+
+const { character } = Astro.props as Props;
+const slug = character.id;
+
+// Standard D&D 5e conditions
+const standardConditions = [
+  'Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened',
+  'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified',
+  'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious'
+];
+
+// API URL for token validation and draft operations
+const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
+
+// Prepare character data for client
+const characterData = {
+  slug: character.id,
+  name: character.data.name,
+  level: character.data.level || 1,
+  class: character.data.class || 'Unknown',
+  combat: {
+    hp: character.data.combat?.hp ?? character.data.combat?.maxHp ?? 10,
+    maxHp: character.data.combat?.maxHp ?? 10,
+    tempHp: character.data.combat?.tempHp ?? 0,
+  },
+  spellcasting: character.data.spellcasting ? {
+    spellSlots: character.data.spellcasting.spellSlots || [],
+    pactSlots: character.data.spellcasting.pactSlots || null,
+  } : null,
+  activeConditions: character.data.activeConditions || [],
+  features: (character.data.features || []).filter((f: { uses?: unknown }) => f.uses),
+};
+---
+
+<BaseLayout
+  title={`Session Tracker - ${character.data.name}`}
+  description={`Track HP, spell slots, and conditions for ${character.data.name}`}
+>
+  <div class="session-tracker" data-character-slug={slug}>
+    <!-- Auth Gate -->
+    <div id="auth-gate" class="auth-gate">
+      <div class="auth-content">
+        <div class="auth-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h1 class="auth-title">{character.data.name}</h1>
+        <p class="auth-description">Enter your player token to access the session tracker.</p>
+        <form id="auth-form" class="auth-form">
+          <label for="player-token" class="visually-hidden">Player Token</label>
+          <input
+            type="password"
+            id="player-token"
+            class="auth-input"
+            placeholder="Enter player token..."
+            autocomplete="off"
+            required
+          />
+          <button type="submit" class="auth-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+              <polyline points="10 17 15 12 10 7"></polyline>
+              <line x1="15" y1="12" x2="3" y2="12"></line>
+            </svg>
+            Enter
+          </button>
+        </form>
+        <p id="auth-error" class="auth-error" style="display: none;"></p>
+      </div>
+    </div>
+
+    <!-- Session Tracker Content -->
+    <div id="tracker-content" class="tracker-content" style="display: none;">
+      <header class="tracker-header">
+        <a href="/player" class="back-link">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"></path>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          Player Hub
+        </a>
+        <div class="header-info">
+          <h1 class="tracker-title">{character.data.name}</h1>
+          <span class="character-meta">Level {character.data.level} {character.data.class}</span>
+        </div>
+        <div id="draft-indicator" class="draft-indicator" style="display: none;">
+          <span class="draft-badge">Unsaved</span>
+        </div>
+      </header>
+
+      <!-- HP Section -->
+      <section class="hp-section">
+        <h2 class="section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+          Hit Points
+        </h2>
+
+        <div class="hp-display">
+          <div class="hp-main">
+            <button id="hp-minus-10" class="hp-btn hp-btn--large" data-change="-10">-10</button>
+            <button id="hp-minus" class="hp-btn" data-change="-1">-1</button>
+            <div class="hp-value-container">
+              <input type="number" id="hp-current" class="hp-input" value={characterData.combat.hp} min="0" />
+              <span class="hp-separator">/</span>
+              <span id="hp-max" class="hp-max">{characterData.combat.maxHp}</span>
+            </div>
+            <button id="hp-plus" class="hp-btn" data-change="1">+1</button>
+            <button id="hp-plus-10" class="hp-btn hp-btn--large" data-change="10">+10</button>
+          </div>
+          <div id="hp-bar" class="hp-bar">
+            <div class="hp-bar-fill" style={`width: ${Math.min(100, (characterData.combat.hp / characterData.combat.maxHp) * 100)}%`}></div>
+          </div>
+        </div>
+
+        <div class="temp-hp-section">
+          <label for="temp-hp" class="temp-hp-label">Temporary HP</label>
+          <div class="temp-hp-controls">
+            <button id="temp-hp-minus" class="hp-btn hp-btn--small" data-change="-1">-</button>
+            <input type="number" id="temp-hp" class="temp-hp-input" value={characterData.combat.tempHp} min="0" />
+            <button id="temp-hp-plus" class="hp-btn hp-btn--small" data-change="1">+</button>
+          </div>
+        </div>
+
+        <div class="quick-damage">
+          <input type="number" id="damage-amount" class="damage-input" placeholder="Amount" min="1" />
+          <button id="take-damage" class="damage-btn damage-btn--hurt">Take Damage</button>
+          <button id="heal" class="damage-btn damage-btn--heal">Heal</button>
+        </div>
+      </section>
+
+      <!-- Spell Slots Section (only for casters) -->
+      {characterData.spellcasting && characterData.spellcasting.spellSlots.length > 0 && (
+        <section class="spell-slots-section">
+          <h2 class="section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            Spell Slots
+          </h2>
+
+          <div id="spell-slots-container" class="spell-slots-grid">
+            {characterData.spellcasting.spellSlots.map((slot: { level: number; total: number; expended: number }) => (
+              <div class="slot-row" data-level={slot.level}>
+                <span class="slot-level">Level {slot.level}</span>
+                <div class="slot-pips">
+                  {[...Array(slot.total)].map((_, i) => (
+                    <button
+                      class={`slot-pip ${i < slot.expended ? 'slot-pip--expended' : ''}`}
+                      data-index={i}
+                      data-level={slot.level}
+                      title={i < slot.expended ? 'Restore slot' : 'Expend slot'}
+                    >
+                      <span class="pip-fill"></span>
+                    </button>
+                  ))}
+                </div>
+                <span class="slot-count">{slot.total - slot.expended}/{slot.total}</span>
+              </div>
+            ))}
+          </div>
+
+          {(() => {
+            const pactSlots = characterData.spellcasting?.pactSlots;
+            if (!pactSlots) return null;
+            return (
+              <div id="pact-slots-container" class="pact-slots">
+                <div class="slot-row" data-pact="true">
+                  <span class="slot-level">Pact Slots (Lvl {pactSlots.level})</span>
+                  <div class="slot-pips">
+                    {[...Array(pactSlots.total)].map((_, i) => (
+                      <button
+                        class={`slot-pip slot-pip--pact ${i < pactSlots.expended ? 'slot-pip--expended' : ''}`}
+                        data-index={i}
+                        data-pact="true"
+                        title={i < pactSlots.expended ? 'Restore pact slot' : 'Expend pact slot'}
+                      >
+                        <span class="pip-fill"></span>
+                      </button>
+                    ))}
+                  </div>
+                  <span class="slot-count">{pactSlots.total - pactSlots.expended}/{pactSlots.total}</span>
+                </div>
+              </div>
+            );
+          })()}
+        </section>
+      )}
+
+      <!-- Conditions Section -->
+      <section class="conditions-section">
+        <h2 class="section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          Active Conditions
+        </h2>
+
+        <div id="conditions-list" class="conditions-list">
+          {characterData.activeConditions.length === 0 ? (
+            <p class="no-conditions">No active conditions</p>
+          ) : (
+            characterData.activeConditions.map((condition: { name: string; source?: string; duration?: string; concentration?: boolean; beneficial?: boolean; notes?: string }, index: number) => (
+              <div class={`condition-tag ${condition.beneficial ? 'condition-tag--beneficial' : ''}`} data-index={index}>
+                {condition.concentration && <span class="concentration-icon" title="Concentration">C</span>}
+                <span class="condition-name">{condition.name}</span>
+                {condition.source && <span class="condition-source">({condition.source})</span>}
+                <button class="condition-remove" data-index={index} title="Remove condition">×</button>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div class="add-condition">
+          <select id="condition-select" class="condition-select">
+            <option value="">Add condition...</option>
+            <optgroup label="Standard Conditions">
+              {standardConditions.map(c => <option value={c}>{c}</option>)}
+            </optgroup>
+            <option value="custom">Custom...</option>
+          </select>
+          <input type="text" id="custom-condition" class="custom-condition-input" placeholder="Custom condition name..." style="display: none;" />
+          <label class="concentration-checkbox">
+            <input type="checkbox" id="condition-concentration" />
+            <span>Concentration</span>
+          </label>
+          <label class="beneficial-checkbox">
+            <input type="checkbox" id="condition-beneficial" />
+            <span>Beneficial</span>
+          </label>
+          <button id="add-condition-btn" class="add-condition-btn">Add</button>
+        </div>
+      </section>
+
+      <!-- Rest Section -->
+      <section class="rest-section">
+        <h2 class="section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          Rest
+        </h2>
+
+        <div class="rest-buttons">
+          <button id="short-rest-btn" class="rest-btn rest-btn--short">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            Short Rest
+          </button>
+          <button id="long-rest-btn" class="rest-btn rest-btn--long">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            Long Rest
+          </button>
+        </div>
+      </section>
+
+      <!-- Footer with Save -->
+      <footer class="tracker-footer">
+        <button id="save-draft-btn" class="save-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          Save Draft
+        </button>
+        <span id="save-status" class="save-status"></span>
+        <button id="logout-btn" class="logout-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Sign Out
+        </button>
+      </footer>
+    </div>
+  </div>
+</BaseLayout>
+
+<script is:inline define:vars={{ apiUrl, characterData, standardConditions }}>
+(function() {
+  var TOKEN_KEY = 'player-token';
+  var CHARACTER_SLUG = characterData.slug;
+  var API_URL = apiUrl;
+
+  // State
+  var state = {
+    hp: characterData.combat.hp,
+    maxHp: characterData.combat.maxHp,
+    tempHp: characterData.combat.tempHp,
+    spellSlots: characterData.spellcasting ? [...characterData.spellcasting.spellSlots] : [],
+    pactSlots: characterData.spellcasting?.pactSlots ? {...characterData.spellcasting.pactSlots} : null,
+    activeConditions: [...characterData.activeConditions],
+    isDirty: false,
+  };
+
+  // DOM Elements
+  var authGate = document.getElementById('auth-gate');
+  var trackerContent = document.getElementById('tracker-content');
+  var authForm = document.getElementById('auth-form');
+  var authError = document.getElementById('auth-error');
+  var tokenInput = document.getElementById('player-token');
+  var draftIndicator = document.getElementById('draft-indicator');
+  var saveStatus = document.getElementById('save-status');
+
+  // ============================================
+  // Authentication
+  // ============================================
+
+  async function validateCharacterToken(token) {
+    if (!API_URL) {
+      console.warn('API URL not configured');
+      return { valid: false };
+    }
+
+    try {
+      var response = await fetch(API_URL + '/validate-character-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Player-Token': token,
+        },
+      });
+
+      if (!response.ok) return { valid: false };
+      return await response.json();
+    } catch (error) {
+      console.error('Token validation error:', error);
+      return { valid: false };
+    }
+  }
+
+  async function checkAuth() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      var result = await validateCharacterToken(token);
+      if (result.valid && result.characterSlug === CHARACTER_SLUG) {
+        showTracker();
+        loadDraft();
+      } else if (result.valid) {
+        showAuthError('This token is for ' + result.characterSlug + ', not ' + CHARACTER_SLUG);
+      } else {
+        localStorage.removeItem(TOKEN_KEY);
+        showAuthGate();
+      }
+    }
+  }
+
+  function showTracker() {
+    authGate.style.display = 'none';
+    trackerContent.style.display = 'block';
+  }
+
+  function showAuthGate() {
+    authGate.style.display = 'flex';
+    trackerContent.style.display = 'none';
+  }
+
+  function showAuthError(message) {
+    authError.textContent = message;
+    authError.style.display = 'block';
+  }
+
+  authForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var token = tokenInput.value.trim();
+
+    if (token) {
+      authError.style.display = 'none';
+      var result = await validateCharacterToken(token);
+
+      if (result.valid && result.characterSlug === CHARACTER_SLUG) {
+        localStorage.setItem(TOKEN_KEY, token);
+        showTracker();
+        loadDraft();
+      } else if (result.valid) {
+        showAuthError('This token is for ' + result.characterSlug + ', not ' + CHARACTER_SLUG);
+      } else {
+        showAuthError('Invalid token. Please try again.');
+      }
+    }
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', function() {
+    localStorage.removeItem(TOKEN_KEY);
+    showAuthGate();
+    tokenInput.value = '';
+  });
+
+  // ============================================
+  // HP Controls
+  // ============================================
+
+  var hpInput = document.getElementById('hp-current');
+  var hpBar = document.querySelector('.hp-bar-fill');
+  var tempHpInput = document.getElementById('temp-hp');
+
+  function updateHpDisplay() {
+    hpInput.value = state.hp;
+    var percent = Math.min(100, (state.hp / state.maxHp) * 100);
+    hpBar.style.width = percent + '%';
+
+    // Color based on HP percentage
+    if (percent <= 25) {
+      hpBar.style.background = 'var(--color-error)';
+    } else if (percent <= 50) {
+      hpBar.style.background = 'var(--color-warning, #f59e0b)';
+    } else {
+      hpBar.style.background = 'var(--color-success, #10b981)';
+    }
+
+    markDirty();
+  }
+
+  function changeHp(amount) {
+    state.hp = Math.max(0, Math.min(state.maxHp, state.hp + amount));
+    updateHpDisplay();
+  }
+
+  // HP buttons
+  document.querySelectorAll('.hp-btn[data-change]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var change = parseInt(this.dataset.change);
+      if (this.id.startsWith('temp-hp')) {
+        state.tempHp = Math.max(0, state.tempHp + change);
+        tempHpInput.value = state.tempHp;
+        markDirty();
+      } else {
+        changeHp(change);
+      }
+    });
+  });
+
+  hpInput.addEventListener('change', function() {
+    state.hp = Math.max(0, Math.min(state.maxHp, parseInt(this.value) || 0));
+    updateHpDisplay();
+  });
+
+  tempHpInput.addEventListener('change', function() {
+    state.tempHp = Math.max(0, parseInt(this.value) || 0);
+    markDirty();
+  });
+
+  // Quick damage/heal
+  document.getElementById('take-damage').addEventListener('click', function() {
+    var amount = parseInt(document.getElementById('damage-amount').value) || 0;
+    if (amount > 0) {
+      // Damage temp HP first
+      if (state.tempHp > 0) {
+        var tempDamage = Math.min(state.tempHp, amount);
+        state.tempHp -= tempDamage;
+        amount -= tempDamage;
+        tempHpInput.value = state.tempHp;
+      }
+      if (amount > 0) {
+        changeHp(-amount);
+      }
+      document.getElementById('damage-amount').value = '';
+    }
+  });
+
+  document.getElementById('heal').addEventListener('click', function() {
+    var amount = parseInt(document.getElementById('damage-amount').value) || 0;
+    if (amount > 0) {
+      changeHp(amount);
+      document.getElementById('damage-amount').value = '';
+    }
+  });
+
+  // ============================================
+  // Spell Slots
+  // ============================================
+
+  function updateSlotDisplay() {
+    state.spellSlots.forEach(function(slot) {
+      var row = document.querySelector('.slot-row[data-level="' + slot.level + '"]');
+      if (!row) return;
+
+      var pips = row.querySelectorAll('.slot-pip');
+      pips.forEach(function(pip, i) {
+        pip.classList.toggle('slot-pip--expended', i < slot.expended);
+      });
+
+      var count = row.querySelector('.slot-count');
+      if (count) count.textContent = (slot.total - slot.expended) + '/' + slot.total;
+    });
+
+    if (state.pactSlots) {
+      var pactRow = document.querySelector('.slot-row[data-pact="true"]');
+      if (pactRow) {
+        var pactPips = pactRow.querySelectorAll('.slot-pip');
+        pactPips.forEach(function(pip, i) {
+          pip.classList.toggle('slot-pip--expended', i < state.pactSlots.expended);
+        });
+        var pactCount = pactRow.querySelector('.slot-count');
+        if (pactCount) pactCount.textContent = (state.pactSlots.total - state.pactSlots.expended) + '/' + state.pactSlots.total;
+      }
+    }
+
+    markDirty();
+  }
+
+  document.querySelectorAll('.slot-pip').forEach(function(pip) {
+    pip.addEventListener('click', function() {
+      var index = parseInt(this.dataset.index);
+      var isPact = this.dataset.pact === 'true';
+
+      if (isPact && state.pactSlots) {
+        // Toggle pact slot
+        if (index < state.pactSlots.expended) {
+          state.pactSlots.expended = index;
+        } else {
+          state.pactSlots.expended = index + 1;
+        }
+      } else {
+        var level = parseInt(this.dataset.level);
+        var slot = state.spellSlots.find(function(s) { return s.level === level; });
+        if (slot) {
+          // Toggle slot
+          if (index < slot.expended) {
+            slot.expended = index;
+          } else {
+            slot.expended = index + 1;
+          }
+        }
+      }
+
+      updateSlotDisplay();
+    });
+  });
+
+  // ============================================
+  // Conditions
+  // ============================================
+
+  var conditionsList = document.getElementById('conditions-list');
+  var conditionSelect = document.getElementById('condition-select');
+  var customConditionInput = document.getElementById('custom-condition');
+
+  function createConditionElement(condition, index) {
+    var div = document.createElement('div');
+    div.className = 'condition-tag' + (condition.beneficial ? ' condition-tag--beneficial' : '');
+    div.setAttribute('data-index', index);
+
+    if (condition.concentration) {
+      var concIcon = document.createElement('span');
+      concIcon.className = 'concentration-icon';
+      concIcon.title = 'Concentration';
+      concIcon.textContent = 'C';
+      div.appendChild(concIcon);
+    }
+
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'condition-name';
+    nameSpan.textContent = condition.name;
+    div.appendChild(nameSpan);
+
+    if (condition.source) {
+      var sourceSpan = document.createElement('span');
+      sourceSpan.className = 'condition-source';
+      sourceSpan.textContent = '(' + condition.source + ')';
+      div.appendChild(sourceSpan);
+    }
+
+    var removeBtn = document.createElement('button');
+    removeBtn.className = 'condition-remove';
+    removeBtn.setAttribute('data-index', index);
+    removeBtn.title = 'Remove condition';
+    removeBtn.textContent = '×';
+    removeBtn.addEventListener('click', function() {
+      state.activeConditions.splice(index, 1);
+      renderConditions();
+      markDirty();
+    });
+    div.appendChild(removeBtn);
+
+    return div;
+  }
+
+  function renderConditions() {
+    // Clear the list
+    while (conditionsList.firstChild) {
+      conditionsList.removeChild(conditionsList.firstChild);
+    }
+
+    if (state.activeConditions.length === 0) {
+      var p = document.createElement('p');
+      p.className = 'no-conditions';
+      p.textContent = 'No active conditions';
+      conditionsList.appendChild(p);
+    } else {
+      state.activeConditions.forEach(function(condition, index) {
+        conditionsList.appendChild(createConditionElement(condition, index));
+      });
+    }
+  }
+
+  conditionSelect.addEventListener('change', function() {
+    customConditionInput.style.display = this.value === 'custom' ? 'block' : 'none';
+  });
+
+  document.getElementById('add-condition-btn').addEventListener('click', function() {
+    var name = conditionSelect.value === 'custom'
+      ? customConditionInput.value.trim()
+      : conditionSelect.value;
+
+    if (!name) return;
+
+    state.activeConditions.push({
+      name: name,
+      concentration: document.getElementById('condition-concentration').checked,
+      beneficial: document.getElementById('condition-beneficial').checked,
+    });
+
+    renderConditions();
+    markDirty();
+
+    // Reset
+    conditionSelect.value = '';
+    customConditionInput.value = '';
+    customConditionInput.style.display = 'none';
+    document.getElementById('condition-concentration').checked = false;
+    document.getElementById('condition-beneficial').checked = false;
+  });
+
+  // Initial remove handlers for server-rendered conditions
+  conditionsList.querySelectorAll('.condition-remove').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var idx = parseInt(this.dataset.index);
+      state.activeConditions.splice(idx, 1);
+      renderConditions();
+      markDirty();
+    });
+  });
+
+  // ============================================
+  // Rest
+  // ============================================
+
+  document.getElementById('short-rest-btn').addEventListener('click', function() {
+    if (confirm('Take a short rest? This will restore Warlock pact slots.')) {
+      // Restore pact slots
+      if (state.pactSlots) {
+        state.pactSlots.expended = 0;
+      }
+      updateSlotDisplay();
+      saveStatus.textContent = 'Short rest taken';
+      setTimeout(function() { saveStatus.textContent = ''; }, 2000);
+    }
+  });
+
+  document.getElementById('long-rest-btn').addEventListener('click', function() {
+    if (confirm('Take a long rest? This will restore all HP and spell slots, and clear temporary conditions.')) {
+      // Restore HP
+      state.hp = state.maxHp;
+      state.tempHp = 0;
+      tempHpInput.value = 0;
+      updateHpDisplay();
+
+      // Restore all spell slots
+      state.spellSlots.forEach(function(slot) {
+        slot.expended = 0;
+      });
+      if (state.pactSlots) {
+        state.pactSlots.expended = 0;
+      }
+      updateSlotDisplay();
+
+      // Clear non-permanent conditions (keep only beneficial ones marked as "permanent")
+      state.activeConditions = state.activeConditions.filter(function(c) {
+        return c.duration === 'permanent';
+      });
+      renderConditions();
+
+      markDirty();
+      saveStatus.textContent = 'Long rest taken - fully restored!';
+      setTimeout(function() { saveStatus.textContent = ''; }, 3000);
+    }
+  });
+
+  // ============================================
+  // Draft Save/Load
+  // ============================================
+
+  function markDirty() {
+    state.isDirty = true;
+    draftIndicator.style.display = 'inline-flex';
+  }
+
+  async function saveDraft() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    if (!token || !API_URL) return;
+
+    var draft = {
+      characterSlug: CHARACTER_SLUG,
+      combat: {
+        hp: state.hp,
+        tempHp: state.tempHp,
+      },
+      spellSlots: state.spellSlots,
+      pactSlots: state.pactSlots,
+      activeConditions: state.activeConditions,
+    };
+
+    try {
+      var response = await fetch(API_URL + '/player/drafts/' + CHARACTER_SLUG, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Player-Token': token,
+        },
+        body: JSON.stringify(draft),
+      });
+
+      if (response.ok) {
+        state.isDirty = false;
+        draftIndicator.style.display = 'none';
+        saveStatus.textContent = 'Draft saved!';
+        saveStatus.className = 'save-status save-status--success';
+      } else {
+        saveStatus.textContent = 'Failed to save draft';
+        saveStatus.className = 'save-status save-status--error';
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      saveStatus.textContent = 'Error saving draft';
+      saveStatus.className = 'save-status save-status--error';
+    }
+
+    setTimeout(function() {
+      saveStatus.textContent = '';
+      saveStatus.className = 'save-status';
+    }, 3000);
+  }
+
+  async function loadDraft() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    if (!token || !API_URL) return;
+
+    try {
+      var response = await fetch(API_URL + '/player/drafts/' + CHARACTER_SLUG, {
+        method: 'GET',
+        headers: {
+          'X-Player-Token': token,
+        },
+      });
+
+      if (response.ok) {
+        var draft = await response.json();
+        if (draft && draft.combat) {
+          state.hp = draft.combat.hp;
+          state.tempHp = draft.combat.tempHp || 0;
+          tempHpInput.value = state.tempHp;
+          updateHpDisplay();
+        }
+        if (draft && draft.spellSlots) {
+          state.spellSlots = draft.spellSlots;
+          updateSlotDisplay();
+        }
+        if (draft && draft.pactSlots) {
+          state.pactSlots = draft.pactSlots;
+          updateSlotDisplay();
+        }
+        if (draft && draft.activeConditions) {
+          state.activeConditions = draft.activeConditions;
+          renderConditions();
+        }
+
+        // Don't mark dirty since we just loaded
+        state.isDirty = false;
+        draftIndicator.style.display = 'none';
+      }
+    } catch (error) {
+      console.log('No draft found or error loading:', error);
+    }
+  }
+
+  document.getElementById('save-draft-btn').addEventListener('click', saveDraft);
+
+  // Warn on page leave if dirty
+  window.addEventListener('beforeunload', function(e) {
+    if (state.isDirty) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  // ============================================
+  // Initialize
+  // ============================================
+
+  checkAuth();
+})();
+</script>
+
+<style>
+  .session-tracker {
+    min-height: 80vh;
+  }
+
+  /* Auth Gate (same as player hub) */
+  .auth-gate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    padding: var(--space-xl);
+  }
+
+  .auth-content {
+    text-align: center;
+    max-width: 400px;
+  }
+
+  .auth-icon {
+    color: var(--color-accent);
+    margin-bottom: var(--space-lg);
+  }
+
+  .auth-title {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .auth-description {
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-xl);
+  }
+
+  .auth-form {
+    display: flex;
+    gap: var(--space-sm);
+  }
+
+  .auth-input {
+    flex: 1;
+    padding: var(--space-md);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+    font-size: var(--text-base);
+  }
+
+  .auth-input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  .auth-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .auth-btn:hover {
+    background: var(--color-accent-hover);
+    transform: translateY(-1px);
+  }
+
+  .auth-error {
+    color: var(--color-error);
+    margin-top: var(--space-md);
+    font-size: var(--text-sm);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Tracker Content */
+  .tracker-content {
+    padding: var(--space-lg);
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .tracker-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+    flex-wrap: wrap;
+  }
+
+  .back-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    transition: color var(--transition-fast);
+  }
+
+  .back-link:hover {
+    color: var(--color-accent);
+  }
+
+  .header-info {
+    flex: 1;
+  }
+
+  .tracker-title {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    color: var(--color-gold);
+    margin: 0;
+  }
+
+  .character-meta {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+  }
+
+  .draft-indicator {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .draft-badge {
+    background: var(--color-warning, #f59e0b);
+    color: var(--color-bg);
+    padding: 4px 12px;
+    border-radius: var(--radius-md);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  /* Sections */
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 2px solid var(--color-gold);
+  }
+
+  section {
+    margin-bottom: var(--space-2xl);
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  /* HP Section */
+  .hp-display {
+    margin-bottom: var(--space-lg);
+  }
+
+  .hp-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+
+  .hp-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .hp-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .hp-btn--large {
+    width: 50px;
+    height: 50px;
+    font-size: var(--text-sm);
+  }
+
+  .hp-btn--small {
+    width: 32px;
+    height: 32px;
+    font-size: var(--text-xs);
+  }
+
+  .hp-value-container {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-xs);
+  }
+
+  .hp-input {
+    width: 80px;
+    text-align: center;
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    font-family: var(--font-display);
+    color: var(--color-accent);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--color-accent);
+  }
+
+  .hp-input:focus {
+    outline: none;
+  }
+
+  .hp-separator {
+    font-size: var(--text-xl);
+    color: var(--color-text-muted);
+  }
+
+  .hp-max {
+    font-size: var(--text-xl);
+    color: var(--color-text-secondary);
+  }
+
+  .hp-bar {
+    height: 12px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .hp-bar-fill {
+    height: 100%;
+    background: var(--color-success, #10b981);
+    transition: width var(--transition-fast), background var(--transition-fast);
+  }
+
+  .temp-hp-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+    padding: var(--space-md);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+  }
+
+  .temp-hp-label {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+  }
+
+  .temp-hp-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .temp-hp-input {
+    width: 60px;
+    text-align: center;
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--color-info, #3b82f6);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-xs);
+  }
+
+  .quick-damage {
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .damage-input {
+    width: 100px;
+    padding: var(--space-sm);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    text-align: center;
+  }
+
+  .damage-btn {
+    padding: var(--space-sm) var(--space-lg);
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .damage-btn--hurt {
+    background: var(--color-error);
+    color: white;
+  }
+
+  .damage-btn--hurt:hover {
+    background: #dc2626;
+  }
+
+  .damage-btn--heal {
+    background: var(--color-success, #10b981);
+    color: white;
+  }
+
+  .damage-btn--heal:hover {
+    background: #059669;
+  }
+
+  /* Spell Slots */
+  .spell-slots-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .slot-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+  }
+
+  .slot-level {
+    width: 80px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+  }
+
+  .slot-pips {
+    display: flex;
+    gap: var(--space-xs);
+    flex: 1;
+  }
+
+  .slot-pip {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--color-accent);
+    background: transparent;
+    cursor: pointer;
+    padding: 3px;
+    transition: all var(--transition-fast);
+  }
+
+  .slot-pip:hover {
+    transform: scale(1.1);
+  }
+
+  .pip-fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: transparent;
+    transition: background var(--transition-fast);
+  }
+
+  .slot-pip--expended .pip-fill {
+    background: var(--color-text-muted);
+  }
+
+  .slot-pip:not(.slot-pip--expended) .pip-fill {
+    background: var(--color-accent);
+  }
+
+  .slot-pip--pact {
+    border-color: var(--color-gold);
+  }
+
+  .slot-pip--pact:not(.slot-pip--expended) .pip-fill {
+    background: var(--color-gold);
+  }
+
+  .slot-count {
+    width: 40px;
+    text-align: right;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .pact-slots {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* Conditions */
+  .conditions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+    min-height: 40px;
+  }
+
+  .no-conditions {
+    color: var(--color-text-muted);
+    font-style: italic;
+    margin: 0;
+  }
+
+  .condition-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-error);
+    color: white;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+  }
+
+  .condition-tag--beneficial {
+    background: var(--color-success, #10b981);
+  }
+
+  .concentration-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .condition-source {
+    font-size: var(--text-xs);
+    opacity: 0.8;
+  }
+
+  .condition-remove {
+    background: none;
+    border: none;
+    color: white;
+    font-size: var(--text-lg);
+    cursor: pointer;
+    padding: 0 var(--space-xs);
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+  }
+
+  .condition-remove:hover {
+    opacity: 1;
+  }
+
+  .add-condition {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: center;
+  }
+
+  .condition-select {
+    flex: 1;
+    min-width: 200px;
+    padding: var(--space-sm);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+  }
+
+  .custom-condition-input {
+    flex: 1;
+    min-width: 200px;
+    padding: var(--space-sm);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+  }
+
+  .concentration-checkbox,
+  .beneficial-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+  }
+
+  .add-condition-btn {
+    padding: var(--space-sm) var(--space-lg);
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .add-condition-btn:hover {
+    background: var(--color-accent-hover);
+  }
+
+  /* Rest Section */
+  .rest-buttons {
+    display: flex;
+    gap: var(--space-lg);
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .rest-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-xl);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .rest-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .rest-btn--short:hover {
+    border-color: var(--color-info, #3b82f6);
+    color: var(--color-info, #3b82f6);
+  }
+
+  .rest-btn--long:hover {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+  }
+
+  /* Footer */
+  .tracker-footer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--color-border);
+    flex-wrap: wrap;
+  }
+
+  .save-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-xl);
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .save-btn:hover {
+    background: var(--color-accent-hover);
+    transform: translateY(-1px);
+  }
+
+  .save-status {
+    flex: 1;
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .save-status--success {
+    color: var(--color-success, #10b981);
+  }
+
+  .save-status--error {
+    color: var(--color-error);
+  }
+
+  .logout-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .logout-btn:hover {
+    border-color: var(--color-error);
+    color: var(--color-error);
+  }
+
+  @media (max-width: 640px) {
+    .tracker-content {
+      padding: var(--space-md);
+    }
+
+    .hp-main {
+      flex-wrap: wrap;
+    }
+
+    .slot-row {
+      flex-wrap: wrap;
+    }
+
+    .slot-level {
+      width: 100%;
+    }
+
+    .add-condition {
+      flex-direction: column;
+    }
+
+    .condition-select,
+    .custom-condition-input {
+      width: 100%;
+    }
+
+    .tracker-footer {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .save-btn {
+      justify-content: center;
+    }
+
+    .logout-btn {
+      justify-content: center;
+    }
+  }
+</style>
