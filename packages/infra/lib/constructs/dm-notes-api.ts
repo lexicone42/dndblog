@@ -777,8 +777,8 @@ exports.handler = async (event) => {
       environment: {
         TOKEN_PARAMETER_NAME: tokenParameterName,
         ALLOWED_ORIGIN: props.allowedOrigin,
-        // Using Meta Llama 3.1 70B Instruct - open source, no approval required
-        BEDROCK_MODEL_ID: 'us.meta.llama3-1-70b-instruct-v1:0',
+        // Using Amazon Nova Premier - Amazon's own model, no approval required
+        BEDROCK_MODEL_ID: 'us.amazon.nova-premier-v1:0',
       },
       code: lambda.Code.fromInline(`
 const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
@@ -962,19 +962,19 @@ IMPORTANT RULES:
       ? \`Entity type hint: \${hint}\\n\\nDescription: \${input}\`
       : \`Description: \${input}\`;
 
-    // Llama 3.1 Instruct format with [INST] tags
-    const fullPrompt = \`<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-
-\${systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>
-
-\${userPrompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-
-\`;
-
+    // Amazon Nova Premier uses Messages API format
     const bedrockPayload = {
-      prompt: fullPrompt,
-      max_gen_len: 2048,
-      temperature: 0.3,
+      messages: [
+        {
+          role: 'user',
+          content: [{ text: userPrompt }]
+        }
+      ],
+      system: [{ text: systemPrompt }],
+      inferenceConfig: {
+        maxTokens: 2048,
+        temperature: 0.3,
+      },
     };
 
     const command = new InvokeModelCommand({
@@ -986,8 +986,8 @@ IMPORTANT RULES:
 
     const response = await bedrockClient.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-    // Llama returns 'generation' field instead of Claude's 'content' array
-    const outputText = responseBody.generation || '';
+    // Nova returns output.message.content[0].text
+    const outputText = responseBody.output?.message?.content?.[0]?.text || '';
 
     // Parse the AI response as JSON
     let result;
@@ -1076,12 +1076,12 @@ IMPORTANT RULES:
       `),
     });
 
-    // Grant Bedrock permissions to generate entity function (Meta Llama 3.1 70B Instruct)
+    // Grant Bedrock permissions to generate entity function (Amazon Nova Premier)
     generateEntityFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel'],
       resources: [
-        'arn:aws:bedrock:*::foundation-model/meta.llama3-1-70b-instruct-v1:0',
-        'arn:aws:bedrock:*:*:inference-profile/us.meta.llama3-1-70b-instruct-v1:0',
+        'arn:aws:bedrock:*::foundation-model/amazon.nova-premier-v1:0',
+        'arn:aws:bedrock:*:*:inference-profile/us.amazon.nova-premier-v1:0',
       ],
     }));
 
