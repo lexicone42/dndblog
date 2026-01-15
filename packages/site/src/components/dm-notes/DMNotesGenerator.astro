@@ -346,6 +346,55 @@
     margin: 0;
   }
 
+  /* Full markdown content rendering */
+  .entity-card-preview :global(.entity-markdown-full) {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-lg);
+    border-top: 2px solid var(--color-border);
+  }
+
+  .entity-card-preview :global(.md-section) {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--color-gold);
+    margin: var(--space-lg) 0 var(--space-sm);
+  }
+
+  .entity-card-preview :global(.md-section:first-child) {
+    margin-top: 0;
+  }
+
+  .entity-card-preview :global(.md-subsection) {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin: var(--space-md) 0 var(--space-xs);
+  }
+
+  .entity-card-preview :global(.entity-markdown-full p) {
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    line-height: 1.7;
+    margin: 0 0 var(--space-sm);
+  }
+
+  .entity-card-preview :global(.md-list) {
+    margin: var(--space-xs) 0 var(--space-md);
+    padding-left: var(--space-lg);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+
+  .entity-card-preview :global(.md-list li) {
+    margin-bottom: var(--space-xs);
+    line-height: 1.5;
+  }
+
+  .entity-card-preview :global(.entity-markdown-full strong) {
+    color: var(--color-gold);
+    font-weight: 600;
+  }
+
   /* User-defined tags section at bottom */
   .entity-card-preview :global(.entity-tags) {
     margin-top: var(--space-md);
