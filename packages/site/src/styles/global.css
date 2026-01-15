@@ -65,11 +65,11 @@
   --color-link-hover: #8b4513;
   --color-code-bg: #e8e0d0;
   --color-code-text: #8b0000;
-  --color-gold: #b8860b;
-  --color-gold-light: #d4a943;
-  --color-success: #16a34a;
-  --color-error: #dc2626;
-  --color-warning: #d97706;
+  --color-gold: #856410;
+  --color-gold-light: #b8860b;
+  --color-success: #0d7a32;
+  --color-error: #b91c1c;
+  --color-warning: #a95505;
   --shadow-sm: 0 1px 2px rgba(44, 36, 22, 0.1);
   --shadow-md: 0 4px 6px rgba(44, 36, 22, 0.15);
   --shadow-lg: 0 10px 15px rgba(44, 36, 22, 0.2);
