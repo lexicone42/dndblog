@@ -4,9 +4,9 @@
  *
  * Complete entity management hub: generate, organize, edit, and publish.
  * Features:
- * - Branch sidebar: Create, select, delete staging branches
- * - Entities tab: View, edit, delete entities within a branch
- * - Generator tab: AI-powered entity creation, add directly to branch
+ * - Create tab: AI-powered entity generation with single draft preview
+ * - Organize tab: Branch management + entity list view
+ * - Edit tab: Entity viewer/editor (TODO: integrate entity viewer component)
  * - Publish to GitHub: Create feature branches and PRs
  *
  * Token-gated access (same pattern as dm-notes)
@@ -61,16 +61,19 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
       <!-- Main Tab Navigation -->
       <nav class="dashboard-tabs" role="tablist" aria-label="Entity management sections">
-        <button class="dashboard-tab dashboard-tab--active" data-tab="edit" role="tab" aria-selected="true" aria-controls="edit-panel">
-          Edit
+        <button class="dashboard-tab dashboard-tab--active" data-tab="create" role="tab" aria-selected="true" aria-controls="create-panel">
+          Create
         </button>
         <button class="dashboard-tab" data-tab="organize" role="tab" aria-selected="false" aria-controls="organize-panel">
           Organize
         </button>
+        <button class="dashboard-tab" data-tab="edit" role="tab" aria-selected="false" aria-controls="edit-panel">
+          Edit
+        </button>
       </nav>
 
-      <!-- Edit Panel - Generator + All Entities -->
-      <div id="edit-panel" class="dashboard-panel" role="tabpanel" aria-labelledby="tab-edit">
+      <!-- Create Panel - Generator + Draft Preview Only -->
+      <div id="create-panel" class="dashboard-panel" role="tabpanel" aria-labelledby="tab-create">
         <!-- Compact Generator Section -->
         <div class="generator-compact">
           <div class="generator-compact__header">
@@ -146,39 +149,9 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             </div>
           </div>
         </div>
-
-        <!-- Filter Bar -->
-        <div class="entities-filter-bar">
-          <h2>All Entities</h2>
-          <div class="filter-controls">
-            <select id="filter-branch" class="filter-select">
-              <option value="">All Branches</option>
-            </select>
-            <select id="filter-type" class="filter-select">
-              <option value="">All Types</option>
-              <option value="character">Characters</option>
-              <option value="enemy">Enemies</option>
-              <option value="item">Items</option>
-              <option value="location">Locations</option>
-              <option value="faction">Factions</option>
-            </select>
-            <input type="search" id="filter-search" class="filter-search" placeholder="Search entities..." />
-          </div>
-        </div>
-
-        <!-- Entity Grid -->
-        <div id="entity-grid" class="entity-grid">
-          <div class="loading-grid">Loading entities...</div>
-        </div>
-
-        <div id="no-entities" class="empty-state" style="display: none;">
-          <div class="empty-state__icon">✨</div>
-          <h3>No Entities Yet</h3>
-          <p>Use the generator above to create your first entity.</p>
-        </div>
       </div>
 
-      <!-- Organize Panel - Branch Management -->
+      <!-- Organize Panel - Branch Management + Entity View -->
       <div id="organize-panel" class="dashboard-panel" role="tabpanel" aria-labelledby="tab-organize" style="display: none;">
         <div class="organize-header">
           <h2>Branches</h2>
@@ -193,6 +166,50 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           <div class="empty-state__icon">📂</div>
           <h3>No Branches Yet</h3>
           <p>Create a branch to start organizing your entities for publishing.</p>
+        </div>
+
+        <!-- Entity List Section -->
+        <div class="entities-section">
+          <div class="entities-filter-bar">
+            <h2>All Entities</h2>
+            <div class="filter-controls">
+              <select id="filter-branch" class="filter-select">
+                <option value="">All Branches</option>
+              </select>
+              <select id="filter-type" class="filter-select">
+                <option value="">All Types</option>
+                <option value="character">Characters</option>
+                <option value="enemy">Enemies</option>
+                <option value="item">Items</option>
+                <option value="location">Locations</option>
+                <option value="faction">Factions</option>
+              </select>
+              <input type="search" id="filter-search" class="filter-search" placeholder="Search entities..." />
+            </div>
+          </div>
+
+          <!-- Entity Grid -->
+          <div id="entity-grid" class="entity-grid">
+            <div class="loading-grid">Loading entities...</div>
+          </div>
+
+          <div id="no-entities" class="empty-state" style="display: none;">
+            <div class="empty-state__icon">✨</div>
+            <h3>No Entities Yet</h3>
+            <p>Create entities in the Create tab and add them to a branch.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Panel - Entity Viewer/Editor (TODO: Integrate entity viewer from entity pages) -->
+      <div id="edit-panel" class="dashboard-panel" role="tabpanel" aria-labelledby="tab-edit" style="display: none;">
+        <div class="edit-panel-placeholder">
+          <div class="empty-state">
+            <div class="empty-state__icon">📝</div>
+            <h3>Entity Editor</h3>
+            <p>Select an entity from the Create tab to edit it here.</p>
+            <p class="empty-state__hint">Coming soon: Full entity viewer integration with side-by-side preview and editing.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -336,7 +353,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       // State
       var allBranches = [];
       var allEntities = []; // Aggregated from all branches
-      var currentTab = 'edit';
+      var currentTab = 'create';
       var editingEntity = null;
       var deleteTarget = null; // { type: 'branch' | 'entity', ... }
       var currentResult = null; // Generator result
@@ -411,8 +428,9 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           t.setAttribute('aria-selected', isActive ? 'true' : 'false');
         });
 
-        document.getElementById('edit-panel').style.display = tab === 'edit' ? 'block' : 'none';
+        document.getElementById('create-panel').style.display = tab === 'create' ? 'block' : 'none';
         document.getElementById('organize-panel').style.display = tab === 'organize' ? 'block' : 'none';
+        document.getElementById('edit-panel').style.display = tab === 'edit' ? 'block' : 'none';
       }
 
       // ===========================================
@@ -2016,6 +2034,15 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
     .branch-select:focus {
       outline: none;
       border-color: var(--color-gold);
+    }
+
+    /* ===========================================
+       Entities Section (in Organize tab)
+       =========================================== */
+    .entities-section {
+      margin-top: var(--space-2xl);
+      padding-top: var(--space-xl);
+      border-top: 1px solid var(--color-border);
     }
 
     /* ===========================================

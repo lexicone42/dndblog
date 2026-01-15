@@ -1,11 +1,16 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as apigateway from 'aws-cdk-lib/aws-apigatewayv2';
 import * as apigatewayIntegrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as logs from 'aws-cdk-lib/aws-logs';
+import * as logsDestinations from 'aws-cdk-lib/aws-logs-destinations';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as snsSubscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
@@ -123,6 +128,30 @@ export class DmNotesApi extends Construct {
         },
       ],
     });
+
+    // ==========================================================================
+    // Visitor IP Tracking (for new visitor alerts)
+    // ==========================================================================
+
+    // DynamoDB table to track seen IP addresses
+    const visitorsTable = new dynamodb.Table(this, 'VisitorsTable', {
+      tableName: 'ProtectedSiteVisitors',
+      partitionKey: { name: 'ip', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // OK to lose IP tracking data
+      timeToLiveAttribute: 'expiresAt',
+    });
+
+    // SNS topic for new visitor alerts
+    const newVisitorTopic = new sns.Topic(this, 'NewVisitorTopic', {
+      topicName: 'ProtectedSiteNewVisitor',
+      displayName: 'Protected Site New Visitor Alerts',
+    });
+
+    // Email subscription for alerts
+    newVisitorTopic.addSubscription(
+      new snsSubscriptions.EmailSubscription('bryan.egan@gmail.com')
+    );
 
     // ==========================================================================
     // Cognito User Pool (Optional - scaffold for future migration)
@@ -735,6 +764,137 @@ Respond with valid JSON only:\`
         throttlingRateLimit: 5,
       };
     }
+
+    // ==========================================================================
+    // API Gateway Access Logging (for IP tracking)
+    // ==========================================================================
+
+    // Log group for API access logs
+    const apiAccessLogGroup = new logs.LogGroup(this, 'ApiAccessLogGroup', {
+      logGroupName: '/aws/apigateway/dm-notes-api/access-logs',
+      retention: logs.RetentionDays.ONE_MONTH,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    // Enable access logging on the HTTP API stage
+    // Log format includes: IP, path, status, timestamp
+    if (defaultStage) {
+      defaultStage.accessLogSettings = {
+        destinationArn: apiAccessLogGroup.logGroupArn,
+        format: JSON.stringify({
+          requestId: '$context.requestId',
+          ip: '$context.identity.sourceIp',
+          requestTime: '$context.requestTime',
+          httpMethod: '$context.httpMethod',
+          path: '$context.path',
+          status: '$context.status',
+          responseLength: '$context.responseLength',
+        }),
+      };
+    }
+
+    // ==========================================================================
+    // IP Tracker Lambda (processes access logs for new visitor alerts)
+    // ==========================================================================
+
+    const ipTrackerFunction = new lambda.Function(this, 'IpTrackerFunction', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
+      environment: {
+        VISITORS_TABLE: visitorsTable.tableName,
+        ALERT_TOPIC_ARN: newVisitorTopic.topicArn,
+      },
+      code: lambda.Code.fromInline(`
+const { DynamoDBClient, GetItemCommand, PutItemCommand } = require('@aws-sdk/client-dynamodb');
+const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
+const zlib = require('zlib');
+
+const dynamoClient = new DynamoDBClient({});
+const snsClient = new SNSClient({});
+
+// Paths to track (successful token validations)
+const TRACKED_PATHS = ['/validate-player-token', '/validate-dm-token'];
+
+exports.handler = async (event) => {
+  // CloudWatch Logs subscription sends base64-encoded gzipped data
+  const payload = Buffer.from(event.awslogs.data, 'base64');
+  const unzipped = zlib.gunzipSync(payload);
+  const logData = JSON.parse(unzipped.toString('utf8'));
+
+  const now = new Date().toISOString();
+  const ttl = Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60); // 90 days
+
+  for (const logEvent of logData.logEvents) {
+    try {
+      const log = JSON.parse(logEvent.message);
+
+      // Only track successful (200) requests to token validation endpoints
+      if (!TRACKED_PATHS.includes(log.path) || log.status !== 200) {
+        continue;
+      }
+
+      const sourceIp = log.ip;
+      if (!sourceIp || sourceIp === '-') {
+        continue;
+      }
+
+      // Determine token type from path
+      const tokenType = log.path.includes('player') ? 'player' : 'dm';
+
+      // Check if IP exists
+      const existing = await dynamoClient.send(new GetItemCommand({
+        TableName: process.env.VISITORS_TABLE,
+        Key: { ip: { S: sourceIp } }
+      }));
+
+      if (!existing.Item) {
+        // New visitor - send alert
+        console.log('New visitor from IP:', sourceIp, 'Type:', tokenType);
+        await snsClient.send(new PublishCommand({
+          TopicArn: process.env.ALERT_TOPIC_ARN,
+          Subject: 'New visitor to protected site',
+          Message: 'New IP: ' + sourceIp + '\\nType: ' + tokenType + '\\nTime: ' + now
+        }));
+      }
+
+      // Store/update visitor record
+      await dynamoClient.send(new PutItemCommand({
+        TableName: process.env.VISITORS_TABLE,
+        Item: {
+          ip: { S: sourceIp },
+          firstSeen: { S: existing.Item?.firstSeen?.S || now },
+          lastSeen: { S: now },
+          tokenType: { S: tokenType },
+          expiresAt: { N: String(ttl) }
+        }
+      }));
+    } catch (err) {
+      console.error('Error processing log event:', err);
+      // Continue processing other events
+    }
+  }
+
+  return { statusCode: 200 };
+};
+      `),
+    });
+
+    // Grant DynamoDB and SNS access to IP tracker
+    visitorsTable.grantReadWriteData(ipTrackerFunction);
+    newVisitorTopic.grantPublish(ipTrackerFunction);
+
+    // Subscribe IP tracker to API access logs
+    // Filter for only token validation paths with status 200
+    new logs.SubscriptionFilter(this, 'IpTrackerSubscription', {
+      logGroup: apiAccessLogGroup,
+      destination: new logsDestinations.LambdaDestination(ipTrackerFunction),
+      filterPattern: logs.FilterPattern.anyTerm(
+        'validate-player-token',
+        'validate-dm-token'
+      ),
+    });
 
     // Add upload-url route (OPTIONS for CORS preflight)
     this.api.addRoutes({
@@ -2406,6 +2566,145 @@ exports.handler = async (event) => {
       alarmName: `${cdk.Names.uniqueId(this)}-validate-player-token-errors`,
       alarmDescription: 'Player token validation function errors',
       metric: validatePlayerTokenFunction.metricErrors({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    // ==========================================================================
+    // DM Token Validation Endpoint
+    // ==========================================================================
+    //
+    // Validates DM tokens for /dm page access.
+    // Token is stored in SSM Parameter Store.
+    //
+    // ==========================================================================
+
+    const validateDmTokenFunction = new lambda.Function(this, 'ValidateDmTokenFunction', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 256,
+      environment: {
+        DM_TOKEN_PARAMETER_NAME: tokenParameterName,
+        ALLOWED_ORIGIN: props.allowedOrigin,
+      },
+      code: lambda.Code.fromInline(`
+const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
+
+const ssmClient = new SSMClient({});
+
+let cachedToken = null;
+let tokenExpiry = 0;
+
+async function getDmToken() {
+  const now = Date.now();
+  if (cachedToken && now < tokenExpiry) {
+    return cachedToken;
+  }
+
+  const result = await ssmClient.send(new GetParameterCommand({
+    Name: process.env.DM_TOKEN_PARAMETER_NAME,
+    WithDecryption: true,
+  }));
+
+  cachedToken = result.Parameter.Value;
+  tokenExpiry = now + 5 * 60 * 1000; // Cache for 5 minutes
+  return cachedToken;
+}
+
+function getCorsOrigin(event) {
+  const origin = event.headers?.origin || event.headers?.Origin || '';
+  const allowed = process.env.ALLOWED_ORIGIN;
+  if (origin.startsWith('http://localhost:')) {
+    return origin;
+  }
+  return allowed;
+}
+
+exports.handler = async (event) => {
+  const corsOrigin = getCorsOrigin(event);
+  const headers = {
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+  };
+
+  // Handle CORS preflight
+  if (event.requestContext?.http?.method === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  try {
+    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
+
+    if (!providedToken) {
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({ valid: false, error: 'Missing DM token' }),
+      };
+    }
+
+    const validToken = await getDmToken();
+    if (providedToken !== validToken) {
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({ valid: false, error: 'Invalid DM token' }),
+      };
+    }
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ valid: true }),
+    };
+
+  } catch (error) {
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ valid: false, error: 'Internal server error' }),
+    };
+  }
+};
+      `),
+    });
+
+    // Grant SSM parameter read access to DM token validation function
+    validateDmTokenFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: tokenParameterName.replace(/^\//, ''),
+        }),
+      ],
+    }));
+
+    // Add DM token validation route
+    this.api.addRoutes({
+      path: '/validate-dm-token',
+      methods: [apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'ValidateDmTokenIntegration',
+        validateDmTokenFunction
+      ),
+    });
+
+    // DM Token Validation Function Alarm
+    new cloudwatch.Alarm(this, 'ValidateDmTokenFunctionErrors', {
+      alarmName: `${cdk.Names.uniqueId(this)}-validate-dm-token-errors`,
+      alarmDescription: 'DM token validation function errors',
+      metric: validateDmTokenFunction.metricErrors({
         statistic: 'Sum',
         period: cdk.Duration.minutes(5),
       }),
