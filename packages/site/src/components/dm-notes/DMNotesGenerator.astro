@@ -305,6 +305,91 @@
     margin: 0 var(--space-md) 0 var(--space-xs);
   }
 
+  /* Entity sections (abilities, relationships, details, markdown) */
+  .entity-card-preview :global(.entity-section) {
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .entity-card-preview :global(.entity-section h4) {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 var(--space-sm);
+  }
+
+  .entity-card-preview :global(.entity-abilities),
+  .entity-card-preview :global(.entity-relationships) {
+    margin: 0;
+    padding-left: var(--space-lg);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+
+  .entity-card-preview :global(.entity-abilities li),
+  .entity-card-preview :global(.entity-relationships li) {
+    margin-bottom: var(--space-xs);
+  }
+
+  .entity-card-preview :global(.rel-note) {
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  .entity-card-preview :global(.entity-markdown p) {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* User-defined tags section at bottom */
+  .entity-card-preview :global(.entity-tags) {
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .entity-card-preview :global(.entity-tag--user) {
+    background: var(--color-bg-tertiary, rgba(255,255,255,0.05));
+    border-color: var(--color-border);
+  }
+
+  .entity-card-preview :global(.entity-tag--subtype) {
+    background: var(--color-accent-secondary, #4a5568);
+    border-color: transparent;
+  }
+
+  .entity-card-preview :global(.entity-tag--status) {
+    font-weight: 600;
+  }
+
+  .entity-card-preview :global(.entity-tag--dead) {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: var(--color-error);
+    color: var(--color-error);
+  }
+
+  .entity-card-preview :global(.entity-tag--missing) {
+    background: rgba(234, 179, 8, 0.2);
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+  }
+
+  /* Rarity colors for items */
+  .entity-card-preview :global(.entity-tag--common) { color: #9ca3af; }
+  .entity-card-preview :global(.entity-tag--uncommon) { color: #22c55e; }
+  .entity-card-preview :global(.entity-tag--rare) { color: #3b82f6; }
+  .entity-card-preview :global(.entity-tag--very-rare) { color: #a855f7; }
+  .entity-card-preview :global(.entity-tag--legendary) { color: #f59e0b; }
+  .entity-card-preview :global(.entity-tag--artifact) { color: #ef4444; }
+
   /* Suggestions Panel */
   .suggestions-panel {
     background: rgba(234, 179, 8, 0.1);

@@ -871,58 +871,117 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       function renderEntityPreview(result) {
         var previewEl = document.getElementById('entity-card-preview');
         var fm = result.frontmatter || {};
+        // Note: All content is sanitized via escapeHtml() before innerHTML insertion
 
-        // Build entity type tag
+        // Build entity type and subtype badges
         var typeTag = '<span class="entity-tag entity-tag--type">' + escapeHtml(result.entityType || 'unknown') + '</span>';
-
-        // Build subtype tag
         var subtypeTag = fm.subtype
-          ? '<span class="entity-tag">' + escapeHtml(fm.subtype) + '</span>'
+          ? '<span class="entity-tag entity-tag--subtype">' + escapeHtml(fm.subtype) + '</span>'
           : '';
 
-        // Build additional tags based on entity type
-        var detailTags = '';
+        // Build status badge if not active
+        var statusTag = (fm.status && fm.status !== 'active')
+          ? '<span class="entity-tag entity-tag--status entity-tag--' + escapeHtml(fm.status) + '">' + escapeHtml(fm.status) + '</span>'
+          : '';
+
+        // Build key attribute tags based on entity type
+        var attrTags = '';
         if (result.entityType === 'character') {
-          if (fm.race) detailTags += '<span class="entity-tag">' + escapeHtml(fm.race) + '</span>';
-          if (fm.class) detailTags += '<span class="entity-tag">' + escapeHtml(fm.class) + '</span>';
+          if (fm.race) attrTags += '<span class="entity-tag">' + escapeHtml(fm.race) + '</span>';
+          if (fm.class) attrTags += '<span class="entity-tag">' + escapeHtml(fm.class) + '</span>';
+          if (fm.level) attrTags += '<span class="entity-tag">Lvl ' + escapeHtml(String(fm.level)) + '</span>';
+          if (fm.alignment) attrTags += '<span class="entity-tag">' + escapeHtml(fm.alignment) + '</span>';
         } else if (result.entityType === 'enemy') {
-          if (fm.cr) detailTags += '<span class="entity-tag">CR ' + escapeHtml(fm.cr) + '</span>';
-          if (fm.creatureType) detailTags += '<span class="entity-tag">' + escapeHtml(fm.creatureType) + '</span>';
+          if (fm.cr) attrTags += '<span class="entity-tag">CR ' + escapeHtml(fm.cr) + '</span>';
+          if (fm.creatureType) attrTags += '<span class="entity-tag">' + escapeHtml(fm.creatureType) + '</span>';
+          if (fm.baseMonster) attrTags += '<span class="entity-tag">' + escapeHtml(fm.baseMonster) + '</span>';
         } else if (result.entityType === 'item') {
-          if (fm.rarity) detailTags += '<span class="entity-tag">' + escapeHtml(fm.rarity) + '</span>';
-          if (fm.attunement) detailTags += '<span class="entity-tag">attunement</span>';
+          if (fm.rarity) attrTags += '<span class="entity-tag entity-tag--' + escapeHtml(fm.rarity) + '">' + escapeHtml(fm.rarity) + '</span>';
+          if (fm.attunement) attrTags += '<span class="entity-tag">requires attunement</span>';
+        } else if (result.entityType === 'location') {
+          if (fm.terrain) attrTags += '<span class="entity-tag">' + escapeHtml(fm.terrain) + '</span>';
+          if (fm.population) attrTags += '<span class="entity-tag">' + escapeHtml(fm.population) + '</span>';
+        } else if (result.entityType === 'faction') {
+          if (fm.leader) attrTags += '<span class="entity-tag">Led by: ' + escapeHtml(fm.leader) + '</span>';
         }
 
-        // Build details section based on entity type
-        var detailsHtml = '';
-        if (result.entityType === 'character' && fm.equipment) {
-          var equipped = fm.equipment.equipped || [];
-          var currency = fm.equipment.currency || {};
-          var items = equipped.map(function(e) { return e.item; }).join(', ');
-          var coins = Object.entries(currency)
-            .filter(function(pair) { return pair[1] > 0; })
-            .map(function(pair) { return pair[1] + pair[0]; })
-            .join(' ');
-          if (items || coins) {
-            detailsHtml = '<dl class="entity-details">';
-            if (items) detailsHtml += '<dt>Equipment:</dt><dd>' + escapeHtml(items) + '</dd>';
-            if (coins) detailsHtml += '<dt>Currency:</dt><dd>' + escapeHtml(coins) + '</dd>';
-            detailsHtml += '</dl>';
+        // Build abilities section
+        var abilitiesHtml = '';
+        if (fm.abilities && fm.abilities.length > 0) {
+          abilitiesHtml = '<div class="entity-section"><h4>Abilities</h4><ul class="entity-abilities">';
+          fm.abilities.forEach(function(ability) {
+            abilitiesHtml += '<li>' + escapeHtml(ability) + '</li>';
+          });
+          abilitiesHtml += '</ul></div>';
+        }
+
+        // Build relationships section
+        var relationshipsHtml = '';
+        if (fm.relationships && fm.relationships.length > 0) {
+          relationshipsHtml = '<div class="entity-section"><h4>Relationships</h4><ul class="entity-relationships">';
+          fm.relationships.forEach(function(rel) {
+            var relText = '<strong>' + escapeHtml(rel.type) + '</strong>: ' + escapeHtml(rel.entity);
+            if (rel.note) relText += ' <span class="rel-note">(' + escapeHtml(rel.note) + ')</span>';
+            relationshipsHtml += '<li>' + relText + '</li>';
+          });
+          relationshipsHtml += '</ul></div>';
+        }
+
+        // Build type-specific details
+        var detailsHtml = '<div class="entity-section entity-details"><h4>Details</h4><dl>';
+        var hasDetails = false;
+
+        if (result.entityType === 'character') {
+          if (fm.faction) { detailsHtml += '<dt>Faction:</dt><dd>' + escapeHtml(fm.faction) + '</dd>'; hasDetails = true; }
+          if (fm.location) { detailsHtml += '<dt>Location:</dt><dd>' + escapeHtml(fm.location) + '</dd>'; hasDetails = true; }
+          if (fm.background) { detailsHtml += '<dt>Background:</dt><dd>' + escapeHtml(fm.background) + '</dd>'; hasDetails = true; }
+        } else if (result.entityType === 'enemy') {
+          if (fm.faction) { detailsHtml += '<dt>Faction:</dt><dd>' + escapeHtml(fm.faction) + '</dd>'; hasDetails = true; }
+          if (fm.lair) { detailsHtml += '<dt>Lair:</dt><dd>' + escapeHtml(fm.lair) + '</dd>'; hasDetails = true; }
+        } else if (result.entityType === 'item') {
+          if (fm.currentOwner) { detailsHtml += '<dt>Owner:</dt><dd>' + escapeHtml(fm.currentOwner) + '</dd>'; hasDetails = true; }
+          if (fm.properties && fm.properties.length) { detailsHtml += '<dt>Properties:</dt><dd>' + escapeHtml(fm.properties.join(', ')) + '</dd>'; hasDetails = true; }
+        } else if (result.entityType === 'location') {
+          if (fm.parentLocation) { detailsHtml += '<dt>Part of:</dt><dd>' + escapeHtml(fm.parentLocation) + '</dd>'; hasDetails = true; }
+          if (fm.controlledBy) { detailsHtml += '<dt>Controlled by:</dt><dd>' + escapeHtml(fm.controlledBy) + '</dd>'; hasDetails = true; }
+          if (fm.climate) { detailsHtml += '<dt>Climate:</dt><dd>' + escapeHtml(fm.climate) + '</dd>'; hasDetails = true; }
+        } else if (result.entityType === 'faction') {
+          if (fm.headquarters) { detailsHtml += '<dt>HQ:</dt><dd>' + escapeHtml(fm.headquarters) + '</dd>'; hasDetails = true; }
+          if (fm.goals && fm.goals.length) { detailsHtml += '<dt>Goals:</dt><dd>' + escapeHtml(fm.goals.join(', ')) + '</dd>'; hasDetails = true; }
+          if (fm.methods && fm.methods.length) { detailsHtml += '<dt>Methods:</dt><dd>' + escapeHtml(fm.methods.join(', ')) + '</dd>'; hasDetails = true; }
+          if (fm.motto) { detailsHtml += '<dt>Motto:</dt><dd>"' + escapeHtml(fm.motto) + '"</dd>'; hasDetails = true; }
+        }
+        detailsHtml += '</dl></div>';
+        if (!hasDetails) detailsHtml = '';
+
+        // Build tags section
+        var tagsHtml = '';
+        if (fm.tags && fm.tags.length > 0) {
+          tagsHtml = '<div class="entity-tags">';
+          fm.tags.forEach(function(tag) {
+            tagsHtml += '<span class="entity-tag entity-tag--user">' + escapeHtml(tag) + '</span>';
+          });
+          tagsHtml += '</div>';
+        }
+
+        // Build markdown preview (first few lines)
+        var markdownPreview = '';
+        if (result.markdown) {
+          var lines = result.markdown.split('\\n').filter(function(l) { return l.trim() && !l.startsWith('#'); }).slice(0, 3);
+          if (lines.length > 0) {
+            markdownPreview = '<div class="entity-section entity-markdown"><h4>Description</h4><p>' + escapeHtml(lines.join(' ').substring(0, 300)) + (lines.join(' ').length > 300 ? '...' : '') + '</p></div>';
           }
-        } else if (result.entityType === 'faction' && fm.goals) {
-          var goals = Array.isArray(fm.goals) ? fm.goals.slice(0, 2).join(', ') : fm.goals;
-          if (goals) {
-            detailsHtml = '<dl class="entity-details"><dt>Goals:</dt><dd>' + escapeHtml(goals) + '</dd></dl>';
-          }
-        } else if (result.entityType === 'location' && fm.parentLocation) {
-          detailsHtml = '<dl class="entity-details"><dt>Located in:</dt><dd>' + escapeHtml(fm.parentLocation) + '</dd></dl>';
         }
 
         previewEl.innerHTML =
           '<h3 class="entity-name">' + escapeHtml(fm.name || 'Unnamed Entity') + '</h3>' +
-          '<div class="entity-meta">' + typeTag + subtypeTag + detailTags + '</div>' +
-          '<p class="entity-description">' + escapeHtml(fm.description || result.markdown?.split('\n')[0] || 'No description') + '</p>' +
-          detailsHtml;
+          '<div class="entity-meta">' + typeTag + subtypeTag + statusTag + attrTags + '</div>' +
+          '<p class="entity-description">' + escapeHtml(fm.description || 'No description') + '</p>' +
+          abilitiesHtml +
+          relationshipsHtml +
+          detailsHtml +
+          markdownPreview +
+          tagsHtml;
       }
 
       function renderConfidenceBadge(confidence) {
