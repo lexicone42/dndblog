@@ -777,8 +777,8 @@ exports.handler = async (event) => {
       environment: {
         TOKEN_PARAMETER_NAME: tokenParameterName,
         ALLOWED_ORIGIN: props.allowedOrigin,
-        // Using Claude 3.5 Sonnet v2 (same as review function's fallback)
-        BEDROCK_MODEL_ID: 'us.anthropic.claude-3-5-sonnet-20241022-v2:0',
+        // Using Meta Llama 3.1 70B Instruct - open source, no approval required
+        BEDROCK_MODEL_ID: 'us.meta.llama3-1-70b-instruct-v1:0',
       },
       code: lambda.Code.fromInline(`
 const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
@@ -947,26 +947,34 @@ Output valid JSON with this structure:
   "suggestions": ["optional improvement suggestions"]
 }
 
-IMPORTANT:
+IMPORTANT RULES:
 - frontmatter must include "type" and "subtype" fields
 - All field names use camelCase
 - Do not include null or undefined values
 - Tags should be lowercase kebab-case
 - Status defaults to "active"
-- Visibility defaults to "public"\`;
+- Visibility defaults to "public"
+- Output ONLY valid JSON, no explanations or markdown code blocks
+- Start your response with { and end with }
+- Do not include any text before or after the JSON object\`;
 
     const userPrompt = hint
       ? \`Entity type hint: \${hint}\\n\\nDescription: \${input}\`
       : \`Description: \${input}\`;
 
+    // Llama 3.1 Instruct format with [INST] tags
+    const fullPrompt = \`<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+\${systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+\${userPrompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+\`;
+
     const bedrockPayload = {
-      anthropic_version: 'bedrock-2023-05-31',
-      max_tokens: 2048,
+      prompt: fullPrompt,
+      max_gen_len: 2048,
       temperature: 0.3,
-      messages: [
-        { role: 'user', content: userPrompt }
-      ],
-      system: systemPrompt
     };
 
     const command = new InvokeModelCommand({
@@ -978,7 +986,8 @@ IMPORTANT:
 
     const response = await bedrockClient.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-    const outputText = responseBody.content?.[0]?.text || '';
+    // Llama returns 'generation' field instead of Claude's 'content' array
+    const outputText = responseBody.generation || '';
 
     // Parse the AI response as JSON
     let result;
@@ -1067,12 +1076,12 @@ IMPORTANT:
       `),
     });
 
-    // Grant Bedrock permissions to generate entity function (Claude 3.5 Sonnet v2)
+    // Grant Bedrock permissions to generate entity function (Meta Llama 3.1 70B Instruct)
     generateEntityFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel'],
       resources: [
-        'arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0',
-        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-3-5-sonnet-20241022-v2:0',
+        'arn:aws:bedrock:*::foundation-model/meta.llama3-1-70b-instruct-v1:0',
+        'arn:aws:bedrock:*:*:inference-profile/us.meta.llama3-1-70b-instruct-v1:0',
       ],
     }));
 
