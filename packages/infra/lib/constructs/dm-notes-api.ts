@@ -176,6 +176,21 @@ export class DmNotesApi extends Construct {
           },
         });
         this.userPool = newUserPool;
+
+        // Create User Pool Groups for role-based access
+        new cognito.CfnUserPoolGroup(this, 'DmGroup', {
+          userPoolId: newUserPool.userPoolId,
+          groupName: 'dm',
+          description: 'Dungeon Masters with full access to DM tools',
+          precedence: 0, // Lower = higher priority
+        });
+
+        new cognito.CfnUserPoolGroup(this, 'PlayerGroup', {
+          userPoolId: newUserPool.userPoolId,
+          groupName: 'player',
+          description: 'Players with access to player tools',
+          precedence: 1,
+        });
       }
 
       // Create or reference existing User Pool Client
@@ -292,30 +307,50 @@ async function validateCognitoToken(token) {
   return { valid: true, payload };
 }
 
-// Main auth validation function - supports both modes
+// Main auth validation function - supports dual-mode auth (token AND Cognito)
+// AUTH_MODE can be: 'token' (only token), 'cognito' (only JWT), 'dual' (both)
 async function validateAuth(event) {
   const authMode = process.env.AUTH_MODE || 'token';
 
-  if (authMode === 'cognito') {
-    // Cognito JWT validation
-    const authHeader = event.headers?.authorization || event.headers?.Authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return { valid: false, error: 'Missing or invalid Authorization header' };
-    }
-    const token = authHeader.substring(7);
-    return validateCognitoToken(token);
-  } else {
-    // Token-based validation (default)
+  // Try token auth first (always available in 'token' or 'dual' mode)
+  if (authMode === 'token' || authMode === 'dual') {
     const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (!providedToken) {
-      return { valid: false, error: 'Missing authentication token' };
+    if (providedToken) {
+      const validToken = await getToken();
+      if (providedToken === validToken) {
+        return {
+          valid: true,
+          authMethod: 'token',
+          roles: { isDm: true, isPlayer: true } // Token auth grants full access
+        };
+      }
     }
-    const validToken = await getToken();
-    if (providedToken !== validToken) {
-      return { valid: false, error: 'Invalid token' };
-    }
-    return { valid: true };
   }
+
+  // Try Cognito JWT (available in 'cognito' or 'dual' mode)
+  if (authMode === 'cognito' || authMode === 'dual') {
+    const authHeader = event.headers?.authorization || event.headers?.Authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const jwt = authHeader.substring(7);
+      const result = await validateCognitoToken(jwt);
+      if (result.valid) {
+        // Extract roles from Cognito groups
+        const groups = result.payload['cognito:groups'] || [];
+        const isDm = groups.includes('dm');
+        const isPlayer = groups.includes('player') || isDm; // DMs are also players
+        return {
+          ...result,
+          authMethod: 'cognito',
+          roles: { isDm, isPlayer },
+          userId: result.payload.sub,
+          email: result.payload.email
+        };
+      }
+    }
+  }
+
+  // No valid auth found
+  return { valid: false, error: 'No valid authentication provided' };
 }
 
 // Helper to get CORS origin (allows localhost for dev)
@@ -330,8 +365,9 @@ function getCorsOrigin(event) {
 `;
 
     // Environment variables for auth (varies based on mode)
+    // When Cognito is enabled, use 'dual' mode so both token AND JWT auth work
     const authEnvironment: Record<string, string> = {
-      AUTH_MODE: cognitoEnabled ? 'cognito' : 'token',
+      AUTH_MODE: cognitoEnabled ? 'dual' : 'token',
       TOKEN_PARAMETER_NAME: tokenParameterName,
     };
 
