@@ -56,6 +56,17 @@
   background: #dc2626;
 }
 
+/* Success button - green */
+.btn--success {
+  background: var(--color-success, #22c55e);
+  color: white;
+  border-color: var(--color-success, #22c55e);
+}
+
+.btn--success:hover:not(:disabled) {
+  background: #16a34a;
+}
+
 /* EasyMDE Editor Overrides */
 /* These styles customize the CodeMirror editor used by EasyMDE */
 

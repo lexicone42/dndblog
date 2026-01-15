@@ -18,6 +18,7 @@ import DMNotesBrowser from '@components/dm-notes/DMNotesBrowser.astro';
 import DMNotesGenerator from '@components/dm-notes/DMNotesGenerator.astro';
 import ViewNoteModal from '@components/dm-notes/ViewNoteModal.astro';
 import DeleteConfirmModal from '@components/dm-notes/DeleteConfirmModal.astro';
+import StagingBranchModal from '@components/dm-notes/StagingBranchModal.astro';
 import '@components/dm-notes/dm-notes-shared.css';
 
 // Get API URL from environment variable
@@ -42,6 +43,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
     <DMNotesGenerator />
     <ViewNoteModal />
     <DeleteConfirmModal />
+    <StagingBranchModal />
   </div>
 
   <!-- Store API URL in a data attribute -->
@@ -1173,6 +1175,221 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         URL.revokeObjectURL(url);
       }
 
+      // ========================================
+      // Staging Integration
+      // ========================================
+
+      async function loadStagingBranches() {
+        var token = getToken();
+        var apiUrl = getApiUrl();
+        if (!token || !apiUrl) return [];
+
+        try {
+          var response = await fetch(apiUrl + '/staging/branches', {
+            headers: { 'X-DM-Token': token }
+          });
+          if (!response.ok) return [];
+          var data = await response.json();
+          return data.branches || [];
+        } catch (e) {
+          console.error('Failed to load staging branches:', e);
+          return [];
+        }
+      }
+
+      function populateBranchSelect(select, branches) {
+        // Clear existing options using safe DOM methods
+        while (select.firstChild) {
+          select.removeChild(select.firstChild);
+        }
+
+        if (branches.length === 0) {
+          var emptyOption = document.createElement('option');
+          emptyOption.value = '';
+          emptyOption.textContent = '(No branches - create one below)';
+          select.appendChild(emptyOption);
+        } else {
+          var defaultOption = document.createElement('option');
+          defaultOption.value = '';
+          defaultOption.textContent = '-- Select a branch --';
+          select.appendChild(defaultOption);
+
+          branches.forEach(function(b) {
+            var option = document.createElement('option');
+            option.value = b.name;
+            option.textContent = b.displayName + ' (' + b.entityCount + ' entities)';
+            select.appendChild(option);
+          });
+        }
+      }
+
+      function openStagingModal() {
+        if (!currentResult) return;
+
+        var modal = document.getElementById('staging-modal');
+        var select = document.getElementById('staging-branch-select');
+        var newBranchInput = document.getElementById('new-branch-name');
+        var errorEl = document.getElementById('staging-error');
+
+        // Reset form
+        newBranchInput.value = '';
+        errorEl.style.display = 'none';
+
+        // Update entity preview using textContent (XSS-safe)
+        var typeBadge = modal.querySelector('.entity-type-badge');
+        var nameEl = modal.querySelector('.entity-name');
+        typeBadge.textContent = currentResult.type || 'entity';
+        nameEl.textContent = currentResult.name || currentResult.slug || 'Unnamed';
+
+        // Show loading state
+        while (select.firstChild) select.removeChild(select.firstChild);
+        var loadingOption = document.createElement('option');
+        loadingOption.value = '';
+        loadingOption.textContent = 'Loading...';
+        select.appendChild(loadingOption);
+
+        // Load and populate branches
+        loadStagingBranches().then(function(branches) {
+          populateBranchSelect(select, branches);
+        });
+
+        modal.style.display = 'flex';
+      }
+
+      function closeStagingModal() {
+        document.getElementById('staging-modal').style.display = 'none';
+      }
+
+      async function saveToStaging() {
+        var token = getToken();
+        var apiUrl = getApiUrl();
+
+        if (!token || !apiUrl || !currentResult) {
+          showStagingError('Missing configuration or entity');
+          return;
+        }
+
+        var selectedBranch = document.getElementById('staging-branch-select').value;
+        var newBranchName = document.getElementById('new-branch-name').value.trim();
+
+        // Validate input
+        if (!selectedBranch && !newBranchName) {
+          showStagingError('Please select an existing branch or create a new one');
+          return;
+        }
+
+        if (newBranchName && !/^[a-z0-9-]+$/.test(newBranchName)) {
+          showStagingError('Branch name must contain only lowercase letters, numbers, and hyphens');
+          return;
+        }
+
+        var branchName = selectedBranch || newBranchName;
+        var saveBtn = document.getElementById('confirm-staging-btn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+          // Create branch if new
+          if (newBranchName) {
+            var createResponse = await fetch(apiUrl + '/staging/branches', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-DM-Token': token
+              },
+              body: JSON.stringify({
+                name: newBranchName,
+                displayName: newBranchName.replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); }),
+                description: 'Created from Entity Generator'
+              })
+            });
+
+            if (!createResponse.ok) {
+              var errData = await createResponse.json().catch(function() { return {}; });
+              throw new Error(errData.error || 'Failed to create branch');
+            }
+            branchName = newBranchName;
+          }
+
+          // Save entity to branch
+          var entityData = {
+            id: currentResult.slug || Date.now().toString(),
+            type: currentResult.type || 'character',
+            name: currentResult.name || 'Unnamed',
+            slug: currentResult.slug,
+            subtype: currentResult.subtype || null,
+            description: currentResult.description || '',
+            frontmatter: currentResult,
+            fullContent: document.getElementById('yaml-editor').value
+          };
+
+          var saveResponse = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(branchName) + '/entities', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-DM-Token': token
+            },
+            body: JSON.stringify(entityData)
+          });
+
+          if (!saveResponse.ok) {
+            var errData = await saveResponse.json().catch(function() { return {}; });
+            throw new Error(errData.error || 'Failed to save entity');
+          }
+
+          // Success!
+          closeStagingModal();
+
+          // Show success feedback on the button
+          var stagingBtn = document.getElementById('save-staging-btn');
+          var originalText = stagingBtn.textContent;
+          stagingBtn.textContent = 'Saved!';
+          stagingBtn.classList.add('btn--success');
+          setTimeout(function() {
+            stagingBtn.textContent = originalText;
+            stagingBtn.classList.remove('btn--success');
+          }, 2000);
+
+        } catch (error) {
+          showStagingError('Error: ' + error.message);
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Entity';
+        }
+      }
+
+      function showStagingError(message) {
+        var errorEl = document.getElementById('staging-error');
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+      }
+
+      function initStaging() {
+        var saveStagingBtn = document.getElementById('save-staging-btn');
+        var confirmStagingBtn = document.getElementById('confirm-staging-btn');
+        var closeElements = document.querySelectorAll('[data-close-staging-modal]');
+
+        if (saveStagingBtn) {
+          saveStagingBtn.addEventListener('click', openStagingModal);
+        }
+        if (confirmStagingBtn) {
+          confirmStagingBtn.addEventListener('click', saveToStaging);
+        }
+        closeElements.forEach(function(el) {
+          el.addEventListener('click', closeStagingModal);
+        });
+
+        // Clear new branch input when selecting existing branch
+        var branchSelect = document.getElementById('staging-branch-select');
+        if (branchSelect) {
+          branchSelect.addEventListener('change', function() {
+            if (this.value) {
+              document.getElementById('new-branch-name').value = '';
+            }
+          });
+        }
+      }
+
       function initGenerator() {
         var token = getToken();
         if (!token) return;
@@ -1181,6 +1398,9 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         document.getElementById('regenerate-btn').addEventListener('click', generateEntity);
         document.getElementById('copy-btn').addEventListener('click', copyToClipboard);
         document.getElementById('download-btn').addEventListener('click', downloadFile);
+
+        // Initialize staging integration
+        initStaging();
 
         // Allow Enter key to generate
         document.getElementById('entity-input').addEventListener('keydown', function(e) {
