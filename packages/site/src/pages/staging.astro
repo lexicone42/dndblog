@@ -73,7 +73,10 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
                 </div>
               </div>
               <div class="branch-detail__actions">
-                <button id="publish-branch-btn" class="btn btn--primary" disabled title="Coming soon">
+                <a id="branch-pr-link" href="#" target="_blank" class="btn btn--secondary" style="display: none;">
+                  View PR
+                </a>
+                <button id="publish-branch-btn" class="btn btn--primary">
                   Publish to GitHub
                 </button>
                 <button id="delete-branch-btn" class="btn btn--danger btn--sm">Delete Branch</button>
@@ -168,6 +171,51 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         </div>
       </div>
     </div>
+
+    <!-- Publish Modal -->
+    <div id="publish-modal" class="modal" style="display: none;">
+      <div class="modal__backdrop"></div>
+      <div class="modal__content">
+        <div class="modal__header">
+          <h2 id="publish-modal-title">Publish to GitHub</h2>
+          <button class="modal__close" data-close-modal>&times;</button>
+        </div>
+        <div class="modal__body">
+          <div id="publish-confirm" class="publish-confirm">
+            <p>This will create a GitHub branch and pull request with all entities from this staging branch.</p>
+            <div class="publish-summary">
+              <div class="summary-item">
+                <span class="summary-label">Branch:</span>
+                <span id="publish-branch-name" class="summary-value"></span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Entities:</span>
+                <span id="publish-entity-count" class="summary-value"></span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">GitHub branch:</span>
+                <span id="publish-github-branch" class="summary-value"></span>
+              </div>
+            </div>
+          </div>
+          <div id="publish-progress" class="publish-progress" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Publishing to GitHub...</p>
+          </div>
+          <div id="publish-success" class="publish-success" style="display: none;">
+            <div class="success-icon">✓</div>
+            <h3>Published Successfully!</h3>
+            <p>Your entities have been pushed to GitHub and a pull request has been created.</p>
+            <a id="publish-pr-url" href="#" target="_blank" class="btn btn--primary">View Pull Request</a>
+          </div>
+          <div id="publish-error" class="publish-error" style="display: none;"></div>
+        </div>
+        <div id="publish-modal-footer" class="modal__footer">
+          <button class="btn btn--secondary" data-close-modal>Cancel</button>
+          <button id="confirm-publish-btn" class="btn btn--primary">Publish</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Store API URL in a data attribute -->
@@ -177,6 +225,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
   <script is:inline>
     (function() {
       var currentBranch = null;
+      var currentBranchData = null;
       var allBranches = [];
       var currentEntities = [];
       var editingEntity = null;
@@ -321,6 +370,21 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           document.getElementById('branch-entity-count').textContent = currentEntities.length + ' entities';
           document.getElementById('branch-status').textContent = data.status || 'draft';
           document.getElementById('branch-status').className = 'meta-item status-badge status-badge--' + (data.status || 'draft');
+
+          // Show/hide PR link if published
+          var prLink = document.getElementById('branch-pr-link');
+          var publishBtn = document.getElementById('publish-branch-btn');
+          if (data.githubPrUrl) {
+            prLink.href = data.githubPrUrl;
+            prLink.style.display = 'inline-flex';
+            publishBtn.textContent = 'Republish';
+          } else {
+            prLink.style.display = 'none';
+            publishBtn.textContent = 'Publish to GitHub';
+          }
+
+          // Store branch data for publish
+          currentBranchData = data;
 
           renderEntityGrid();
 
@@ -709,6 +773,10 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           }
         });
 
+        // Publish button
+        document.getElementById('publish-branch-btn').addEventListener('click', openPublishModal);
+        document.getElementById('confirm-publish-btn').addEventListener('click', publishToGitHub);
+
         // Edit entity content preview update
         document.getElementById('edit-entity-content').addEventListener('input', function() {
           clearTimeout(this._previewTimeout);
@@ -735,6 +803,82 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             createBranch();
           }
         });
+      }
+
+      // ===========================================
+      // Publish Functions
+      // ===========================================
+
+      function openPublishModal() {
+        if (!currentBranch || !currentBranchData) return;
+
+        // Reset modal state
+        document.getElementById('publish-confirm').style.display = 'block';
+        document.getElementById('publish-progress').style.display = 'none';
+        document.getElementById('publish-success').style.display = 'none';
+        document.getElementById('publish-error').style.display = 'none';
+        document.getElementById('publish-modal-footer').style.display = 'flex';
+
+        // Populate summary
+        document.getElementById('publish-branch-name').textContent = currentBranchData.displayName || currentBranch;
+        document.getElementById('publish-entity-count').textContent = currentEntities.length + ' entities';
+        document.getElementById('publish-github-branch').textContent = 'staging/' + currentBranch;
+
+        openModal('publish-modal');
+      }
+
+      async function publishToGitHub() {
+        var token = getToken();
+        var apiUrl = getApiUrl();
+
+        // Show progress
+        document.getElementById('publish-confirm').style.display = 'none';
+        document.getElementById('publish-progress').style.display = 'flex';
+        document.getElementById('publish-modal-footer').style.display = 'none';
+        document.getElementById('publish-error').style.display = 'none';
+
+        try {
+          var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(currentBranch) + '/publish', {
+            method: 'POST',
+            headers: { 'X-DM-Token': token }
+          });
+
+          if (!response.ok) {
+            var errorData = await response.json().catch(function() { return {}; });
+            throw new Error(errorData.error || 'Failed to publish');
+          }
+
+          var result = await response.json();
+
+          // Show success
+          document.getElementById('publish-progress').style.display = 'none';
+          document.getElementById('publish-success').style.display = 'block';
+          document.getElementById('publish-pr-url').href = result.prUrl;
+
+          // Update branch status in UI
+          document.getElementById('branch-status').textContent = 'published';
+          document.getElementById('branch-status').className = 'meta-item status-badge status-badge--published';
+
+          // Show PR link
+          var prLink = document.getElementById('branch-pr-link');
+          prLink.href = result.prUrl;
+          prLink.style.display = 'inline-flex';
+          document.getElementById('publish-branch-btn').textContent = 'Republish';
+
+          // Update currentBranchData
+          currentBranchData.status = 'published';
+          currentBranchData.githubPrUrl = result.prUrl;
+
+          // Refresh branch list to update status
+          await loadBranches();
+
+        } catch (error) {
+          document.getElementById('publish-progress').style.display = 'none';
+          document.getElementById('publish-error').textContent = 'Error: ' + error.message;
+          document.getElementById('publish-error').style.display = 'block';
+          document.getElementById('publish-modal-footer').style.display = 'flex';
+          document.getElementById('publish-confirm').style.display = 'block';
+        }
       }
 
       // ===========================================
@@ -1299,6 +1443,98 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
     .yaml-editor:focus {
       outline: none;
       border-color: var(--color-gold);
+    }
+
+    /* ===========================================
+       Publish Modal
+       =========================================== */
+    .publish-summary {
+      background: var(--color-bg-secondary);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      margin-top: var(--space-md);
+    }
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-xs) 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .summary-item:last-child {
+      border-bottom: none;
+    }
+
+    .summary-label {
+      color: var(--color-text-muted);
+    }
+
+    .summary-value {
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .publish-progress {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl);
+      text-align: center;
+      color: var(--color-text-muted);
+    }
+
+    .publish-progress .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--color-border);
+      border-top-color: var(--color-gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: var(--space-md);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .publish-success {
+      text-align: center;
+      padding: var(--space-lg);
+    }
+
+    .publish-success .success-icon {
+      width: 60px;
+      height: 60px;
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--color-success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--text-2xl);
+      font-weight: bold;
+      margin: 0 auto var(--space-md);
+    }
+
+    .publish-success h3 {
+      color: var(--color-success);
+      margin: 0 0 var(--space-sm);
+    }
+
+    .publish-success p {
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-lg);
+    }
+
+    .publish-error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--color-error);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      color: var(--color-error);
+      margin-top: var(--space-md);
     }
   </style>
 </BaseLayout>
