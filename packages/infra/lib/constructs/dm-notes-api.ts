@@ -1048,25 +1048,56 @@ exports.handler = async (event) => {
 
     const response = await bedrockClient.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+
     // Nova returns output.message.content[0].text
+    // Log the full response structure for debugging
+    console.log('Nova response structure:', JSON.stringify(responseBody, null, 2).substring(0, 1000));
+
     const outputText = responseBody.output?.message?.content?.[0]?.text || '';
 
+    if (!outputText) {
+      return {
+        statusCode: 422,
+        headers,
+        body: JSON.stringify({
+          error: 'Empty response from model',
+          debug: {
+            hasOutput: !!responseBody.output,
+            hasMessage: !!responseBody.output?.message,
+            hasContent: !!responseBody.output?.message?.content,
+            contentLength: responseBody.output?.message?.content?.length,
+            responseKeys: Object.keys(responseBody),
+          },
+        }),
+      };
+    }
+
     // Parse the AI response as JSON
+    // Handle markdown code blocks and extract JSON
     let result;
     try {
-      const jsonMatch = outputText.match(/\\{[\\s\\S]*\\}/);
+      let jsonText = outputText;
+
+      // Remove markdown code blocks if present
+      const codeBlockMatch = outputText.match(/\`\`\`(?:json)?\\s*([\\s\\S]*?)\`\`\`/);
+      if (codeBlockMatch) {
+        jsonText = codeBlockMatch[1].trim();
+      }
+
+      // Try to find JSON object
+      const jsonMatch = jsonText.match(/\\{[\\s\\S]*\\}/);
       if (jsonMatch) {
         result = JSON.parse(jsonMatch[0]);
       } else {
-        throw new Error('No JSON found in response');
+        throw new Error('No JSON object found in response');
       }
     } catch (parseErr) {
       return {
         statusCode: 422,
         headers,
         body: JSON.stringify({
-          error: 'Failed to parse AI response',
-          raw: outputText.substring(0, 500),
+          error: 'Failed to parse AI response: ' + parseErr.message,
+          raw: outputText.substring(0, 1000),
         }),
       };
     }
