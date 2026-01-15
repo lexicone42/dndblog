@@ -831,7 +831,8 @@ exports.handler = async (event) => {
       const log = JSON.parse(logEvent.message);
 
       // Only track successful (200) requests to token validation endpoints
-      if (!TRACKED_PATHS.includes(log.path) || log.status !== 200) {
+      // Note: status is a string in API Gateway access logs
+      if (!TRACKED_PATHS.includes(log.path) || String(log.status) !== '200') {
         continue;
       }
 
