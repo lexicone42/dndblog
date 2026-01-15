@@ -1073,7 +1073,7 @@ exports.handler = async (event) => {
     }
 
     // Parse the AI response as JSON
-    // Handle markdown code blocks and extract JSON
+    // Handle markdown code blocks and sanitize control characters
     let result;
     try {
       let jsonText = outputText;
@@ -1086,11 +1086,52 @@ exports.handler = async (event) => {
 
       // Try to find JSON object
       const jsonMatch = jsonText.match(/\\{[\\s\\S]*\\}/);
-      if (jsonMatch) {
-        result = JSON.parse(jsonMatch[0]);
-      } else {
+      if (!jsonMatch) {
         throw new Error('No JSON object found in response');
       }
+
+      // Sanitize the JSON - Nova puts actual newlines in strings
+      // We need to escape them before JSON.parse
+      let sanitized = jsonMatch[0];
+
+      // Process character by character to escape control chars inside strings
+      let inString = false;
+      let escaped = false;
+      let output = '';
+      for (let i = 0; i < sanitized.length; i++) {
+        const c = sanitized[i];
+        const code = c.charCodeAt(0);
+
+        if (escaped) {
+          output += c;
+          escaped = false;
+          continue;
+        }
+
+        if (c === '\\\\' && inString) {
+          escaped = true;
+          output += c;
+          continue;
+        }
+
+        if (c === '"') {
+          inString = !inString;
+          output += c;
+          continue;
+        }
+
+        if (inString && code < 32) {
+          // Escape control characters inside strings
+          if (code === 10) output += '\\\\n';
+          else if (code === 13) output += '\\\\r';
+          else if (code === 9) output += '\\\\t';
+          // Skip other control chars
+        } else {
+          output += c;
+        }
+      }
+
+      result = JSON.parse(output);
     } catch (parseErr) {
       return {
         statusCode: 422,
