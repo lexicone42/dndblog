@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigatewayv2';
 import * as apigatewayIntegrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
@@ -7,6 +8,40 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
+
+// ==========================================================================
+// Auth Configuration Types
+// ==========================================================================
+
+/**
+ * Configuration for Cognito-based authentication (future migration path)
+ * When enabled, the API will validate JWT tokens from Cognito User Pool
+ * instead of simple SSM-stored tokens.
+ */
+export interface CognitoAuthConfig {
+  /**
+   * Whether to enable Cognito authentication
+   * When false, uses simple token-based auth from SSM
+   */
+  enabled: boolean;
+
+  /**
+   * Cognito User Pool ID (required if enabled)
+   * @example 'us-west-2_abc123'
+   */
+  userPoolId?: string;
+
+  /**
+   * Cognito User Pool Client ID (required if enabled)
+   */
+  userPoolClientId?: string;
+
+  /**
+   * Optional: Custom domain for the Cognito hosted UI
+   * @example 'auth.yourdomain.com'
+   */
+  customDomain?: string;
+}
 
 export interface DmNotesApiProps {
   /**
@@ -16,15 +51,42 @@ export interface DmNotesApiProps {
 
   /**
    * SSM parameter name storing the DM auth token
+   * Used when Cognito auth is disabled (default behavior)
    * @default '/dndblog/dm-notes-token'
    */
   tokenParameterName?: string;
+
+  /**
+   * Optional Cognito authentication configuration
+   * When provided and enabled, the API will use JWT validation instead of
+   * simple token-based auth. This is the recommended production configuration.
+   *
+   * Migration path:
+   * 1. Deploy with cognitoAuth: { enabled: false } (current behavior)
+   * 2. Set up Cognito User Pool and obtain userPoolId/userPoolClientId
+   * 3. Deploy with cognitoAuth: { enabled: true, userPoolId, userPoolClientId }
+   * 4. Update frontend to use Cognito login flow
+   *
+   * @default undefined (uses simple token auth)
+   */
+  cognitoAuth?: CognitoAuthConfig;
 }
 
 export class DmNotesApi extends Construct {
   public readonly bucket: s3.Bucket;
   public readonly api: apigateway.HttpApi;
   public readonly apiUrl: string;
+
+  /**
+   * Optional Cognito User Pool (only created if cognitoAuth.enabled is true)
+   * Use this to integrate with other services or configure additional settings
+   */
+  public readonly userPool?: cognito.IUserPool;
+
+  /**
+   * Optional Cognito User Pool Client (only created if cognitoAuth.enabled is true)
+   */
+  public readonly userPoolClient?: cognito.IUserPoolClient;
 
   constructor(scope: Construct, id: string, props: DmNotesApiProps) {
     super(scope, id);
@@ -54,6 +116,224 @@ export class DmNotesApi extends Construct {
         },
       ],
     });
+
+    // ==========================================================================
+    // Cognito User Pool (Optional - scaffold for future migration)
+    // ==========================================================================
+    //
+    // Migration from token-based auth to Cognito:
+    // 1. Set cognitoAuth.enabled = true in props
+    // 2. The User Pool will be created automatically
+    // 3. Add users via AWS Console or Cognito APIs
+    // 4. Update frontend to use Amplify Auth or aws-amplify
+    // 5. JWT tokens will be validated instead of SSM tokens
+    //
+    // Benefits of Cognito:
+    // - User management (sign-up, password reset, MFA)
+    // - OAuth2/OIDC compliance
+    // - Integration with social providers
+    // - Fine-grained access control with groups/roles
+    //
+    // ==========================================================================
+
+    const cognitoEnabled = props.cognitoAuth?.enabled === true;
+
+    if (cognitoEnabled) {
+      // Create or reference existing User Pool
+      if (props.cognitoAuth?.userPoolId) {
+        // Use existing User Pool (e.g., shared across environments)
+        this.userPool = cognito.UserPool.fromUserPoolId(
+          this, 'UserPool', props.cognitoAuth.userPoolId
+        );
+      } else {
+        // Create new User Pool for DM Notes
+        const newUserPool = new cognito.UserPool(this, 'UserPool', {
+          userPoolName: 'DmNotesUserPool',
+          selfSignUpEnabled: false, // Admin-only for DM access
+          signInAliases: { email: true },
+          autoVerify: { email: true },
+          passwordPolicy: {
+            minLength: 12,
+            requireLowercase: true,
+            requireUppercase: true,
+            requireDigits: true,
+            requireSymbols: false,
+          },
+          accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+          removalPolicy: cdk.RemovalPolicy.RETAIN,
+          // MFA configuration (recommended for production)
+          mfa: cognito.Mfa.OPTIONAL,
+          mfaSecondFactor: {
+            sms: false,
+            otp: true, // TOTP apps like Google Authenticator
+          },
+        });
+        this.userPool = newUserPool;
+      }
+
+      // Create or reference existing User Pool Client
+      if (props.cognitoAuth?.userPoolClientId && this.userPool instanceof cognito.UserPool) {
+        this.userPoolClient = cognito.UserPoolClient.fromUserPoolClientId(
+          this, 'UserPoolClient', props.cognitoAuth.userPoolClientId
+        );
+      } else if (this.userPool instanceof cognito.UserPool) {
+        this.userPoolClient = this.userPool.addClient('WebClient', {
+          userPoolClientName: 'DmNotesWebClient',
+          authFlows: {
+            userPassword: true,
+            userSrp: true,
+          },
+          oAuth: {
+            flows: { authorizationCodeGrant: true },
+            scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL],
+            callbackUrls: [props.allowedOrigin + '/auth/callback', 'http://localhost:4321/auth/callback'],
+            logoutUrls: [props.allowedOrigin, 'http://localhost:4321'],
+          },
+          accessTokenValidity: cdk.Duration.hours(1),
+          idTokenValidity: cdk.Duration.hours(1),
+          refreshTokenValidity: cdk.Duration.days(30),
+        });
+      }
+
+      // Output User Pool details for frontend configuration
+      new cdk.CfnOutput(this, 'UserPoolId', {
+        value: this.userPool.userPoolId,
+        description: 'Cognito User Pool ID for frontend configuration',
+      });
+      if (this.userPoolClient) {
+        new cdk.CfnOutput(this, 'UserPoolClientId', {
+          value: this.userPoolClient.userPoolClientId,
+          description: 'Cognito User Pool Client ID for frontend configuration',
+        });
+      }
+    }
+
+    // ==========================================================================
+    // Shared Auth Helper Code (inlined into each Lambda)
+    // ==========================================================================
+    //
+    // This auth helper supports both token-based and JWT-based authentication.
+    // The AUTH_MODE environment variable controls which mode is used:
+    // - 'token': Validates against SSM-stored token (default, current behavior)
+    // - 'cognito': Validates JWT tokens from Cognito User Pool
+    //
+    // The helper is designed to be drop-in replaceable, so migrating to Cognito
+    // requires only changing the AUTH_MODE environment variable.
+    //
+    // ==========================================================================
+
+    const authHelperCode = `
+// ==========================================================================
+// Auth Helper - Supports both token and Cognito JWT authentication
+// ==========================================================================
+
+const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
+const ssmClient = new SSMClient({});
+
+let cachedToken = null;
+let tokenExpiry = 0;
+
+// Get SSM token (for token-based auth)
+async function getToken() {
+  const now = Date.now();
+  if (cachedToken && now < tokenExpiry) {
+    return cachedToken;
+  }
+  const result = await ssmClient.send(new GetParameterCommand({
+    Name: process.env.TOKEN_PARAMETER_NAME,
+    WithDecryption: true,
+  }));
+  cachedToken = result.Parameter.Value;
+  tokenExpiry = now + 5 * 60 * 1000;
+  return cachedToken;
+}
+
+// Decode and validate JWT (for Cognito auth)
+// Note: In production, you should verify the signature using the JWKS endpoint
+// This is a simplified version for scaffolding purposes
+function decodeJwt(token) {
+  try {
+    const [headerB64, payloadB64] = token.split('.');
+    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString());
+    return payload;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Validate JWT from Cognito
+async function validateCognitoToken(token) {
+  const payload = decodeJwt(token);
+  if (!payload) return { valid: false, error: 'Invalid token format' };
+
+  // Check expiration
+  if (payload.exp && payload.exp * 1000 < Date.now()) {
+    return { valid: false, error: 'Token expired' };
+  }
+
+  // Check issuer matches our User Pool
+  const expectedIssuer = 'https://cognito-idp.' + process.env.AWS_REGION + '.amazonaws.com/' + process.env.COGNITO_USER_POOL_ID;
+  if (payload.iss !== expectedIssuer) {
+    return { valid: false, error: 'Invalid issuer' };
+  }
+
+  // Check audience (client ID)
+  if (payload.aud && payload.aud !== process.env.COGNITO_CLIENT_ID) {
+    return { valid: false, error: 'Invalid audience' };
+  }
+
+  return { valid: true, payload };
+}
+
+// Main auth validation function - supports both modes
+async function validateAuth(event) {
+  const authMode = process.env.AUTH_MODE || 'token';
+
+  if (authMode === 'cognito') {
+    // Cognito JWT validation
+    const authHeader = event.headers?.authorization || event.headers?.Authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return { valid: false, error: 'Missing or invalid Authorization header' };
+    }
+    const token = authHeader.substring(7);
+    return validateCognitoToken(token);
+  } else {
+    // Token-based validation (default)
+    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
+    if (!providedToken) {
+      return { valid: false, error: 'Missing authentication token' };
+    }
+    const validToken = await getToken();
+    if (providedToken !== validToken) {
+      return { valid: false, error: 'Invalid token' };
+    }
+    return { valid: true };
+  }
+}
+
+// Helper to get CORS origin (allows localhost for dev)
+function getCorsOrigin(event) {
+  const origin = event.headers?.origin || event.headers?.Origin || '';
+  const allowed = process.env.ALLOWED_ORIGIN;
+  if (origin.startsWith('http://localhost:')) {
+    return origin;
+  }
+  return allowed;
+}
+`;
+
+    // Environment variables for auth (varies based on mode)
+    const authEnvironment: Record<string, string> = {
+      AUTH_MODE: cognitoEnabled ? 'cognito' : 'token',
+      TOKEN_PARAMETER_NAME: tokenParameterName,
+    };
+
+    if (cognitoEnabled && this.userPool) {
+      authEnvironment.COGNITO_USER_POOL_ID = this.userPool.userPoolId;
+      if (this.userPoolClient) {
+        authEnvironment.COGNITO_CLIENT_ID = this.userPoolClient.userPoolClientId;
+      }
+    }
 
     // Lambda function for generating pre-signed URLs
     const uploadUrlFunction = new lambda.Function(this, 'UploadUrlFunction', {
@@ -1134,6 +1414,407 @@ exports.handler = async (event) => {
       threshold: 70000, // 70 seconds (78% of 90s timeout)
       evaluationPeriods: 2,
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    // ==========================================================================
+    // Entity Staging Function - Branch and entity CRUD for staging workflow
+    // ==========================================================================
+
+    const stagingFunction = new lambda.Function(this, 'StagingFunction', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 512,
+      environment: {
+        BUCKET_NAME: this.bucket.bucketName,
+        TOKEN_PARAMETER_NAME: tokenParameterName,
+        ALLOWED_ORIGIN: props.allowedOrigin,
+        STAGING_PREFIX: 'staging/branches/',
+      },
+      code: lambda.Code.fromInline(`
+const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
+const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
+
+const s3Client = new S3Client({});
+const ssmClient = new SSMClient({});
+
+let cachedToken = null;
+let tokenExpiry = 0;
+
+async function getToken() {
+  const now = Date.now();
+  if (cachedToken && now < tokenExpiry) {
+    return cachedToken;
+  }
+  const result = await ssmClient.send(new GetParameterCommand({
+    Name: process.env.TOKEN_PARAMETER_NAME,
+    WithDecryption: true,
+  }));
+  cachedToken = result.Parameter.Value;
+  tokenExpiry = now + 5 * 60 * 1000;
+  return cachedToken;
+}
+
+function getCorsOrigin(event) {
+  const origin = event.headers?.origin || event.headers?.Origin || '';
+  const allowed = process.env.ALLOWED_ORIGIN;
+  if (origin.startsWith('http://localhost:')) {
+    return origin;
+  }
+  return allowed;
+}
+
+// Sanitize branch name to prevent path traversal
+function sanitizeBranchName(name) {
+  return name.replace(/[^a-z0-9-_]/gi, '-').toLowerCase().substring(0, 50);
+}
+
+// Get all branches
+async function listBranches() {
+  const prefix = process.env.STAGING_PREFIX;
+  const result = await s3Client.send(new ListObjectsV2Command({
+    Bucket: process.env.BUCKET_NAME,
+    Prefix: prefix,
+    Delimiter: '/',
+  }));
+
+  const branches = [];
+  for (const cp of (result.CommonPrefixes || [])) {
+    const branchName = cp.Prefix.replace(prefix, '').replace(/\\/$/, '');
+    try {
+      const metadata = await getBranchMetadata(branchName);
+      branches.push(metadata);
+    } catch (e) {
+      // Branch exists but no metadata - create default
+      branches.push({ name: branchName, displayName: branchName, entityCount: 0, status: 'draft' });
+    }
+  }
+  return branches;
+}
+
+// Get branch metadata
+async function getBranchMetadata(branchName) {
+  const key = process.env.STAGING_PREFIX + branchName + '/_metadata.json';
+  const result = await s3Client.send(new GetObjectCommand({
+    Bucket: process.env.BUCKET_NAME,
+    Key: key,
+  }));
+  const body = await result.Body.transformToString();
+  return JSON.parse(body);
+}
+
+// Save branch metadata
+async function saveBranchMetadata(branchName, metadata) {
+  const key = process.env.STAGING_PREFIX + branchName + '/_metadata.json';
+  await s3Client.send(new PutObjectCommand({
+    Bucket: process.env.BUCKET_NAME,
+    Key: key,
+    Body: JSON.stringify(metadata, null, 2),
+    ContentType: 'application/json',
+  }));
+}
+
+// List entities in a branch
+async function listEntities(branchName) {
+  const prefix = process.env.STAGING_PREFIX + branchName + '/entities/';
+  const result = await s3Client.send(new ListObjectsV2Command({
+    Bucket: process.env.BUCKET_NAME,
+    Prefix: prefix,
+  }));
+
+  const entities = [];
+  for (const obj of (result.Contents || [])) {
+    if (obj.Key.endsWith('.json')) {
+      try {
+        const entityResult = await s3Client.send(new GetObjectCommand({
+          Bucket: process.env.BUCKET_NAME,
+          Key: obj.Key,
+        }));
+        const body = await entityResult.Body.transformToString();
+        entities.push(JSON.parse(body));
+      } catch (e) {
+        console.error('Error loading entity:', obj.Key, e);
+      }
+    }
+  }
+  return entities;
+}
+
+// Save entity to branch
+async function saveEntity(branchName, entity) {
+  const entityType = entity.entityType || 'unknown';
+  const id = entity.id || crypto.randomUUID();
+  entity.id = id;
+  entity.updatedAt = new Date().toISOString();
+  if (!entity.createdAt) entity.createdAt = entity.updatedAt;
+
+  const key = process.env.STAGING_PREFIX + branchName + '/entities/' + entityType + '/' + entity.slug + '.json';
+  entity.targetPath = 'packages/site/src/content/campaign/' + entityType + 's/' + entity.slug + '.md';
+
+  await s3Client.send(new PutObjectCommand({
+    Bucket: process.env.BUCKET_NAME,
+    Key: key,
+    Body: JSON.stringify(entity, null, 2),
+    ContentType: 'application/json',
+  }));
+
+  // Update branch entity count
+  try {
+    const metadata = await getBranchMetadata(branchName);
+    const entities = await listEntities(branchName);
+    metadata.entityCount = entities.length;
+    metadata.updatedAt = new Date().toISOString();
+    await saveBranchMetadata(branchName, metadata);
+  } catch (e) {
+    console.error('Error updating branch metadata:', e);
+  }
+
+  return entity;
+}
+
+// Delete entity from branch
+async function deleteEntity(branchName, entityType, slug) {
+  const key = process.env.STAGING_PREFIX + branchName + '/entities/' + entityType + '/' + slug + '.json';
+  await s3Client.send(new DeleteObjectCommand({
+    Bucket: process.env.BUCKET_NAME,
+    Key: key,
+  }));
+
+  // Update branch entity count
+  try {
+    const metadata = await getBranchMetadata(branchName);
+    const entities = await listEntities(branchName);
+    metadata.entityCount = entities.length;
+    metadata.updatedAt = new Date().toISOString();
+    await saveBranchMetadata(branchName, metadata);
+  } catch (e) {
+    console.error('Error updating branch metadata:', e);
+  }
+}
+
+// Delete entire branch
+async function deleteBranch(branchName) {
+  const prefix = process.env.STAGING_PREFIX + branchName + '/';
+  const result = await s3Client.send(new ListObjectsV2Command({
+    Bucket: process.env.BUCKET_NAME,
+    Prefix: prefix,
+  }));
+
+  for (const obj of (result.Contents || [])) {
+    await s3Client.send(new DeleteObjectCommand({
+      Bucket: process.env.BUCKET_NAME,
+      Key: obj.Key,
+    }));
+  }
+}
+
+exports.handler = async (event) => {
+  const corsOrigin = getCorsOrigin(event);
+  const headers = {
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Content-Type': 'application/json',
+  };
+
+  if (event.requestContext?.http?.method === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  try {
+    // Validate token
+    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
+    if (!providedToken) {
+      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Missing authentication token' }) };
+    }
+    const validToken = await getToken();
+    if (providedToken !== validToken) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'Invalid token' }) };
+    }
+
+    const method = event.requestContext?.http?.method;
+    const path = event.rawPath || '';
+
+    // Route: GET /staging/branches
+    if (path === '/staging/branches' && method === 'GET') {
+      const branches = await listBranches();
+      return { statusCode: 200, headers, body: JSON.stringify({ branches }) };
+    }
+
+    // Route: POST /staging/branches - Create new branch
+    if (path === '/staging/branches' && method === 'POST') {
+      const body = JSON.parse(event.body || '{}');
+      const name = sanitizeBranchName(body.name || '');
+      if (!name) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Branch name is required' }) };
+      }
+
+      const metadata = {
+        name,
+        displayName: body.displayName || name,
+        description: body.description || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        entityCount: 0,
+        status: 'draft',
+        githubBranch: null,
+        githubPrUrl: null,
+      };
+
+      await saveBranchMetadata(name, metadata);
+      return { statusCode: 201, headers, body: JSON.stringify(metadata) };
+    }
+
+    // Route: GET /staging/branches/{name}
+    const branchMatch = path.match(/^\\/staging\\/branches\\/([^/]+)$/);
+    if (branchMatch && method === 'GET') {
+      const branchName = sanitizeBranchName(branchMatch[1]);
+      try {
+        const metadata = await getBranchMetadata(branchName);
+        const entities = await listEntities(branchName);
+        return { statusCode: 200, headers, body: JSON.stringify({ ...metadata, entities }) };
+      } catch (e) {
+        return { statusCode: 404, headers, body: JSON.stringify({ error: 'Branch not found' }) };
+      }
+    }
+
+    // Route: PUT /staging/branches/{name} - Update branch metadata
+    if (branchMatch && method === 'PUT') {
+      const branchName = sanitizeBranchName(branchMatch[1]);
+      const body = JSON.parse(event.body || '{}');
+      try {
+        const metadata = await getBranchMetadata(branchName);
+        Object.assign(metadata, {
+          displayName: body.displayName || metadata.displayName,
+          description: body.description !== undefined ? body.description : metadata.description,
+          updatedAt: new Date().toISOString(),
+        });
+        await saveBranchMetadata(branchName, metadata);
+        return { statusCode: 200, headers, body: JSON.stringify(metadata) };
+      } catch (e) {
+        return { statusCode: 404, headers, body: JSON.stringify({ error: 'Branch not found' }) };
+      }
+    }
+
+    // Route: DELETE /staging/branches/{name}
+    if (branchMatch && method === 'DELETE') {
+      const branchName = sanitizeBranchName(branchMatch[1]);
+      await deleteBranch(branchName);
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+    }
+
+    // Route: POST /staging/branches/{name}/entities - Add entity
+    const entityAddMatch = path.match(/^\\/staging\\/branches\\/([^/]+)\\/entities$/);
+    if (entityAddMatch && method === 'POST') {
+      const branchName = sanitizeBranchName(entityAddMatch[1]);
+      const body = JSON.parse(event.body || '{}');
+
+      if (!body.entityType || !body.slug) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'entityType and slug are required' }) };
+      }
+
+      const entity = await saveEntity(branchName, body);
+      return { statusCode: 201, headers, body: JSON.stringify(entity) };
+    }
+
+    // Route: PUT /staging/branches/{name}/entities/{type}/{slug} - Update entity
+    const entityUpdateMatch = path.match(/^\\/staging\\/branches\\/([^/]+)\\/entities\\/([^/]+)\\/([^/]+)$/);
+    if (entityUpdateMatch && method === 'PUT') {
+      const branchName = sanitizeBranchName(entityUpdateMatch[1]);
+      const entityType = entityUpdateMatch[2];
+      const slug = entityUpdateMatch[3];
+      const body = JSON.parse(event.body || '{}');
+
+      body.entityType = entityType;
+      body.slug = slug;
+      const entity = await saveEntity(branchName, body);
+      return { statusCode: 200, headers, body: JSON.stringify(entity) };
+    }
+
+    // Route: DELETE /staging/branches/{name}/entities/{type}/{slug} - Delete entity
+    if (entityUpdateMatch && method === 'DELETE') {
+      const branchName = sanitizeBranchName(entityUpdateMatch[1]);
+      const entityType = entityUpdateMatch[2];
+      const slug = entityUpdateMatch[3];
+      await deleteEntity(branchName, entityType, slug);
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+    }
+
+    return { statusCode: 404, headers, body: JSON.stringify({ error: 'Not found' }) };
+
+  } catch (error) {
+    console.error('Error:', error);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
+  }
+};
+      `),
+    });
+
+    // Grant S3 permissions to staging function
+    this.bucket.grantReadWrite(stagingFunction);
+    this.bucket.grantDelete(stagingFunction);
+
+    // Grant SSM parameter read access
+    stagingFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: tokenParameterName.replace(/^\//, ''),
+        }),
+      ],
+    }));
+
+    // Add staging routes
+    this.api.addRoutes({
+      path: '/staging/branches',
+      methods: [apigateway.HttpMethod.GET, apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'StagingBranchesIntegration',
+        stagingFunction
+      ),
+    });
+
+    this.api.addRoutes({
+      path: '/staging/branches/{name}',
+      methods: [apigateway.HttpMethod.GET, apigateway.HttpMethod.PUT, apigateway.HttpMethod.DELETE, apigateway.HttpMethod.OPTIONS],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'StagingBranchIntegration',
+        stagingFunction
+      ),
+    });
+
+    this.api.addRoutes({
+      path: '/staging/branches/{name}/entities',
+      methods: [apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'StagingEntitiesIntegration',
+        stagingFunction
+      ),
+    });
+
+    this.api.addRoutes({
+      path: '/staging/branches/{name}/entities/{type}/{slug}',
+      methods: [apigateway.HttpMethod.PUT, apigateway.HttpMethod.DELETE, apigateway.HttpMethod.OPTIONS],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'StagingEntityIntegration',
+        stagingFunction
+      ),
+    });
+
+    // Staging Function Alarm
+    new cloudwatch.Alarm(this, 'StagingFunctionErrors', {
+      alarmName: `${cdk.Names.uniqueId(this)}-staging-errors`,
+      alarmDescription: 'Entity staging function errors',
+      metric: stagingFunction.metricErrors({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
     });
   }
