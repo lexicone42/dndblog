@@ -777,8 +777,8 @@ exports.handler = async (event) => {
       environment: {
         TOKEN_PARAMETER_NAME: tokenParameterName,
         ALLOWED_ORIGIN: props.allowedOrigin,
-        // Using Amazon Nova Premier - Amazon's own model, no approval required
-        BEDROCK_MODEL_ID: 'us.amazon.nova-premier-v1:0',
+        // Using Claude Sonnet 4.5 via cross-region inference profile
+        BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
       },
       code: lambda.Code.fromInline(`
 const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
@@ -820,141 +820,63 @@ function slugify(name) {
     .replace(/^-|-$/g, '');
 }
 
-// Rich entity generation prompt for Nova Premier - matches site content.config.ts schema exactly
-const SYSTEM_PROMPT = \`You are a D&D 5e campaign wiki generator. Convert natural language into structured entity data that matches the Astro content collection schema exactly.
+// Entity generation prompt optimized for Claude Sonnet 4.5
+const SYSTEM_PROMPT = \`You are a D&D 5e campaign wiki generator. Convert natural language descriptions into structured entity data for an Astro content collection.
 
-## OUTPUT JSON STRUCTURE
+You must respond with ONLY a valid JSON object (no markdown code blocks, no explanation). The JSON must follow this exact structure:
+
 {
-  "entityType": "character|enemy|item|location|faction",
-  "subtype": "specific subtype from list below",
-  "confidence": 0-100,
-  "frontmatter": { /* fields matching the schema for this entity type */ },
-  "markdown": "Rich markdown content with sections",
-  "slug": "kebab-case-name"
+  "entityType": "character" | "enemy" | "item" | "location" | "faction",
+  "subtype": "<specific subtype - see schemas below>",
+  "confidence": <0-100 integer>,
+  "frontmatter": { <fields matching the schema for this entity type> },
+  "markdown": "<rich markdown content with ## sections>",
+  "slug": "<kebab-case-name>"
 }
 
-## ENTITY SCHEMAS (use these exact field names)
+ENTITY SCHEMAS:
 
-### CHARACTER
-type: "character"
-subtype: "pc" | "npc" | "deity" | "historical"
-Fields:
-- name: string (required)
-- status: "active" | "inactive" | "dead" | "missing" | "unknown" (default: "active")
-- visibility: "public" | "dm-only" (default: "public")
-- description: string (one-line summary)
-- race: string (e.g., "Orc", "Half-Elf", "Human")
-- class: string (e.g., "Fighter", "Rogue", "Cleric")
-- level: number 1-20 (if known)
-- alignment: string (e.g., "Chaotic Evil", "Lawful Good")
-- background: string
-- faction: string (faction slug if affiliated)
-- location: string (location slug)
-- abilities: string[] (notable abilities/traits)
-- tags: string[] (lowercase, kebab-case)
-- relationships: [{entity: "slug", type: "ally|enemy|employer|serves", note: "context"}]
-- ideals: string[]
-- bonds: string[]
-- flaws: string[]
+CHARACTER (subtype: "pc" | "npc" | "deity" | "historical")
+Required: name (string), type: "character", subtype
+Optional: status ("active"|"inactive"|"dead"|"missing"|"unknown"), visibility ("public"|"dm-only"), description, race, class, subclass, level (1-20), alignment, background, faction, location, homeLocation, abilities[], tags[], relationships[], ideals[], bonds[], flaws[], player (for PCs)
+Markdown: Include sections for Description, Personality, Background, Notable Traits
 
-Markdown sections: Role/Description, Personality, Secrets (dm-only), Key Dialogue
+ENEMY (subtype: "boss" | "lieutenant" | "minion" | "creature" | "swarm" | "trap")
+Required: name, type: "enemy", subtype
+Optional: status, visibility, description, baseMonster (SRD name), cr (string like "1/4" or "5"), creatureType, faction, lair, territory[], abilities[], customizations[], legendaryActions[], lairActions[], tags[], relationships[]
+Markdown: Include sections for Description, Tactics, Motivation, Loot
 
-### ENEMY
-type: "enemy"
-subtype: "boss" | "lieutenant" | "minion" | "creature" | "swarm" | "trap"
-Fields:
-- name: string (required)
-- status: "active" | "dead" | "destroyed" | "dormant" | "unknown"
-- visibility: "public" | "dm-only"
-- description: string
-- baseMonster: string (SRD monster name, e.g., "goblin", "dragon")
-- cr: string (e.g., "1/4", "5", "10")
-- creatureType: string (beast, humanoid, undead, fiend, etc.)
-- faction: string (faction slug)
-- lair: string (location slug)
-- territory: string[] (location slugs)
-- abilities: string[] (notable abilities)
-- customizations: string[] (changes from base monster)
-- legendaryActions: string[] (for bosses)
-- tags: string[]
-- relationships: [{entity: "slug", type: "serves|guards|hunts|rival", note: "context"}]
+ITEM (subtype: "weapon" | "armor" | "artifact" | "consumable" | "quest" | "treasure" | "tool" | "wondrous" | "vehicle" | "property")
+Required: name, type: "item", subtype
+Optional: status, visibility, description, baseItem (SRD name), rarity ("common"|"uncommon"|"rare"|"very-rare"|"legendary"|"artifact"|"unique"), attunement (boolean), attunementRequirements, currentOwner, location, properties[], charges, maxCharges, creator, significance, secrets[], tags[], relationships[]
+Markdown: Include sections for Description, Properties, History
 
-Markdown sections: Description, Tactics, Motivation, Loot
+LOCATION (subtype: "plane" | "continent" | "region" | "city" | "town" | "village" | "dungeon" | "wilderness" | "building" | "room" | "landmark")
+Required: name, type: "location", subtype
+Optional: status, visibility, description, parentLocation, childLocations[], climate, terrain, population, controlledBy, pointsOfInterest[], dungeonLevel, notableEvents[], secrets[], tags[], relationships[]
+Markdown: Include sections for Description, Points of Interest, Atmosphere, Secrets
 
-### ITEM
-type: "item"
-subtype: "weapon" | "armor" | "artifact" | "consumable" | "quest" | "treasure" | "tool" | "wondrous" | "vehicle" | "property"
-Fields:
-- name: string (required)
-- status: "active" | "destroyed" | "unknown"
-- visibility: "public" | "dm-only"
-- description: string
-- baseItem: string (SRD item name)
-- rarity: "common" | "uncommon" | "rare" | "very-rare" | "legendary" | "artifact" | "unique"
-- attunement: boolean (default false)
-- currentOwner: string (character slug)
-- location: string (location slug if not owned)
-- properties: string[] (magical properties)
-- tags: string[]
-- relationships: [{entity: "slug", type: "owned-by|created-by|guards", note: "context"}]
+FACTION (subtype: "cult" | "guild" | "government" | "military" | "religious" | "criminal" | "merchant" | "noble-house" | "adventuring-party" | "secret-society")
+Required: name, type: "faction", subtype
+Optional: status, visibility, description, leader, formerLeaders[], notableMembers[], headquarters, territory[], influence[], allies[], enemies[], parentOrganization, subsidiaries[], goals[], methods[], resources[], secrets[], symbol, motto, tags[], relationships[]
+Markdown: Include sections for Description, Goals, Methods, Notable Members, Influence
 
-Markdown sections: Description, Properties, History
+RELATIONSHIP FORMAT:
+Each relationship object: { "entity": "<slug>", "type": "<relationship-type>", "note": "<optional context>" }
+Types vary by entity: ally, enemy, serves, employer, member-of, controls, guards, etc.
 
-### LOCATION
-type: "location"
-subtype: "plane" | "continent" | "region" | "city" | "town" | "village" | "dungeon" | "wilderness" | "building" | "room" | "landmark"
-Fields:
-- name: string (required)
-- status: "active" | "destroyed" | "unknown"
-- visibility: "public" | "dm-only"
-- description: string
-- parentLocation: string (location slug)
-- climate: string
-- terrain: string
-- population: string
-- controlledBy: string (faction or character slug)
-- pointsOfInterest: string[] (location slugs)
-- secrets: string[] (dm-only notes)
-- tags: string[]
-- relationships: [{entity: "slug", type: "part-of|controlled-by|connected-to", note: "context"}]
+CONVENTIONS:
+- Slugs: lowercase kebab-case (e.g., "captain-tallow", "shadow-guild")
+- Tags: 3-5 lowercase kebab-case tags relevant to the entity
+- Names: Properly capitalized ("gorok" → "Gorok")
+- Status: Default "active" unless explicitly dead/destroyed/inactive
+- Visibility: Default "public" unless DM-only information
+- Markdown: Use proper newlines (\\n), headers (##), and bullet points
+- Abilities: 2-4 notable traits/powers as descriptive strings
 
-Markdown sections: Description, Points of Interest, Secrets
+EXAMPLE INPUT: "Captain Tallow - ship captain of the Siren's Song, secretly a druid who can cast banishment and part mists"
 
-### FACTION
-type: "faction"
-subtype: "cult" | "guild" | "government" | "military" | "religious" | "criminal" | "merchant" | "noble-house" | "adventuring-party" | "secret-society"
-Fields:
-- name: string (required)
-- status: "active" | "inactive" | "destroyed" | "unknown"
-- visibility: "public" | "dm-only"
-- description: string
-- leader: string (character slug)
-- headquarters: string (location slug)
-- territory: string[] (location slugs)
-- goals: string[]
-- methods: string[]
-- allies: string[] (faction slugs)
-- enemies: string[] (faction slugs)
-- symbol: string (description of symbol)
-- motto: string
-- tags: string[]
-- relationships: [{entity: "slug", type: "allied-with|opposes|controls", note: "context"}]
-
-Markdown sections: Description, Goals, Methods, Notable Members
-
-## PARSING RULES
-- Names: Capitalize properly ("gorok" → "Gorok", "chief gorok" → "Chief Gorok")
-- Alignment: Infer from behavior - "cruel", "vile" → evil; "noble", "kind" → good
-- Status: Default "active" unless "dead", "deceased", "destroyed" stated
-- Slugs: kebab-case, lowercase (e.g., "shadow-guild", "captain-tallow")
-- Tags: lowercase kebab-case, 3-5 relevant tags
-- Abilities: 2-4 notable traits/powers as strings
-
-## EXAMPLE
-
-Input: "Captain Tallow - ship captain of the Siren's Song, secretly a druid who can cast banishment and part mists"
-
-Output:
+EXAMPLE OUTPUT:
 {
   "entityType": "character",
   "subtype": "npc",
@@ -966,23 +888,13 @@ Output:
     "status": "active",
     "visibility": "public",
     "description": "Ship captain of the Siren's Song and secret druid",
-    "class": "druid",
-    "abilities": ["Druidic magic", "Banishment", "Mist-parting ritual"],
-    "tags": ["npc", "ally", "captain", "druid", "secret-identity"],
-    "relationships": [{"entity": "the-party", "type": "ally", "note": "Transported them"}]
+    "class": "Druid",
+    "abilities": ["Druidic magic", "Banishment spell", "Mist-parting ritual"],
+    "tags": ["captain", "druid", "secret-identity", "maritime"]
   },
-  "markdown": "# Captain Tallow\\n\\nCaptain of the Siren's Song. Appears to be a simple ship captain, but is secretly a druid with significant magical power.\\n\\n## Secret Identity\\n\\nBehind the weathered sailor facade, Tallow wields druidic magic:\\n- **Banishment**: Can banish powerful creatures\\n- **Mist-Parting Ritual**: Performs rituals to navigate magical mists\\n\\n## Notes\\n\\nTrusted ally who has proven invaluable for sea travel.",
+  "markdown": "## Description\\n\\nCaptain of the Siren's Song, a weathered sailor with a commanding presence. Behind the practical exterior lies a secret—Tallow is a druid of considerable power.\\n\\n## Secret Powers\\n\\n- **Banishment**: Can banish creatures to another plane\\n- **Mist-Parting**: Performs rituals to navigate through magical mists\\n\\n## Roleplaying Notes\\n\\nSpeak in a gruff, nautical manner. Reveals druidic nature only when absolutely necessary.",
   "slug": "captain-tallow"
-}
-
-## CRITICAL RULES
-- Output ONLY valid JSON, nothing else
-- Start with { end with }
-- Use exact field names from schemas above
-- frontmatter.type and frontmatter.subtype are REQUIRED
-- Generate rich markdown with multiple ## sections
-- Include abilities array with 2-4 items
-- Include 3-5 relevant tags\`;
+}\`;
 
 exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
@@ -1024,19 +936,18 @@ exports.handler = async (event) => {
       ? \`[Entity type hint: \${hint}]\\n\\n\${input}\`
       : input;
 
-    // Amazon Nova Premier uses Messages API format
+    // Claude Messages API format via Bedrock
     const bedrockPayload = {
+      anthropic_version: 'bedrock-2023-05-31',
+      max_tokens: 4096,
+      temperature: 0.3,
+      system: SYSTEM_PROMPT,
       messages: [
         {
           role: 'user',
-          content: [{ text: userPrompt }]
+          content: userPrompt
         }
-      ],
-      system: [{ text: SYSTEM_PROMPT }],
-      inferenceConfig: {
-        maxTokens: 2048,
-        temperature: 0.3,
-      },
+      ]
     };
 
     const command = new InvokeModelCommand({
@@ -1049,23 +960,20 @@ exports.handler = async (event) => {
     const response = await bedrockClient.send(command);
     const responseBody = JSON.parse(new TextDecoder().decode(response.body));
 
-    // Nova returns output.message.content[0].text
-    // Log the full response structure for debugging
-    console.log('Nova response structure:', JSON.stringify(responseBody, null, 2).substring(0, 1000));
-
-    const outputText = responseBody.output?.message?.content?.[0]?.text || '';
+    // Claude returns content[0].text directly
+    const outputText = responseBody.content?.[0]?.text || '';
 
     if (!outputText) {
+      console.error('Empty response from Claude:', JSON.stringify(responseBody, null, 2).substring(0, 500));
       return {
         statusCode: 422,
         headers,
         body: JSON.stringify({
           error: 'Empty response from model',
           debug: {
-            hasOutput: !!responseBody.output,
-            hasMessage: !!responseBody.output?.message,
-            hasContent: !!responseBody.output?.message?.content,
-            contentLength: responseBody.output?.message?.content?.length,
+            hasContent: !!responseBody.content,
+            contentLength: responseBody.content?.length,
+            stopReason: responseBody.stop_reason,
             responseKeys: Object.keys(responseBody),
           },
         }),
@@ -1073,72 +981,33 @@ exports.handler = async (event) => {
     }
 
     // Parse the AI response as JSON
-    // Handle markdown code blocks and sanitize control characters
+    // Claude follows instructions well, so minimal sanitization needed
     let result;
     try {
-      let jsonText = outputText;
+      let jsonText = outputText.trim();
 
-      // Remove markdown code blocks if present
-      const codeBlockMatch = outputText.match(/\`\`\`(?:json)?\\s*([\\s\\S]*?)\`\`\`/);
+      // Remove markdown code blocks if present (shouldn't happen with good prompt)
+      const codeBlockMatch = jsonText.match(/\`\`\`(?:json)?\\s*([\\s\\S]*?)\`\`\`/);
       if (codeBlockMatch) {
         jsonText = codeBlockMatch[1].trim();
       }
 
-      // Try to find JSON object
+      // Find JSON object if there's any surrounding text
       const jsonMatch = jsonText.match(/\\{[\\s\\S]*\\}/);
       if (!jsonMatch) {
         throw new Error('No JSON object found in response');
       }
 
-      // Sanitize the JSON - Nova puts actual newlines in strings
-      // We need to escape them before JSON.parse
-      let sanitized = jsonMatch[0];
-
-      // Process character by character to escape control chars inside strings
-      let inString = false;
-      let escaped = false;
-      let output = '';
-      for (let i = 0; i < sanitized.length; i++) {
-        const c = sanitized[i];
-        const code = c.charCodeAt(0);
-
-        if (escaped) {
-          output += c;
-          escaped = false;
-          continue;
-        }
-
-        if (c === '\\\\' && inString) {
-          escaped = true;
-          output += c;
-          continue;
-        }
-
-        if (c === '"') {
-          inString = !inString;
-          output += c;
-          continue;
-        }
-
-        if (inString && code < 32) {
-          // Escape control characters inside strings
-          if (code === 10) output += '\\\\n';
-          else if (code === 13) output += '\\\\r';
-          else if (code === 9) output += '\\\\t';
-          // Skip other control chars
-        } else {
-          output += c;
-        }
-      }
-
-      result = JSON.parse(output);
+      result = JSON.parse(jsonMatch[0]);
     } catch (parseErr) {
+      console.error('JSON parse error:', parseErr.message);
+      console.error('Raw output:', outputText.substring(0, 1000));
       return {
         statusCode: 422,
         headers,
         body: JSON.stringify({
           error: 'Failed to parse AI response: ' + parseErr.message,
-          raw: outputText.substring(0, 1000),
+          raw: outputText.substring(0, 1500),
         }),
       };
     }
@@ -1210,12 +1079,14 @@ exports.handler = async (event) => {
       `),
     });
 
-    // Grant Bedrock permissions to generate entity function (Amazon Nova Premier)
+    // Grant Bedrock permissions to generate entity function (Claude Sonnet 4.5)
     generateEntityFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel'],
       resources: [
-        'arn:aws:bedrock:*::foundation-model/amazon.nova-premier-v1:0',
-        'arn:aws:bedrock:*:*:inference-profile/us.amazon.nova-premier-v1:0',
+        // Claude Sonnet 4.5 foundation model
+        'arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0',
+        // Cross-region inference profile
+        'arn:aws:bedrock:*:*:inference-profile/us.anthropic.claude-sonnet-4-5-20250929-v1:0',
       ],
     }));
 
