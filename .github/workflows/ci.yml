@@ -26,8 +26,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup
-        uses: ./.github/actions/setup
+      - name: Setup with retry
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: |
+            # Setup pnpm
+            corepack enable
+            corepack prepare pnpm@latest --activate
+            # Setup Node.js (cache handled separately to avoid auth failures)
+            pnpm install --frozen-lockfile
 
       - name: Security audit
         run: pnpm audit --audit-level=high
@@ -52,8 +62,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup
-        uses: ./.github/actions/setup
+      - name: Setup with retry
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: |
+            corepack enable
+            corepack prepare pnpm@latest --activate
+            pnpm install --frozen-lockfile
 
       - name: Run site tests
         working-directory: packages/site
@@ -75,8 +93,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup
-        uses: ./.github/actions/setup
+      - name: Setup with retry
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: |
+            corepack enable
+            corepack prepare pnpm@latest --activate
+            pnpm install --frozen-lockfile
 
       - name: Build content pipeline
         working-directory: packages/content-pipeline
