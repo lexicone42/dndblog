@@ -10,16 +10,19 @@ import BreadcrumbNav from '@components/BreadcrumbNav.astro';
 
 // Get all items
 const allItems = await getCollection('items');
+type ItemEntry = typeof allItems[0];
 
 // Sort alphabetically by name
-const sortedItems = allItems.sort((a, b) =>
+const sortedItems = allItems.sort((a: ItemEntry, b: ItemEntry) =>
   a.data.name.localeCompare(b.data.name)
 );
 
 // Extract unique values for filters
-const subtypes = [...new Set(sortedItems.map(i => i.data.subtype).filter(Boolean))].sort();
+const subtypes = [...new Set(sortedItems.map((i: ItemEntry) => i.data.subtype).filter(Boolean))] as string[];
+subtypes.sort();
 const rarities = ['common', 'uncommon', 'rare', 'very-rare', 'legendary', 'artifact'];
-const statuses = [...new Set(sortedItems.map(i => i.data.status).filter(Boolean))].sort();
+const statuses = [...new Set(sortedItems.map((i: ItemEntry) => i.data.status).filter(Boolean))] as string[];
+statuses.sort();
 
 // Rarity colors
 const rarityColors: Record<string, string> = {
@@ -112,7 +115,7 @@ function formatRarity(rarity: string): string {
 
     <!-- Items Grid -->
     <div class="items-grid" id="items-grid">
-      {sortedItems.map(item => (
+      {sortedItems.map((item: ItemEntry) => (
         <a
           href={`/campaign/items/${item.id}`}
           class="item-card"

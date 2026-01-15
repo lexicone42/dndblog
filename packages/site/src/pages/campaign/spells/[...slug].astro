@@ -7,10 +7,19 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 
+// Get collection for type inference
+const allSpellEntries = await getCollection('spells');
+type SpellEntry = typeof allSpellEntries[0];
+
+interface Props {
+  entry: SpellEntry;
+}
+
 export async function getStaticPaths() {
   const entries = await getCollection('spells');
+  type Entry = typeof entries[0];
 
-  return entries.map(entry => ({
+  return entries.map((entry: Entry) => ({
     params: { slug: entry.id },
     props: { entry },
   }));
@@ -18,7 +27,7 @@ export async function getStaticPaths() {
 
 import { marked } from 'marked';
 
-const { entry } = Astro.props;
+const { entry } = Astro.props as Props;
 
 /**
  * Process spell markdown to remove duplicate header info.

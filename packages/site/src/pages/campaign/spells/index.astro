@@ -10,16 +10,20 @@ import BreadcrumbNav from '@components/BreadcrumbNav.astro';
 
 // Get all spells
 const allSpells = await getCollection('spells');
+type SpellEntry = typeof allSpells[0];
 
 // Sort alphabetically by name
-const sortedSpells = allSpells.sort((a, b) =>
+const sortedSpells = allSpells.sort((a: SpellEntry, b: SpellEntry) =>
   a.data.name.localeCompare(b.data.name)
 );
 
 // Extract unique values for filters
-const schools = [...new Set(sortedSpells.map(s => s.data.school))].sort();
-const levels = [...new Set(sortedSpells.map(s => s.data.level))].sort((a, b) => a - b);
-const classes = [...new Set(sortedSpells.flatMap(s => s.data.classes || []))].sort();
+const schools = [...new Set(sortedSpells.map((s: SpellEntry) => s.data.school))] as string[];
+schools.sort();
+const levels = [...new Set(sortedSpells.map((s: SpellEntry) => s.data.level))] as number[];
+levels.sort((a: number, b: number) => a - b);
+const classes = [...new Set(sortedSpells.flatMap((s: SpellEntry) => s.data.classes || []))] as string[];
+classes.sort();
 
 // School colors for badges
 const schoolColors: Record<string, string> = {
@@ -67,7 +71,7 @@ function formatLevel(level: number): string {
         <label class="filter-label">Level</label>
         <div class="filter-options" data-filter="level">
           <button class="filter-btn active" data-value="all">All</button>
-          {levels.map(level => (
+          {levels.map((level: number) => (
             <button class="filter-btn" data-value={level}>
               {formatLevel(level)}
             </button>
@@ -79,7 +83,7 @@ function formatLevel(level: number): string {
         <label class="filter-label">School</label>
         <div class="filter-options" data-filter="school">
           <button class="filter-btn active" data-value="all">All</button>
-          {schools.map(school => (
+          {schools.map((school: string) => (
             <button
               class="filter-btn"
               data-value={school}
@@ -131,7 +135,7 @@ function formatLevel(level: number): string {
           </tr>
         </thead>
         <tbody id="spells-body">
-          {sortedSpells.map(spell => (
+          {sortedSpells.map((spell: SpellEntry) => (
             <tr
               class="spell-row"
               data-level={spell.data.level}

@@ -10,19 +10,22 @@ import BreadcrumbNav from '@components/BreadcrumbNav.astro';
 
 // Get all factions
 const allFactions = await getCollection('factions');
+type FactionEntry = typeof allFactions[0];
 
 // Sort alphabetically by name
-const sortedFactions = allFactions.sort((a, b) =>
+const sortedFactions = allFactions.sort((a: FactionEntry, b: FactionEntry) =>
   a.data.name.localeCompare(b.data.name)
 );
 
 // Extract unique values for filters
-const subtypes = [...new Set(sortedFactions.map(f => f.data.subtype).filter(Boolean))].sort();
-const statuses = [...new Set(sortedFactions.map(f => f.data.status).filter(Boolean))].sort();
+const subtypes = [...new Set(sortedFactions.map((f: FactionEntry) => f.data.subtype).filter(Boolean))] as string[];
+subtypes.sort();
+const statuses = [...new Set(sortedFactions.map((f: FactionEntry) => f.data.status).filter(Boolean))] as string[];
+statuses.sort();
 
 // Group by status for display
-const activeFactions = sortedFactions.filter(f => f.data.status === 'active');
-const inactiveFactions = sortedFactions.filter(f => f.data.status !== 'active');
+const activeFactions = sortedFactions.filter((f: FactionEntry) => f.data.status === 'active');
+const inactiveFactions = sortedFactions.filter((f: FactionEntry) => f.data.status !== 'active');
 
 // Subtype display info
 const subtypeInfo: Record<string, { icon: string; color: string }> = {
@@ -67,7 +70,7 @@ function formatSubtype(subtype: string): string {
         <label class="filter-label">Type</label>
         <div class="filter-options" data-filter="subtype">
           <button class="filter-btn active" data-value="all">All</button>
-          {subtypes.map(subtype => (
+          {subtypes.map((subtype: string) => (
             <button class="filter-btn" data-value={subtype}>
               {subtypeInfo[subtype]?.icon} {formatSubtype(subtype)}
             </button>
@@ -109,7 +112,7 @@ function formatSubtype(subtype: string): string {
         </h2>
         <p class="section-description">Currently operating organizations</p>
         <div class="factions-grid">
-          {activeFactions.map(faction => (
+          {activeFactions.map((faction: FactionEntry) => (
             <a
               href={`/campaign/factions/${faction.id}`}
               class="faction-card faction-card--active"
@@ -162,7 +165,7 @@ function formatSubtype(subtype: string): string {
         </h2>
         <p class="section-description">Defunct, fallen, or historical organizations</p>
         <div class="factions-grid">
-          {inactiveFactions.map(faction => (
+          {inactiveFactions.map((faction: FactionEntry) => (
             <a
               href={`/campaign/factions/${faction.id}`}
               class="faction-card"

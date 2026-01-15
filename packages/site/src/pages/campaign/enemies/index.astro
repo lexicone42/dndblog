@@ -10,6 +10,7 @@ import BreadcrumbNav from '@components/BreadcrumbNav.astro';
 
 // Get all enemies
 const allEnemies = await getCollection('enemies');
+type EnemyEntry = typeof allEnemies[0];
 
 // Sort by subtype (bosses first), then alphabetically
 const subtypeOrder: Record<string, number> = {
@@ -21,7 +22,7 @@ const subtypeOrder: Record<string, number> = {
   trap: 5,
 };
 
-const sortedEnemies = allEnemies.sort((a, b) => {
+const sortedEnemies = allEnemies.sort((a: EnemyEntry, b: EnemyEntry) => {
   const orderA = subtypeOrder[a.data.subtype] ?? 99;
   const orderB = subtypeOrder[b.data.subtype] ?? 99;
   if (orderA !== orderB) return orderA - orderB;
@@ -29,17 +30,17 @@ const sortedEnemies = allEnemies.sort((a, b) => {
 });
 
 // Extract unique values for filters
-const subtypes = [...new Set(sortedEnemies.map(e => e.data.subtype).filter(Boolean))].sort(
-  (a, b) => (subtypeOrder[a] ?? 99) - (subtypeOrder[b] ?? 99)
-);
-const statuses = [...new Set(sortedEnemies.map(e => e.data.status).filter(Boolean))].sort();
+const subtypes = [...new Set(sortedEnemies.map((e: EnemyEntry) => e.data.subtype).filter(Boolean))] as string[];
+subtypes.sort((a: string, b: string) => (subtypeOrder[a] ?? 99) - (subtypeOrder[b] ?? 99));
+const statuses = [...new Set(sortedEnemies.map((e: EnemyEntry) => e.data.status).filter(Boolean))] as string[];
+statuses.sort();
 
 // Group by subtype for display
-const bosses = sortedEnemies.filter(e => e.data.subtype === 'boss');
-const lieutenants = sortedEnemies.filter(e => e.data.subtype === 'lieutenant');
-const creatures = sortedEnemies.filter(e => e.data.subtype === 'creature');
-const minions = sortedEnemies.filter(e => e.data.subtype === 'minion');
-const others = sortedEnemies.filter(e => !['boss', 'lieutenant', 'creature', 'minion'].includes(e.data.subtype));
+const bosses = sortedEnemies.filter((e: EnemyEntry) => e.data.subtype === 'boss');
+const lieutenants = sortedEnemies.filter((e: EnemyEntry) => e.data.subtype === 'lieutenant');
+const creatures = sortedEnemies.filter((e: EnemyEntry) => e.data.subtype === 'creature');
+const minions = sortedEnemies.filter((e: EnemyEntry) => e.data.subtype === 'minion');
+const others = sortedEnemies.filter((e: EnemyEntry) => !['boss', 'lieutenant', 'creature', 'minion'].includes(e.data.subtype));
 
 // Subtype display info
 const subtypeInfo: Record<string, { name: string; description: string; color: string }> = {
@@ -74,7 +75,7 @@ const subtypeInfo: Record<string, { name: string; description: string; color: st
         <label class="filter-label">Threat Level</label>
         <div class="filter-options" data-filter="subtype">
           <button class="filter-btn active" data-value="all">All</button>
-          {subtypes.map(subtype => (
+          {subtypes.map((subtype: string) => (
             <button class="filter-btn" data-value={subtype}>
               {subtypeInfo[subtype]?.name || subtype}
             </button>
@@ -116,7 +117,7 @@ const subtypeInfo: Record<string, { name: string; description: string; color: st
         </h2>
         <p class="section-description">Campaign-level antagonists and world-ending dangers</p>
         <div class="enemies-grid">
-          {bosses.map(enemy => (
+          {bosses.map((enemy: EnemyEntry) => (
             <a
               href={`/campaign/enemies/${enemy.id}`}
               class="enemy-card enemy-card--boss"
@@ -157,7 +158,7 @@ const subtypeInfo: Record<string, { name: string; description: string; color: st
         </h2>
         <p class="section-description">Powerful servants of greater evils</p>
         <div class="enemies-grid">
-          {lieutenants.map(enemy => (
+          {lieutenants.map((enemy: EnemyEntry) => (
             <a
               href={`/campaign/enemies/${enemy.id}`}
               class="enemy-card enemy-card--lieutenant"
@@ -198,7 +199,7 @@ const subtypeInfo: Record<string, { name: string; description: string; color: st
         </h2>
         <p class="section-description">Dangerous beasts and monsters</p>
         <div class="enemies-grid">
-          {creatures.map(enemy => (
+          {creatures.map((enemy: EnemyEntry) => (
             <a
               href={`/campaign/enemies/${enemy.id}`}
               class="enemy-card"
@@ -239,7 +240,7 @@ const subtypeInfo: Record<string, { name: string; description: string; color: st
         </h2>
         <p class="section-description">Lesser foes and pawns</p>
         <div class="enemies-grid">
-          {[...minions, ...others].map(enemy => (
+          {[...minions, ...others].map((enemy: EnemyEntry) => (
             <a
               href={`/campaign/enemies/${enemy.id}`}
               class="enemy-card"

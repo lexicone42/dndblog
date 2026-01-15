@@ -7,24 +7,30 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { getCollection, render } from 'astro:content';
 
+// Get collection for type inference
+const allGlossaryEntries = await getCollection('glossary');
+type GlossaryEntry = typeof allGlossaryEntries[0];
+
+interface Props {
+  entry: GlossaryEntry;
+}
+
 export async function getStaticPaths() {
   const entries = await getCollection('glossary');
-  type GlossaryEntry = typeof entries[0];
+  type Entry = typeof entries[0];
 
-  return entries.map((entry: GlossaryEntry) => ({
+  return entries.map((entry: Entry) => ({
     params: { slug: entry.data.slug },
     props: { entry },
   }));
 }
 
-const { entry } = Astro.props;
+const { entry } = Astro.props as Props;
 const { Content } = await render(entry);
 
 // Build lookup map for see also links
-const allEntries = await getCollection('glossary');
-type GlossaryEntry = typeof allEntries[0];
 const glossaryLookup: Record<string, string> = {};
-for (const e of allEntries as GlossaryEntry[]) {
+for (const e of allGlossaryEntries) {
   glossaryLookup[e.data.name.toLowerCase()] = e.data.slug;
 }
 

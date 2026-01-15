@@ -20,11 +20,12 @@ type Category = 'action' | 'condition' | 'area-of-effect' | 'hazard' | 'attitude
 
 // Extract unique categories (filter out undefined)
 type GlossaryEntry = typeof sortedTerms[0];
-const categories: Category[] = [...new Set(
+const categorySet = new Set(
   sortedTerms
     .map((t: GlossaryEntry) => t.data.category)
-    .filter((c): c is Category => c !== undefined)
-)].sort();
+    .filter((c: GlossaryEntry['data']['category']): c is Category => c !== undefined)
+);
+const categories: Category[] = [...categorySet].sort() as Category[];
 
 // Category colors
 const categoryColors: Record<string, string> = {

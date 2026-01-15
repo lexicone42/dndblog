@@ -10,15 +10,18 @@ import BreadcrumbNav from '@components/BreadcrumbNav.astro';
 
 // Get all locations
 const allLocations = await getCollection('locations');
+type LocationEntry = typeof allLocations[0];
 
 // Sort alphabetically by name
-const sortedLocations = allLocations.sort((a, b) =>
+const sortedLocations = allLocations.sort((a: LocationEntry, b: LocationEntry) =>
   a.data.name.localeCompare(b.data.name)
 );
 
 // Extract unique values for filters
-const subtypes = [...new Set(sortedLocations.map(l => l.data.subtype).filter(Boolean))].sort();
-const statuses = [...new Set(sortedLocations.map(l => l.data.status).filter(Boolean))].sort();
+const subtypes = [...new Set(sortedLocations.map((l: LocationEntry) => l.data.subtype).filter(Boolean))] as string[];
+subtypes.sort();
+const statuses = [...new Set(sortedLocations.map((l: LocationEntry) => l.data.status).filter(Boolean))] as string[];
+statuses.sort();
 ---
 
 <BaseLayout
@@ -79,7 +82,7 @@ const statuses = [...new Set(sortedLocations.map(l => l.data.status).filter(Bool
 
     <!-- Locations Grid -->
     <div class="locations-grid" id="locations-grid">
-      {sortedLocations.map(location => (
+      {sortedLocations.map((location: LocationEntry) => (
         <a
           href={`/campaign/locations/${location.id}`}
           class="location-card"

@@ -2,6 +2,15 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { getCollection, render } from 'astro:content';
 
+// Get collection for type inference
+const allEnemyEntries = await getCollection('enemies');
+type EnemyEntry = typeof allEnemyEntries[0];
+
+interface Props {
+  entry: EnemyEntry;
+  entityLookup: Record<string, { name: string; path: string }>;
+}
+
 export async function getStaticPaths() {
   // Fetch all collections in parallel
   const [entries, characters, enemies, locations, factions, items] = await Promise.all([
@@ -13,21 +22,27 @@ export async function getStaticPaths() {
     getCollection('items'),
   ]);
 
+  type CharacterEntry = typeof characters[0];
+  type EnemyEntry = typeof enemies[0];
+  type LocationEntry = typeof locations[0];
+  type FactionEntry = typeof factions[0];
+  type ItemEntry = typeof items[0];
+
   // Build entity lookup map for linking relationships
   const entityLookup: Record<string, { name: string; path: string }> = {};
-  characters.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/characters/${e.id}` });
-  enemies.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/enemies/${e.id}` });
-  locations.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/locations/${e.id}` });
-  factions.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/factions/${e.id}` });
-  items.forEach(e => entityLookup[e.id] = { name: e.data.name, path: `/campaign/items/${e.id}` });
+  characters.forEach((e: CharacterEntry) => entityLookup[e.id] = { name: e.data.name, path: `/campaign/characters/${e.id}` });
+  enemies.forEach((e: EnemyEntry) => entityLookup[e.id] = { name: e.data.name, path: `/campaign/enemies/${e.id}` });
+  locations.forEach((e: LocationEntry) => entityLookup[e.id] = { name: e.data.name, path: `/campaign/locations/${e.id}` });
+  factions.forEach((e: FactionEntry) => entityLookup[e.id] = { name: e.data.name, path: `/campaign/factions/${e.id}` });
+  items.forEach((e: ItemEntry) => entityLookup[e.id] = { name: e.data.name, path: `/campaign/items/${e.id}` });
 
-  return entries.map(entry => ({
+  return entries.map((entry: EnemyEntry) => ({
     params: { slug: entry.id },
     props: { entry, entityLookup },
   }));
 }
 
-const { entry, entityLookup } = Astro.props;
+const { entry, entityLookup } = Astro.props as Props;
 const { Content } = await render(entry);
 
 const statusColors: Record<string, string> = {
