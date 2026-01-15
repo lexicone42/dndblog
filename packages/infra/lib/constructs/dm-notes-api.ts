@@ -820,72 +820,103 @@ function slugify(name) {
     .replace(/^-|-$/g, '');
 }
 
-// Entity schema definitions for the AI prompt
-const ENTITY_SCHEMAS = \`
-## ENTITY TYPES AND SCHEMAS
+// Rich entity generation prompt for Nova Premier
+const SYSTEM_PROMPT = \`You are a D&D 5e campaign wiki generator. Convert natural language descriptions into rich, structured entity data.
 
-### CHARACTER (subtype: pc | npc | deity | historical)
-Required: name, type: "character", subtype
-Common fields: race, class, level (1-20), background, alignment
-Equipment: { equipped: [{ slot, item, attuned }], currency: { pp, gp, ep, sp, cp } }
-Optional: faction, location, description, tags, relationships
+## OUTPUT FORMAT
+Return valid JSON with this exact structure:
+{
+  "entityType": "character|enemy|item|location|faction",
+  "subtype": "specific subtype",
+  "confidence": 80,
+  "frontmatter": {
+    "name": "Entity Name",
+    "type": "character|enemy|item|location|faction",
+    "subtype": "npc|boss|weapon|city|guild|etc",
+    "status": "active",
+    "visibility": "public",
+    "description": "One-line summary",
+    "abilities": ["Notable ability 1", "Notable ability 2"],
+    "tags": ["tag1", "tag2"],
+    "relationships": [
+      {"entity": "related-entity-slug", "type": "ally|enemy|serves|guards", "note": "Context"}
+    ]
+  },
+  "markdown": "# Entity Name\\n\\nFull description...\\n\\n## Section\\n\\nMore content...",
+  "slug": "entity-name"
+}
 
-### ENEMY (subtype: boss | lieutenant | minion | creature | swarm | trap)
-Required: name, type: "enemy", subtype
-Common fields: baseMonster, cr (e.g. "1/4", "5", "mythic"), creatureType
-Optional: faction, lair, territory, customizations, tags, description
+## ENTITY TYPES
 
-### ITEM (subtype: weapon | armor | artifact | consumable | quest | treasure | tool | wondrous | vehicle | property)
-Required: name, type: "item", subtype
-Common fields: rarity (common|uncommon|rare|very-rare|legendary|artifact|unique)
-Optional: baseItem, attunement (boolean), properties [], currentOwner, description
+### CHARACTER (NPCs, PCs, deities)
+Subtypes: npc, pc, deity, historical
+Fields: class, race, alignment, location, abilities, relationships
+Markdown sections: Description, Personality, Secrets (if any), Key Dialogue
 
-### LOCATION (subtype: plane | continent | region | city | town | village | dungeon | wilderness | building | room | landmark)
-Required: name, type: "location", subtype
-Common fields: parentLocation, climate, terrain, population
-Optional: controlledBy, pointsOfInterest [], secrets [], description
+### ENEMY (Monsters, villains, bosses)
+Subtypes: boss, lieutenant, minion, creature, swarm, trap
+Fields: baseMonster, cr, creatureType, location, abilities, relationships
+Markdown sections: Description, Tactics, Motivation, Loot
 
-### FACTION (subtype: cult | guild | government | military | religious | criminal | merchant | noble-house | adventuring-party | secret-society)
-Required: name, type: "faction", subtype
-Common fields: leader, headquarters, goals [], methods []
-Optional: allies [], enemies [], territory [], symbol, motto, description
-\`;
+### ITEM (Weapons, armor, magic items)
+Subtypes: weapon, armor, artifact, consumable, wondrous, treasure
+Fields: rarity (common/uncommon/rare/very-rare/legendary), attunement, properties
+Markdown sections: Description, Properties, History
 
-const PARSING_RULES = \`
+### LOCATION (Places)
+Subtypes: city, town, village, dungeon, wilderness, building, landmark
+Fields: parentLocation, population, controlledBy
+Markdown sections: Description, Points of Interest, Secrets
+
+### FACTION (Organizations)
+Subtypes: guild, cult, government, military, criminal, merchant, noble-house
+Fields: leader, headquarters, goals, methods
+Markdown sections: Description, Goals, Methods, Notable Members
+
 ## PARSING RULES
+- Currency: "2gp" → use in description, "50 silver" → mention in loot
+- Equipment: Infer from context (orc with scimitar → warrior type)
+- Names: Capitalize properly ("gorok" → "Gorok", "chief gorok" → "Chief Gorok")
+- Alignment: Infer from behavior ("cruel" → evil, "noble" → good)
+- Status: Default "active", use "dead" if stated deceased
 
-1. CURRENCY PARSING:
-   - "2 gold" or "2gp" → { gp: 2 }
-   - "50 silver" or "50sp" → { sp: 50 }
-   - "10 platinum" → { pp: 10 }
-   - Multiple: "2gp 50sp" → { gp: 2, sp: 50 }
+## EXAMPLE INPUT/OUTPUT
 
-2. EQUIPMENT PARSING:
-   - "scimitar" → { slot: "main-hand", item: "scimitar" }
-   - "leather armor" → { slot: "armor", item: "leather-armor" }
-   - "+1 longsword" → { slot: "main-hand", item: "longsword", properties: ["+1"] }
+Input: "Gorok, an orc warrior with a scimitar and 2 gold. He's a cruel bastard who works for the Shadow Guild"
 
-3. NAME HANDLING:
-   - Capitalize properly: "gorok" → "Gorok"
-   - Handle titles: "chief gorok" → "Chief Gorok"
+Output:
+{
+  "entityType": "character",
+  "subtype": "npc",
+  "confidence": 95,
+  "frontmatter": {
+    "name": "Gorok",
+    "type": "character",
+    "subtype": "npc",
+    "status": "active",
+    "visibility": "public",
+    "description": "A cruel orc warrior in service to the Shadow Guild",
+    "race": "Orc",
+    "class": "warrior",
+    "alignment": "Neutral Evil",
+    "abilities": ["Skilled with scimitar", "Brutal combat style"],
+    "tags": ["orc", "warrior", "shadow-guild", "hostile"],
+    "relationships": [
+      {"entity": "shadow-guild", "type": "serves", "note": "Enforcer"}
+    ]
+  },
+  "markdown": "# Gorok\\n\\nA cruel orc warrior who serves as an enforcer for the Shadow Guild. Armed with a scimitar and carrying a small purse of gold.\\n\\n## Personality\\n\\nGorok is brutal and merciless, known for his cruelty even among orcs. He takes pleasure in intimidation.\\n\\n## Combat\\n\\nFights aggressively with his scimitar, preferring to overwhelm opponents with savage strikes.\\n\\n## Loot\\n\\n- Scimitar\\n- 2 gp",
+  "slug": "gorok"
+}
 
-4. ALIGNMENT INFERENCE:
-   - Negative descriptions → evil alignment (CE, NE, LE)
-   - "piece of shit", "vile", "cruel" → Chaotic Evil or Neutral Evil
-   - "noble", "kind", "heroic" → Good alignments
-
-5. STATUS:
-   - Default to "active" unless stated otherwise
-   - "dead", "deceased" → "dead"
-   - "missing", "lost" → "missing"
-
-6. ENTITY TYPE DETECTION:
-   - Creatures with CR/stats → enemy
-   - Named NPCs interacted with → character (npc)
-   - Places → location
-   - Organizations → faction
-   - Objects/gear → item
-\`;
+## CRITICAL RULES
+- Output ONLY the JSON object, nothing else
+- Start with { and end with }
+- Use double quotes for all strings
+- Make markdown rich with multiple sections
+- Include 3-5 relevant tags
+- Always include abilities array with 2-4 notable traits
+- Generate creative but appropriate content based on the description\`;
 
 exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
@@ -923,44 +954,9 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Input too long (max 2000 characters)' }) };
     }
 
-    // Build the AI prompt
-    const systemPrompt = \`You are a D&D campaign assistant that converts natural language entity descriptions into structured YAML frontmatter for a campaign wiki.
-
-\${ENTITY_SCHEMAS}
-
-\${PARSING_RULES}
-
-Your task is to:
-1. Detect the entity type from the input (or use the provided hint)
-2. Extract all mentioned attributes into schema-compliant fields
-3. Infer reasonable defaults for unspecified fields
-4. Generate a brief markdown description
-
-Output valid JSON with this structure:
-{
-  "entityType": "character|enemy|item|location|faction",
-  "subtype": "the specific subtype",
-  "confidence": 0-100,
-  "frontmatter": { ... all YAML fields as a JSON object ... },
-  "markdown": "Brief markdown content for the entity page",
-  "slug": "kebab-case-name",
-  "suggestions": ["optional improvement suggestions"]
-}
-
-IMPORTANT RULES:
-- frontmatter must include "type" and "subtype" fields
-- All field names use camelCase
-- Do not include null or undefined values
-- Tags should be lowercase kebab-case
-- Status defaults to "active"
-- Visibility defaults to "public"
-- Output ONLY valid JSON, no explanations or markdown code blocks
-- Start your response with { and end with }
-- Do not include any text before or after the JSON object\`;
-
     const userPrompt = hint
-      ? \`Entity type hint: \${hint}\\n\\nDescription: \${input}\`
-      : \`Description: \${input}\`;
+      ? \`[Entity type hint: \${hint}]\\n\\n\${input}\`
+      : input;
 
     // Amazon Nova Premier uses Messages API format
     const bedrockPayload = {
@@ -970,7 +966,7 @@ IMPORTANT RULES:
           content: [{ text: userPrompt }]
         }
       ],
-      system: [{ text: systemPrompt }],
+      system: [{ text: SYSTEM_PROMPT }],
       inferenceConfig: {
         maxTokens: 2048,
         temperature: 0.3,
