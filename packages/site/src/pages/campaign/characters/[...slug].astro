@@ -108,6 +108,19 @@ const statusColors: Record<string, string> = {
         <span class={`entity-status ${statusColors[entry.data.status] || 'status--unknown'}`}>
           {entry.data.status}
         </span>
+        <a
+          href={`/dm/entities?type=character&slug=${entry.id}`}
+          class="dm-edit-btn"
+          id="dm-edit-btn"
+          style="display: none;"
+          title="Edit in DM Dashboard"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          Edit
+        </a>
       </div>
 
       {entry.data.description && (
@@ -505,4 +518,43 @@ const statusColors: Record<string, string> = {
     background: var(--color-bg-tertiary);
     color: var(--color-text);
   }
+
+  /* DM Edit Button */
+  .dm-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 4px 10px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-gold);
+    border-radius: var(--radius-md);
+    color: var(--color-gold);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    margin-left: auto;
+  }
+
+  .dm-edit-btn:hover {
+    background: var(--color-gold);
+    color: var(--color-bg);
+  }
+
+  .dm-edit-btn svg {
+    flex-shrink: 0;
+  }
 </style>
+
+<script>
+  // Show DM edit button if authenticated
+  (function() {
+    var token = localStorage.getItem('dmToken');
+    if (token) {
+      var btn = document.getElementById('dm-edit-btn');
+      if (btn) {
+        btn.style.display = 'inline-flex';
+      }
+    }
+  })();
+</script>

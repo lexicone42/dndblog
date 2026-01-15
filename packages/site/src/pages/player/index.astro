@@ -79,49 +79,51 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         {activeParty.length > 0 ? (
           <div class="party-grid">
             {activeParty.map((character: typeof activeParty[0]) => (
-              <a href={`/campaign/characters/${character.id}`} class="character-card">
-                <div class="character-header">
-                  <h3 class="character-name">{character.data.name}</h3>
-                  {character.data.level && (
-                    <span class="character-level">Lvl {character.data.level}</span>
-                  )}
-                </div>
-
-                <div class="character-info">
-                  {character.data.race && (
-                    <span class="character-tag">{character.data.race}</span>
-                  )}
-                  {character.data.class && (
-                    <span class="character-tag character-tag--class">
-                      {character.data.class}
-                      {character.data.subclass && ` (${character.data.subclass})`}
-                    </span>
-                  )}
-                </div>
-
-                {character.data.player && (
-                  <div class="character-player">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    <span>{character.data.player}</span>
+              <div class="character-card">
+                <a href={`/campaign/characters/${character.id}`} class="character-card-link">
+                  <div class="character-header">
+                    <h3 class="character-name">{character.data.name}</h3>
+                    {character.data.level && (
+                      <span class="character-level">Lvl {character.data.level}</span>
+                    )}
                   </div>
-                )}
 
-                {character.data.description && (
-                  <p class="character-description">
-                    {character.data.description.slice(0, 100)}...
-                  </p>
-                )}
+                  <div class="character-info">
+                    {character.data.race && (
+                      <span class="character-tag">{character.data.race}</span>
+                    )}
+                    {character.data.class && (
+                      <span class="character-tag character-tag--class">
+                        {character.data.class}
+                        {character.data.subclass && ` (${character.data.subclass})`}
+                      </span>
+                    )}
+                  </div>
 
-                <a href={`/player/session/${character.id}`} class="session-tracker-btn" onclick="event.stopPropagation();">
+                  {character.data.player && (
+                    <div class="character-player">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      <span>{character.data.player}</span>
+                    </div>
+                  )}
+
+                  {character.data.description && (
+                    <p class="character-description">
+                      {character.data.description.slice(0, 100)}...
+                    </p>
+                  )}
+                </a>
+
+                <a href={`/player/session/${character.id}`} class="session-tracker-btn">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                   </svg>
                   Session Tracker
                 </a>
-              </a>
+              </div>
             ))}
           </div>
         ) : (
@@ -449,19 +451,27 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
   .character-card {
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm);
-    padding: var(--space-lg);
     background: var(--color-bg-secondary);
     border: 2px solid var(--color-gold);
     border-radius: var(--radius-lg);
-    text-decoration: none;
-    color: var(--color-text);
+    overflow: hidden;
     transition: all var(--transition-fast);
   }
 
   .character-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(var(--color-gold-rgb, 201, 162, 39), 0.2);
+  }
+
+  .character-card-link {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-lg);
+    padding-bottom: var(--space-md);
+    text-decoration: none;
+    color: var(--color-text);
+    flex: 1;
   }
 
   .character-header {
@@ -522,9 +532,10 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
   .session-tracker-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: var(--space-xs);
-    margin-top: var(--space-sm);
-    padding: var(--space-xs) var(--space-sm);
+    margin: 0 var(--space-lg) var(--space-lg);
+    padding: var(--space-sm) var(--space-md);
     background: var(--color-accent);
     color: white;
     text-decoration: none;

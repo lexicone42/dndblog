@@ -738,6 +738,89 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       };
 
       var expandedCard = null;  // Track which card is currently expanded
+      var autosaveTimer = null;  // Debounce timer for autosave
+      var pendingAutosave = null;  // Track pending autosave {card, entity}
+
+      // Autosave on field blur with debouncing
+      function scheduleAutosave(card, entity) {
+        // Clear any pending autosave
+        if (autosaveTimer) {
+          clearTimeout(autosaveTimer);
+        }
+
+        // Store what needs saving
+        pendingAutosave = { card: card, entity: entity };
+
+        // Show saving indicator
+        var indicator = card.querySelector('.autosave-indicator');
+        if (indicator) {
+          indicator.textContent = 'Unsaved changes...';
+          indicator.className = 'autosave-indicator autosave-indicator--pending';
+        }
+
+        // Debounce: wait 800ms after last change before saving
+        autosaveTimer = setTimeout(function() {
+          if (pendingAutosave) {
+            performAutosave(pendingAutosave.card, pendingAutosave.entity);
+          }
+        }, 800);
+      }
+
+      async function performAutosave(card, entity) {
+        var token = getToken();
+        var apiUrl = getApiUrl();
+        var formData = collectFormData(card);
+
+        var indicator = card.querySelector('.autosave-indicator');
+        if (indicator) {
+          indicator.textContent = 'Saving...';
+          indicator.className = 'autosave-indicator autosave-indicator--saving';
+        }
+
+        try {
+          var response = await fetch(apiUrl + '/staging/entities/' + entity.branchName + '/' + entity.entityType + '/' + entity.slug, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-DM-Token': token
+            },
+            body: JSON.stringify({ frontmatter: formData })
+          });
+
+          if (!response.ok) {
+            var errorData = await response.json().catch(function() { return {}; });
+            throw new Error(errorData.error || 'Failed to save');
+          }
+
+          // Update the entity in memory to reflect saved state
+          var index = allEntities.findIndex(function(e) {
+            return e.slug === entity.slug && e.branchName === entity.branchName;
+          });
+          if (index !== -1) {
+            Object.assign(allEntities[index].frontmatter, formData);
+          }
+
+          if (indicator) {
+            indicator.textContent = 'Saved ✓';
+            indicator.className = 'autosave-indicator autosave-indicator--saved';
+            // Clear the saved message after 2 seconds
+            setTimeout(function() {
+              if (indicator.classList.contains('autosave-indicator--saved')) {
+                indicator.textContent = '';
+              }
+            }, 2000);
+          }
+
+        } catch (error) {
+          console.error('Autosave error:', error);
+          if (indicator) {
+            indicator.textContent = 'Save failed - click Save Changes';
+            indicator.className = 'autosave-indicator autosave-indicator--error';
+          }
+        }
+
+        pendingAutosave = null;
+      }
 
       function toggleCardExpand(card, entity) {
         var details = card.querySelector('.entity-card__details');
@@ -764,7 +847,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         }
       }
 
-      function createFormField(field, value) {
+      function createFormField(field, value, card, entity) {
         var wrapper = document.createElement('div');
         wrapper.className = 'entity-form-field';
 
@@ -801,6 +884,21 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           input.value = value || '';
         }
         input.dataset.fieldKey = field.key;
+
+        // Attach autosave handlers if card and entity provided
+        if (card && entity) {
+          // For selects, save on change
+          if (field.type === 'select') {
+            input.addEventListener('change', function() {
+              scheduleAutosave(card, entity);
+            });
+          } else {
+            // For text inputs and textareas, save on blur
+            input.addEventListener('blur', function() {
+              scheduleAutosave(card, entity);
+            });
+          }
+        }
 
         wrapper.appendChild(label);
         wrapper.appendChild(input);
@@ -910,7 +1008,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
           var fields = fieldsByType[entity.entityType] || fieldsByType.character;
           fields.forEach(function(field) {
-            var fieldEl = createFormField(field, fm[field.key]);
+            var fieldEl = createFormField(field, fm[field.key], card, entity);
             form.appendChild(fieldEl);
           });
 
@@ -957,6 +1055,11 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             confirmDeleteEntity(entity);
           });
 
+          // Autosave status indicator
+          var autosaveIndicator = document.createElement('span');
+          autosaveIndicator.className = 'autosave-indicator';
+
+          actions.appendChild(autosaveIndicator);
           actions.appendChild(saveBtn);
           actions.appendChild(cancelBtn);
           actions.appendChild(deleteBtn);
@@ -984,6 +1087,37 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           });
 
           gridEl.appendChild(card);
+        });
+
+        // Auto-expand card if linked from reference page via URL params
+        autoExpandFromUrl();
+      }
+
+      function autoExpandFromUrl() {
+        var params = new URLSearchParams(window.location.search);
+        var editSlug = params.get('slug');
+        var editType = params.get('type');
+
+        if (!editSlug) return;
+
+        // Find the matching card
+        var cards = document.querySelectorAll('.entity-card--expandable');
+        cards.forEach(function(card) {
+          if (card.dataset.slug === editSlug && (!editType || card.dataset.type === editType)) {
+            // Find the matching entity
+            var entity = allEntities.find(function(e) {
+              return e.slug === editSlug && (!editType || e.entityType === editType);
+            });
+            if (entity) {
+              toggleCardExpand(card, entity);
+              // Scroll the card into view
+              setTimeout(function() {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 100);
+              // Clear the URL params to avoid re-expanding on refresh
+              window.history.replaceState({}, '', window.location.pathname);
+            }
+          }
         });
       }
 
@@ -2806,6 +2940,37 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       font-family: var(--font-display);
       text-transform: uppercase;
       letter-spacing: 0.05em;
+    }
+
+    /* Autosave indicator */
+    .autosave-indicator {
+      font-size: var(--text-sm);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-sm);
+      min-width: 140px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .autosave-indicator--pending {
+      color: var(--color-gold);
+      background: rgba(184, 134, 11, 0.1);
+    }
+
+    .autosave-indicator--saving {
+      color: var(--color-text-muted);
+      background: rgba(128, 128, 128, 0.1);
+    }
+
+    .autosave-indicator--saved {
+      color: #22c55e;
+      background: rgba(34, 197, 94, 0.1);
+    }
+
+    .autosave-indicator--error {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+      font-weight: 500;
     }
 
     .btn--sm {
