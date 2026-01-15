@@ -1817,5 +1817,354 @@ exports.handler = async (event) => {
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
     });
+
+    // ==========================================================================
+    // GitHub Publish Function - Publish staging branch to GitHub as a PR
+    // ==========================================================================
+
+    const githubPublishFunction = new lambda.Function(this, 'GitHubPublishFunction', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(60),
+      memorySize: 512,
+      environment: {
+        BUCKET_NAME: this.bucket.bucketName,
+        TOKEN_PARAMETER_NAME: tokenParameterName,
+        GITHUB_PAT_PARAMETER_NAME: '/dndblog/github-pat',
+        ALLOWED_ORIGIN: props.allowedOrigin,
+        STAGING_PREFIX: 'staging/branches/',
+        GITHUB_OWNER: 'lexicone42',
+        GITHUB_REPO: 'dndblog',
+        GITHUB_DEFAULT_BRANCH: 'main',
+      },
+      code: lambda.Code.fromInline(`
+const { S3Client, GetObjectCommand, ListObjectsV2Command, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
+const https = require('https');
+
+const s3Client = new S3Client({});
+const ssmClient = new SSMClient({});
+
+let cachedToken = null;
+let tokenExpiry = 0;
+let cachedGitHubPat = null;
+let gitHubPatExpiry = 0;
+
+async function getToken() {
+  const now = Date.now();
+  if (cachedToken && now < tokenExpiry) return cachedToken;
+  const result = await ssmClient.send(new GetParameterCommand({
+    Name: process.env.TOKEN_PARAMETER_NAME,
+    WithDecryption: true,
+  }));
+  cachedToken = result.Parameter.Value;
+  tokenExpiry = now + 5 * 60 * 1000;
+  return cachedToken;
+}
+
+async function getGitHubPat() {
+  const now = Date.now();
+  if (cachedGitHubPat && now < gitHubPatExpiry) return cachedGitHubPat;
+  const result = await ssmClient.send(new GetParameterCommand({
+    Name: process.env.GITHUB_PAT_PARAMETER_NAME,
+    WithDecryption: true,
+  }));
+  cachedGitHubPat = result.Parameter.Value;
+  gitHubPatExpiry = now + 5 * 60 * 1000;
+  return cachedGitHubPat;
+}
+
+function getCorsOrigin(event) {
+  const origin = event.headers?.origin || event.headers?.Origin || '';
+  if (origin.startsWith('http://localhost:')) return origin;
+  return process.env.ALLOWED_ORIGIN;
+}
+
+// GitHub API helper
+async function githubApi(method, path, body = null) {
+  const pat = await getGitHubPat();
+  const options = {
+    hostname: 'api.github.com',
+    port: 443,
+    path: path,
+    method: method,
+    headers: {
+      'Authorization': 'Bearer ' + pat,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'dndblog-staging-publisher',
+      'Content-Type': 'application/json',
+    },
+  };
+
+  return new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const json = data ? JSON.parse(data) : {};
+          if (res.statusCode >= 400) {
+            reject(new Error(json.message || 'GitHub API error: ' + res.statusCode));
+          } else {
+            resolve(json);
+          }
+        } catch (e) {
+          reject(new Error('Failed to parse GitHub response: ' + data.substring(0, 200)));
+        }
+      });
+    });
+    req.on('error', reject);
+    if (body) req.write(JSON.stringify(body));
+    req.end();
+  });
+}
+
+// Get entities from S3 staging branch
+async function getEntitiesFromStaging(branchName) {
+  const prefix = process.env.STAGING_PREFIX + branchName + '/entities/';
+  const result = await s3Client.send(new ListObjectsV2Command({
+    Bucket: process.env.BUCKET_NAME,
+    Prefix: prefix,
+  }));
+
+  const entities = [];
+  for (const obj of (result.Contents || [])) {
+    if (!obj.Key.endsWith('.json')) continue;
+    const data = await s3Client.send(new GetObjectCommand({
+      Bucket: process.env.BUCKET_NAME,
+      Key: obj.Key,
+    }));
+    const body = await data.Body.transformToString();
+    entities.push(JSON.parse(body));
+  }
+  return entities;
+}
+
+// Update staging branch metadata with GitHub info
+async function updateBranchMetadata(branchName, githubBranch, prUrl) {
+  const metaKey = process.env.STAGING_PREFIX + branchName + '/_metadata.json';
+  let metadata;
+  try {
+    const data = await s3Client.send(new GetObjectCommand({
+      Bucket: process.env.BUCKET_NAME,
+      Key: metaKey,
+    }));
+    metadata = JSON.parse(await data.Body.transformToString());
+  } catch (e) {
+    metadata = { name: branchName, displayName: branchName };
+  }
+
+  metadata.status = 'published';
+  metadata.githubBranch = githubBranch;
+  metadata.githubPrUrl = prUrl;
+  metadata.publishedAt = new Date().toISOString();
+
+  await s3Client.send(new PutObjectCommand({
+    Bucket: process.env.BUCKET_NAME,
+    Key: metaKey,
+    Body: JSON.stringify(metadata, null, 2),
+    ContentType: 'application/json',
+  }));
+}
+
+exports.handler = async (event) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': getCorsOrigin(event),
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
+  };
+
+  // Handle CORS preflight
+  if (event.requestContext?.http?.method === 'OPTIONS') {
+    return { statusCode: 204, headers, body: '' };
+  }
+
+  try {
+    // Validate auth
+    const token = await getToken();
+    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
+    if (providedToken !== token) {
+      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
+    }
+
+    // Parse branch name from path: POST /staging/branches/{name}/publish
+    const path = event.rawPath || event.requestContext?.http?.path || '';
+    const match = path.match(/^\\/staging\\/branches\\/([^/]+)\\/publish$/);
+    if (!match) {
+      return { statusCode: 404, headers, body: JSON.stringify({ error: 'Invalid path' }) };
+    }
+
+    const stagingBranchName = match[1].replace(/[^a-z0-9-_]/gi, '-').toLowerCase();
+    const githubBranchName = 'staging/' + stagingBranchName;
+    const owner = process.env.GITHUB_OWNER;
+    const repo = process.env.GITHUB_REPO;
+    const defaultBranch = process.env.GITHUB_DEFAULT_BRANCH;
+
+    // Get entities from staging
+    const entities = await getEntitiesFromStaging(stagingBranchName);
+    if (entities.length === 0) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'No entities to publish' }) };
+    }
+
+    console.log('Publishing ' + entities.length + ' entities to GitHub branch: ' + githubBranchName);
+
+    // 1. Get the SHA of the default branch
+    const refData = await githubApi('GET', '/repos/' + owner + '/' + repo + '/git/ref/heads/' + defaultBranch);
+    const baseSha = refData.object.sha;
+
+    // 2. Create the new branch (or update if exists)
+    try {
+      await githubApi('POST', '/repos/' + owner + '/' + repo + '/git/refs', {
+        ref: 'refs/heads/' + githubBranchName,
+        sha: baseSha,
+      });
+    } catch (e) {
+      if (e.message.includes('Reference already exists')) {
+        // Update existing branch to latest main
+        await githubApi('PATCH', '/repos/' + owner + '/' + repo + '/git/refs/heads/' + githubBranchName, {
+          sha: baseSha,
+          force: true,
+        });
+      } else {
+        throw e;
+      }
+    }
+
+    // 3. Create blobs and tree for all entity files
+    const treeItems = [];
+    for (const entity of entities) {
+      const entityType = entity.entityType || entity.type || 'character';
+      const slug = entity.slug || entity.id;
+      const filePath = 'packages/site/src/content/entities/' + entityType + '/' + slug + '.md';
+
+      // Create blob for the markdown content
+      const content = entity.fullContent || '---\\nyaml: content\\n---\\n';
+      const blobData = await githubApi('POST', '/repos/' + owner + '/' + repo + '/git/blobs', {
+        content: Buffer.from(content).toString('base64'),
+        encoding: 'base64',
+      });
+
+      treeItems.push({
+        path: filePath,
+        mode: '100644',
+        type: 'blob',
+        sha: blobData.sha,
+      });
+    }
+
+    // 4. Get the base tree and create new tree
+    const baseCommit = await githubApi('GET', '/repos/' + owner + '/' + repo + '/git/commits/' + baseSha);
+    const newTree = await githubApi('POST', '/repos/' + owner + '/' + repo + '/git/trees', {
+      base_tree: baseCommit.tree.sha,
+      tree: treeItems,
+    });
+
+    // 5. Create commit
+    const entityNames = entities.map(e => e.name || e.slug).join(', ');
+    const commitMessage = 'Add staged entities: ' + entityNames + '\\n\\nPublished from staging branch: ' + stagingBranchName;
+    const newCommit = await githubApi('POST', '/repos/' + owner + '/' + repo + '/git/commits', {
+      message: commitMessage,
+      tree: newTree.sha,
+      parents: [baseSha],
+    });
+
+    // 6. Update branch ref to point to new commit
+    await githubApi('PATCH', '/repos/' + owner + '/' + repo + '/git/refs/heads/' + githubBranchName, {
+      sha: newCommit.sha,
+    });
+
+    // 7. Create or update pull request
+    let prUrl;
+    try {
+      // Check for existing PR
+      const existingPrs = await githubApi('GET', '/repos/' + owner + '/' + repo + '/pulls?head=' + owner + ':' + githubBranchName + '&state=open');
+      if (existingPrs.length > 0) {
+        prUrl = existingPrs[0].html_url;
+        console.log('Using existing PR: ' + prUrl);
+      } else {
+        // Create new PR
+        const prBody = '## Staged Entities\\n\\n' + entities.map(e => '- **' + (e.name || e.slug) + '** (' + (e.entityType || e.type) + ')').join('\\n') + '\\n\\n---\\nPublished from staging branch: ' + stagingBranchName;
+        const pr = await githubApi('POST', '/repos/' + owner + '/' + repo + '/pulls', {
+          title: 'Add entities from staging: ' + stagingBranchName,
+          body: prBody,
+          head: githubBranchName,
+          base: defaultBranch,
+        });
+        prUrl = pr.html_url;
+        console.log('Created PR: ' + prUrl);
+      }
+    } catch (e) {
+      console.error('PR creation failed:', e.message);
+      // Branch was created, just no PR
+      prUrl = 'https://github.com/' + owner + '/' + repo + '/tree/' + githubBranchName;
+    }
+
+    // 8. Update staging branch metadata
+    await updateBranchMetadata(stagingBranchName, githubBranchName, prUrl);
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        success: true,
+        githubBranch: githubBranchName,
+        prUrl: prUrl,
+        entitiesPublished: entities.length,
+      }),
+    };
+
+  } catch (error) {
+    console.error('Error:', error);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
+  }
+};
+      `),
+    });
+
+    // Grant S3 permissions to GitHub publish function
+    this.bucket.grantReadWrite(githubPublishFunction);
+
+    // Grant SSM parameter read access for both tokens
+    githubPublishFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: tokenParameterName.replace(/^\//, ''),
+        }),
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: 'dndblog/github-pat',
+        }),
+      ],
+    }));
+
+    // Add publish route
+    this.api.addRoutes({
+      path: '/staging/branches/{name}/publish',
+      methods: [apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'GitHubPublishIntegration',
+        githubPublishFunction
+      ),
+    });
+
+    // GitHub Publish Function Alarm
+    new cloudwatch.Alarm(this, 'GitHubPublishFunctionErrors', {
+      alarmName: `${cdk.Names.uniqueId(this)}-github-publish-errors`,
+      alarmDescription: 'GitHub publish function errors',
+      metric: githubPublishFunction.metricErrors({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
   }
 }
