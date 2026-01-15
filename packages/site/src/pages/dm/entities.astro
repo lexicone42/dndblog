@@ -778,7 +778,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         }
 
         try {
-          var response = await fetch(apiUrl + '/staging/entities/' + entity.branchName + '/' + entity.entityType + '/' + entity.slug, {
+          var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(entity.branchName) + '/entities/' + encodeURIComponent(entity.entityType) + '/' + encodeURIComponent(entity.slug), {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -1131,7 +1131,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         saveBtn.textContent = 'Saving...';
 
         try {
-          var response = await fetch(apiUrl + '/staging/entities/' + entity.branchName + '/' + entity.entityType + '/' + entity.slug, {
+          var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(entity.branchName) + '/entities/' + encodeURIComponent(entity.entityType) + '/' + encodeURIComponent(entity.slug), {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
