@@ -37,152 +37,163 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
     <!-- Main Content (hidden until authenticated) -->
     <div id="staging-content" class="staging-content" style="display: none;">
-      <header class="staging-header">
-        <h1>Entity Staging</h1>
-        <p class="staging-subtitle">Manage your staged entities before publishing to the campaign wiki</p>
+      <!-- Dashboard Header -->
+      <header class="dashboard-header">
+        <div class="dashboard-header__info">
+          <h1>Entity Management</h1>
+          <p class="dashboard-subtitle">Create, organize, and publish campaign entities</p>
+        </div>
+        <div class="dashboard-stats" id="dashboard-stats">
+          <div class="stat-card">
+            <span class="stat-value" id="stat-total-entities">-</span>
+            <span class="stat-label">Total Entities</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="stat-branches">-</span>
+            <span class="stat-label">Branches</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="stat-draft">-</span>
+            <span class="stat-label">Draft</span>
+          </div>
+        </div>
       </header>
 
-      <div class="staging-layout">
-        <!-- Branch Sidebar -->
-        <aside class="branch-sidebar">
-          <div class="sidebar-header">
-            <h2>Branches</h2>
-            <button id="new-branch-btn" class="btn btn--primary btn--sm">+ New</button>
+      <!-- Main Tab Navigation -->
+      <nav class="dashboard-tabs" role="tablist" aria-label="Entity management sections">
+        <button class="dashboard-tab dashboard-tab--active" data-tab="edit" role="tab" aria-selected="true" aria-controls="edit-panel">
+          Edit
+        </button>
+        <button class="dashboard-tab" data-tab="organize" role="tab" aria-selected="false" aria-controls="organize-panel">
+          Organize
+        </button>
+      </nav>
+
+      <!-- Edit Panel - Generator + All Entities -->
+      <div id="edit-panel" class="dashboard-panel" role="tabpanel" aria-labelledby="tab-edit">
+        <!-- Compact Generator Section -->
+        <div class="generator-compact">
+          <div class="generator-compact__header">
+            <h2>Quick Generate</h2>
+            <button id="toggle-generator-btn" class="btn btn--ghost btn--sm">Expand</button>
           </div>
-          <div id="branch-list" class="branch-list">
-            <div class="branch-loading">Loading branches...</div>
+          <div class="generator-compact__input">
+            <label for="entity-input" class="visually-hidden">Entity description</label>
+            <textarea
+              id="entity-input"
+              class="entity-input"
+              placeholder="orc 2gold one scimitar named gorok, real piece of shit&#10;&#10;OR try: tavern called the Rusty Anchor • +1 longsword of flame • cult of shadow worshippers"
+              rows="2"
+            ></textarea>
+            <div class="generator-compact__controls">
+              <div class="hint-selector">
+                <label for="entity-type-hint">Type:</label>
+                <select id="entity-type-hint" class="type-hint-select">
+                  <option value="">Auto</option>
+                  <option value="character">Character</option>
+                  <option value="enemy">Enemy</option>
+                  <option value="item">Item</option>
+                  <option value="location">Location</option>
+                  <option value="faction">Faction</option>
+                </select>
+              </div>
+              <button id="generate-btn" class="btn btn--primary">Generate</button>
+            </div>
           </div>
-        </aside>
 
-        <!-- Main Content Area -->
-        <main class="entity-main">
-          <div id="no-branch-selected" class="empty-state">
-            <div class="empty-state__icon">📂</div>
-            <h3>Select a Branch</h3>
-            <p>Choose a branch from the sidebar to view its entities, or create a new one.</p>
+          <!-- Loading State -->
+          <div id="generator-loading" class="generator-loading" role="status" aria-live="polite" style="display: none;">
+            <span class="loading-spinner" aria-hidden="true"></span>
+            <span>Generating entity...</span>
           </div>
 
-          <div id="branch-detail" class="branch-detail" style="display: none;">
-            <!-- Tab Navigation -->
-            <nav class="staging-tabs" role="tablist" aria-label="Staging sections">
-              <button class="staging-tab staging-tab--active" data-tab="entities" role="tab" aria-selected="true" aria-controls="entities-panel">
-                Entities
-              </button>
-              <button class="staging-tab" data-tab="generator" role="tab" aria-selected="false" aria-controls="generator-panel">
-                + Generate New
-              </button>
-            </nav>
+          <!-- Error State -->
+          <div id="generator-error" class="generator-error" role="alert" aria-live="assertive" style="display: none;"></div>
 
-            <!-- Entities Panel -->
-            <div id="entities-panel" class="staging-panel" role="tabpanel" aria-labelledby="tab-entities">
-              <div class="branch-detail__header">
-                <div class="branch-detail__info">
-                  <h2 id="branch-title">Branch Name</h2>
-                  <p id="branch-description" class="branch-description">Description</p>
-                  <div class="branch-meta">
-                    <span id="branch-entity-count" class="meta-item">0 entities</span>
-                    <span id="branch-status" class="meta-item status-badge">draft</span>
-                  </div>
-                </div>
-                <div class="branch-detail__actions">
-                  <a id="branch-pr-link" href="#" target="_blank" class="btn btn--secondary" style="display: none;">
-                    View PR
-                  </a>
-                  <button id="publish-branch-btn" class="btn btn--primary">
-                    Publish to GitHub
-                  </button>
-                  <button id="delete-branch-btn" class="btn btn--danger btn--sm">Delete Branch</button>
-                </div>
-              </div>
-
-              <div id="entity-grid" class="entity-grid">
-                <!-- Entities will be rendered here -->
-              </div>
-
-              <div id="no-entities" class="empty-state" style="display: none;">
-                <div class="empty-state__icon">✨</div>
-                <h3>No Entities Yet</h3>
-                <p>Use the <strong>+ Generate New</strong> tab to create entities and add them to this branch.</p>
-              </div>
+          <!-- Preview Section -->
+          <div id="generator-preview" class="generator-preview" style="display: none;">
+            <div class="preview-header">
+              <h3>Generated Entity</h3>
+              <span id="confidence-badge" class="confidence-badge"></span>
             </div>
 
-            <!-- Generator Panel -->
-            <div id="generator-panel" class="staging-panel" role="tabpanel" aria-labelledby="tab-generator" style="display: none;">
-              <div class="generator-section">
-                <header class="generator-header">
-                  <h2>Entity Generator</h2>
-                  <p class="generator-subtitle">Describe an entity in plain text and let AI structure it</p>
-                </header>
+            <!-- Entity Card Preview -->
+            <div id="entity-card-preview" class="entity-card-preview"></div>
 
-                <!-- Input Section -->
-                <div class="generator-input">
-                  <label for="entity-input" class="visually-hidden">Entity description</label>
-                  <textarea
-                    id="entity-input"
-                    class="entity-input"
-                    placeholder="orc 2gold one scimitar named gorok, real piece of shit&#10;&#10;OR try:&#10;• tavern called the Rusty Anchor in Sharn&#10;• +1 longsword of flame, legendary&#10;• cult of shadow worshippers led by Malzak"
-                    rows="4"
-                  ></textarea>
+            <!-- Suggestions -->
+            <div id="suggestions-panel" class="suggestions-panel" style="display: none;">
+              <h4>Suggestions</h4>
+              <ul id="suggestions-list" class="suggestions-list"></ul>
+            </div>
 
-                  <div class="generator-controls">
-                    <div class="hint-selector">
-                      <label for="entity-type-hint">Type hint:</label>
-                      <select id="entity-type-hint" class="type-hint-select">
-                        <option value="">Auto-detect</option>
-                        <option value="character">Character (NPC)</option>
-                        <option value="enemy">Enemy</option>
-                        <option value="item">Item</option>
-                        <option value="location">Location</option>
-                        <option value="faction">Faction</option>
-                      </select>
-                    </div>
-                    <button id="generate-btn" class="btn btn--primary">Generate Entity</button>
-                  </div>
-                </div>
+            <!-- YAML Editor (collapsible) -->
+            <details class="yaml-editor-section">
+              <summary>View/Edit YAML Frontmatter</summary>
+              <textarea id="yaml-editor" class="yaml-editor" rows="15"></textarea>
+            </details>
 
-                <!-- Loading State -->
-                <div id="generator-loading" class="generator-loading" role="status" aria-live="polite" style="display: none;">
-                  <span class="loading-spinner" aria-hidden="true"></span>
-                  <span>Generating entity...</span>
-                </div>
-
-                <!-- Error State -->
-                <div id="generator-error" class="generator-error" role="alert" aria-live="assertive" style="display: none;"></div>
-
-                <!-- Preview Section -->
-                <div id="generator-preview" class="generator-preview" style="display: none;">
-                  <div class="preview-header">
-                    <h3>Generated Entity</h3>
-                    <span id="confidence-badge" class="confidence-badge"></span>
-                  </div>
-
-                  <!-- Entity Card Preview -->
-                  <div id="entity-card-preview" class="entity-card-preview"></div>
-
-                  <!-- Suggestions -->
-                  <div id="suggestions-panel" class="suggestions-panel" style="display: none;">
-                    <h4>Suggestions</h4>
-                    <ul id="suggestions-list" class="suggestions-list"></ul>
-                  </div>
-
-                  <!-- YAML Editor (collapsible) -->
-                  <details class="yaml-editor-section">
-                    <summary>View/Edit YAML Frontmatter</summary>
-                    <textarea id="yaml-editor" class="yaml-editor" rows="15"></textarea>
-                  </details>
-
-                  <!-- Actions -->
-                  <div class="preview-actions">
-                    <button id="regenerate-btn" class="btn btn--secondary">Regenerate</button>
-                    <button id="copy-btn" class="btn btn--secondary">Copy to Clipboard</button>
-                    <button id="download-btn" class="btn btn--secondary">Download .md</button>
-                    <button id="add-to-branch-btn" class="btn btn--primary">Add to Branch</button>
-                  </div>
-                </div>
+            <!-- Actions with Branch Selector -->
+            <div class="preview-actions">
+              <button id="regenerate-btn" class="btn btn--secondary">Regenerate</button>
+              <button id="copy-btn" class="btn btn--secondary">Copy</button>
+              <button id="download-btn" class="btn btn--secondary">Download</button>
+              <div class="add-to-branch-group">
+                <select id="target-branch-select" class="branch-select">
+                  <option value="">Select branch...</option>
+                </select>
+                <button id="add-to-branch-btn" class="btn btn--primary">Add to Branch</button>
               </div>
             </div>
           </div>
-        </main>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="entities-filter-bar">
+          <h2>All Entities</h2>
+          <div class="filter-controls">
+            <select id="filter-branch" class="filter-select">
+              <option value="">All Branches</option>
+            </select>
+            <select id="filter-type" class="filter-select">
+              <option value="">All Types</option>
+              <option value="character">Characters</option>
+              <option value="enemy">Enemies</option>
+              <option value="item">Items</option>
+              <option value="location">Locations</option>
+              <option value="faction">Factions</option>
+            </select>
+            <input type="search" id="filter-search" class="filter-search" placeholder="Search entities..." />
+          </div>
+        </div>
+
+        <!-- Entity Grid -->
+        <div id="entity-grid" class="entity-grid">
+          <div class="loading-grid">Loading entities...</div>
+        </div>
+
+        <div id="no-entities" class="empty-state" style="display: none;">
+          <div class="empty-state__icon">✨</div>
+          <h3>No Entities Yet</h3>
+          <p>Use the generator above to create your first entity.</p>
+        </div>
+      </div>
+
+      <!-- Organize Panel - Branch Management -->
+      <div id="organize-panel" class="dashboard-panel" role="tabpanel" aria-labelledby="tab-organize" style="display: none;">
+        <div class="organize-header">
+          <h2>Branches</h2>
+          <button id="new-branch-btn" class="btn btn--primary">+ New Branch</button>
+        </div>
+
+        <div id="branch-cards" class="branch-cards">
+          <div class="loading-grid">Loading branches...</div>
+        </div>
+
+        <div id="no-branches" class="empty-state" style="display: none;">
+          <div class="empty-state__icon">📂</div>
+          <h3>No Branches Yet</h3>
+          <p>Create a branch to start organizing your entities for publishing.</p>
+        </div>
       </div>
     </div>
 
@@ -322,14 +333,19 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
   <!-- Main Script -->
   <script is:inline>
     (function() {
-      var currentBranch = null;
-      var currentBranchData = null;
+      // State
       var allBranches = [];
-      var currentEntities = [];
+      var allEntities = []; // Aggregated from all branches
+      var currentTab = 'edit';
       var editingEntity = null;
       var deleteTarget = null; // { type: 'branch' | 'entity', ... }
       var currentResult = null; // Generator result
-      var currentTab = 'entities'; // 'entities' or 'generator'
+      var selectedBranchForPublish = null;
+
+      // Filter state
+      var filterBranch = '';
+      var filterType = '';
+      var filterSearch = '';
 
       function getToken() {
         // Check localStorage first (set by DM dashboard)
@@ -369,19 +385,43 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       }
 
       // ===========================================
+      // Dashboard Stats
+      // ===========================================
+
+      function updateDashboardStats() {
+        var totalEntities = allEntities.length;
+        var totalBranches = allBranches.length;
+        var draftBranches = allBranches.filter(function(b) { return b.status !== 'published'; }).length;
+
+        document.getElementById('stat-total-entities').textContent = totalEntities;
+        document.getElementById('stat-branches').textContent = totalBranches;
+        document.getElementById('stat-draft').textContent = draftBranches;
+      }
+
+      // ===========================================
+      // Tab Switching
+      // ===========================================
+
+      function switchTab(tab) {
+        currentTab = tab;
+        var tabs = document.querySelectorAll('.dashboard-tab');
+        tabs.forEach(function(t) {
+          var isActive = t.dataset.tab === tab;
+          t.classList.toggle('dashboard-tab--active', isActive);
+          t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        document.getElementById('edit-panel').style.display = tab === 'edit' ? 'block' : 'none';
+        document.getElementById('organize-panel').style.display = tab === 'organize' ? 'block' : 'none';
+      }
+
+      // ===========================================
       // Branch Operations
       // ===========================================
 
       async function loadBranches() {
         var token = getToken();
         var apiUrl = getApiUrl();
-        var listEl = document.getElementById('branch-list');
-
-        listEl.textContent = '';
-        var loadingDiv = document.createElement('div');
-        loadingDiv.className = 'branch-loading';
-        loadingDiv.textContent = 'Loading...';
-        listEl.appendChild(loadingDiv);
 
         try {
           var response = await fetch(apiUrl + '/staging/branches', {
@@ -392,216 +432,279 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
           var data = await response.json();
           allBranches = data.branches || [];
-          renderBranchList();
+
+          // Update UI
+          updateBranchSelectors();
+          renderBranchCards();
+          updateDashboardStats();
 
         } catch (error) {
           console.error('Error loading branches:', error);
-          listEl.textContent = '';
+          var cardsEl = document.getElementById('branch-cards');
+          cardsEl.textContent = '';
           var errorDiv = document.createElement('div');
-          errorDiv.className = 'branch-error';
+          errorDiv.className = 'error-message';
           errorDiv.textContent = 'Failed to load branches';
-          listEl.appendChild(errorDiv);
+          cardsEl.appendChild(errorDiv);
         }
       }
 
-      function renderBranchList() {
-        var listEl = document.getElementById('branch-list');
-        listEl.textContent = '';
-
-        if (allBranches.length === 0) {
-          var emptyDiv = document.createElement('div');
-          emptyDiv.className = 'branch-empty';
-          emptyDiv.textContent = 'No branches yet. Create one to get started!';
-          listEl.appendChild(emptyDiv);
-          return;
-        }
-
+      function updateBranchSelectors() {
+        // Update filter dropdown
+        var filterSelect = document.getElementById('filter-branch');
+        filterSelect.textContent = '';
+        var allOption = document.createElement('option');
+        allOption.value = '';
+        allOption.textContent = 'All Branches';
+        filterSelect.appendChild(allOption);
         allBranches.forEach(function(branch) {
-          var item = document.createElement('button');
-          item.className = 'branch-item' + (currentBranch === branch.name ? ' branch-item--active' : '');
-          item.dataset.branch = branch.name;
+          var option = document.createElement('option');
+          option.value = branch.name;
+          option.textContent = branch.displayName || branch.name;
+          filterSelect.appendChild(option);
+        });
 
-          var nameSpan = document.createElement('span');
-          nameSpan.className = 'branch-item__name';
-          nameSpan.textContent = branch.displayName || branch.name;
-
-          var countSpan = document.createElement('span');
-          countSpan.className = 'branch-item__count';
-          countSpan.textContent = String(branch.entityCount || 0);
-
-          item.appendChild(nameSpan);
-          item.appendChild(countSpan);
-
-          item.addEventListener('click', function() {
-            selectBranch(branch.name);
-          });
-          listEl.appendChild(item);
+        // Update target branch dropdown for generator
+        var targetSelect = document.getElementById('target-branch-select');
+        targetSelect.textContent = '';
+        var selectOption = document.createElement('option');
+        selectOption.value = '';
+        selectOption.textContent = 'Select branch...';
+        targetSelect.appendChild(selectOption);
+        allBranches.forEach(function(branch) {
+          var option = document.createElement('option');
+          option.value = branch.name;
+          option.textContent = branch.displayName || branch.name;
+          targetSelect.appendChild(option);
         });
       }
 
-      async function selectBranch(branchName) {
+      function renderBranchCards() {
+        var cardsEl = document.getElementById('branch-cards');
+        var noEl = document.getElementById('no-branches');
+
+        cardsEl.textContent = '';
+
+        if (allBranches.length === 0) {
+          noEl.style.display = 'flex';
+          return;
+        }
+
+        noEl.style.display = 'none';
+
+        allBranches.forEach(function(branch) {
+          var card = document.createElement('div');
+          card.className = 'branch-card';
+          card.dataset.branch = branch.name;
+
+          // Header with title and meta
+          var header = document.createElement('div');
+          header.className = 'branch-card__header';
+
+          var title = document.createElement('h3');
+          title.className = 'branch-card__title';
+          title.textContent = branch.displayName || branch.name;
+
+          var meta = document.createElement('div');
+          meta.className = 'branch-card__meta';
+
+          var statusBadge = document.createElement('span');
+          statusBadge.className = 'status-badge status-badge--' + (branch.status || 'draft');
+          statusBadge.textContent = branch.status || 'draft';
+
+          var countBadge = document.createElement('span');
+          countBadge.className = 'meta-item';
+          countBadge.textContent = (branch.entityCount || 0) + ' entities';
+
+          meta.appendChild(statusBadge);
+          meta.appendChild(countBadge);
+          header.appendChild(title);
+          header.appendChild(meta);
+
+          // Description
+          var desc = document.createElement('p');
+          desc.className = 'branch-card__desc';
+          desc.textContent = branch.description || 'No description';
+
+          // Entity chips preview
+          var entitiesDiv = document.createElement('div');
+          entitiesDiv.className = 'branch-card__entities';
+          var branchEntities = allEntities.filter(function(e) { return e.branchName === branch.name; });
+          var showCount = Math.min(branchEntities.length, 4);
+          for (var i = 0; i < showCount; i++) {
+            var chip = document.createElement('span');
+            chip.className = 'entity-chip';
+            chip.textContent = branchEntities[i].frontmatter?.name || branchEntities[i].slug;
+            entitiesDiv.appendChild(chip);
+          }
+          if (branchEntities.length > 4) {
+            var moreChip = document.createElement('span');
+            moreChip.className = 'entity-chip entity-chip--more';
+            moreChip.textContent = '+' + (branchEntities.length - 4) + ' more';
+            entitiesDiv.appendChild(moreChip);
+          }
+
+          // Actions
+          var actions = document.createElement('div');
+          actions.className = 'branch-card__actions';
+
+          var viewBtn = document.createElement('button');
+          viewBtn.className = 'btn btn--secondary btn--sm';
+          viewBtn.textContent = 'View Entities';
+          viewBtn.addEventListener('click', function() {
+            filterBranch = branch.name;
+            document.getElementById('filter-branch').value = branch.name;
+            applyFilters();
+            switchTab('edit');
+          });
+
+          var publishBtn = document.createElement('button');
+          publishBtn.className = 'btn btn--primary btn--sm';
+          publishBtn.textContent = branch.githubPrUrl ? 'Republish' : 'Publish to GitHub';
+          publishBtn.addEventListener('click', function() {
+            openPublishModal(branch);
+          });
+
+          var prLink = null;
+          if (branch.githubPrUrl) {
+            prLink = document.createElement('a');
+            prLink.className = 'btn btn--secondary btn--sm';
+            prLink.href = branch.githubPrUrl;
+            prLink.target = '_blank';
+            prLink.textContent = 'View PR';
+          }
+
+          var deleteBtn = document.createElement('button');
+          deleteBtn.className = 'btn btn--danger btn--sm';
+          deleteBtn.textContent = 'Delete';
+          deleteBtn.addEventListener('click', function() {
+            deleteTarget = { type: 'branch', name: branch.name, displayName: branch.displayName || branch.name };
+            document.getElementById('delete-confirm-message').textContent =
+              'Are you sure you want to delete branch "' + deleteTarget.displayName + '" and all its entities? This cannot be undone.';
+            openModal('delete-confirm-modal');
+          });
+
+          actions.appendChild(viewBtn);
+          if (prLink) actions.appendChild(prLink);
+          actions.appendChild(publishBtn);
+          actions.appendChild(deleteBtn);
+
+          card.appendChild(header);
+          card.appendChild(desc);
+          if (branchEntities.length > 0) card.appendChild(entitiesDiv);
+          card.appendChild(actions);
+
+          cardsEl.appendChild(card);
+        });
+      }
+
+      // ===========================================
+      // Load All Entities
+      // ===========================================
+
+      async function loadAllEntities() {
         var token = getToken();
         var apiUrl = getApiUrl();
-
-        currentBranch = branchName;
-        renderBranchList(); // Update active state
-
-        document.getElementById('no-branch-selected').style.display = 'none';
-        document.getElementById('branch-detail').style.display = 'block';
-
-        // Show loading state
         var gridEl = document.getElementById('entity-grid');
+
         gridEl.textContent = '';
         var loadingDiv = document.createElement('div');
         loadingDiv.className = 'loading-grid';
         loadingDiv.textContent = 'Loading entities...';
         gridEl.appendChild(loadingDiv);
-        document.getElementById('no-entities').style.display = 'none';
 
         try {
-          var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(branchName), {
-            headers: { 'X-DM-Token': token }
-          });
-
-          if (!response.ok) throw new Error('Failed to load branch');
-
-          var data = await response.json();
-          currentEntities = data.entities || [];
-
-          // Update header
-          document.getElementById('branch-title').textContent = data.displayName || data.name;
-          document.getElementById('branch-description').textContent = data.description || '';
-          document.getElementById('branch-entity-count').textContent = currentEntities.length + ' entities';
-          document.getElementById('branch-status').textContent = data.status || 'draft';
-          document.getElementById('branch-status').className = 'meta-item status-badge status-badge--' + (data.status || 'draft');
-
-          // Show/hide PR link if published
-          var prLink = document.getElementById('branch-pr-link');
-          var publishBtn = document.getElementById('publish-branch-btn');
-          if (data.githubPrUrl) {
-            prLink.href = data.githubPrUrl;
-            prLink.style.display = 'inline-flex';
-            publishBtn.textContent = 'Republish';
-          } else {
-            prLink.style.display = 'none';
-            publishBtn.textContent = 'Publish to GitHub';
+          // First ensure we have branches
+          if (allBranches.length === 0) {
+            var branchResponse = await fetch(apiUrl + '/staging/branches', {
+              headers: { 'X-DM-Token': token }
+            });
+            if (branchResponse.ok) {
+              var branchData = await branchResponse.json();
+              allBranches = branchData.branches || [];
+            }
           }
 
-          // Store branch data for publish
-          currentBranchData = data;
+          // Fetch entities from all branches in parallel
+          var entityPromises = allBranches.map(function(branch) {
+            return fetch(apiUrl + '/staging/branches/' + encodeURIComponent(branch.name), {
+              headers: { 'X-DM-Token': token }
+            }).then(function(r) { return r.json(); })
+              .then(function(data) {
+                // Add branch name to each entity
+                return (data.entities || []).map(function(entity) {
+                  entity.branchName = branch.name;
+                  entity.branchDisplayName = branch.displayName || branch.name;
+                  return entity;
+                });
+              })
+              .catch(function() { return []; });
+          });
 
-          renderEntityGrid();
+          var results = await Promise.all(entityPromises);
+          allEntities = results.flat();
+
+          // Update UI
+          updateBranchSelectors();
+          renderBranchCards();
+          renderAllEntities();
+          updateDashboardStats();
 
         } catch (error) {
-          console.error('Error loading branch:', error);
+          console.error('Error loading entities:', error);
           gridEl.textContent = '';
           var errorDiv = document.createElement('div');
           errorDiv.className = 'error-message';
-          errorDiv.textContent = 'Failed to load branch';
+          errorDiv.textContent = 'Failed to load entities';
           gridEl.appendChild(errorDiv);
         }
       }
 
-      async function createBranch() {
-        var token = getToken();
-        var apiUrl = getApiUrl();
-
-        var name = document.getElementById('branch-name-input').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
-        var displayName = document.getElementById('branch-display-name').value.trim() || name;
-        var description = document.getElementById('branch-desc-input').value.trim();
-
-        if (!name) {
-          alert('Branch name is required');
-          return;
-        }
-
-        var btn = document.getElementById('create-branch-btn');
-        btn.disabled = true;
-        btn.textContent = 'Creating...';
-
-        try {
-          var response = await fetch(apiUrl + '/staging/branches', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-DM-Token': token
-            },
-            body: JSON.stringify({ name: name, displayName: displayName, description: description })
-          });
-
-          if (!response.ok) {
-            var errorData = await response.json().catch(function() { return {}; });
-            throw new Error(errorData.error || 'Failed to create branch');
-          }
-
-          closeAllModals();
-          document.getElementById('new-branch-form').reset();
-          await loadBranches();
-          selectBranch(name);
-
-        } catch (error) {
-          alert('Error: ' + error.message);
-        } finally {
-          btn.disabled = false;
-          btn.textContent = 'Create Branch';
-        }
+      function applyFilters() {
+        filterBranch = document.getElementById('filter-branch').value;
+        filterType = document.getElementById('filter-type').value;
+        filterSearch = document.getElementById('filter-search').value.toLowerCase();
+        renderAllEntities();
       }
 
-      async function deleteBranch() {
-        if (!deleteTarget || deleteTarget.type !== 'branch') return;
-
-        var token = getToken();
-        var apiUrl = getApiUrl();
-        var branchName = deleteTarget.name;
-
-        var btn = document.getElementById('confirm-delete-btn');
-        btn.disabled = true;
-        btn.textContent = 'Deleting...';
-
-        try {
-          var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(branchName), {
-            method: 'DELETE',
-            headers: { 'X-DM-Token': token }
-          });
-
-          if (!response.ok) throw new Error('Failed to delete branch');
-
-          closeAllModals();
-          currentBranch = null;
-          document.getElementById('branch-detail').style.display = 'none';
-          document.getElementById('no-branch-selected').style.display = 'block';
-          await loadBranches();
-
-        } catch (error) {
-          alert('Error: ' + error.message);
-        } finally {
-          btn.disabled = false;
-          btn.textContent = 'Delete';
-        }
-      }
-
-      // ===========================================
-      // Entity Operations
-      // ===========================================
-
-      function renderEntityGrid() {
+      function renderAllEntities() {
         var gridEl = document.getElementById('entity-grid');
-        var emptyEl = document.getElementById('no-entities');
+        var noEl = document.getElementById('no-entities');
 
         gridEl.textContent = '';
 
-        if (currentEntities.length === 0) {
-          emptyEl.style.display = 'block';
+        // Apply filters
+        var filtered = allEntities.filter(function(entity) {
+          if (filterBranch && entity.branchName !== filterBranch) return false;
+          if (filterType && entity.entityType !== filterType) return false;
+          if (filterSearch) {
+            var name = (entity.frontmatter?.name || entity.slug || '').toLowerCase();
+            var desc = (entity.frontmatter?.description || '').toLowerCase();
+            if (!name.includes(filterSearch) && !desc.includes(filterSearch)) return false;
+          }
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          noEl.style.display = 'flex';
+          if (allEntities.length > 0) {
+            noEl.querySelector('h3').textContent = 'No Matching Entities';
+            noEl.querySelector('p').textContent = 'Try adjusting your filters.';
+          } else {
+            noEl.querySelector('h3').textContent = 'No Entities Yet';
+            noEl.querySelector('p').textContent = 'Use the generator above to create your first entity.';
+          }
           return;
         }
 
-        emptyEl.style.display = 'none';
+        noEl.style.display = 'none';
 
-        currentEntities.forEach(function(entity) {
+        filtered.forEach(function(entity) {
           var card = document.createElement('article');
           card.className = 'entity-card';
           card.dataset.type = entity.entityType;
           card.dataset.slug = entity.slug;
+          card.dataset.branch = entity.branchName;
 
           var fm = entity.frontmatter || {};
 
@@ -627,6 +730,12 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             subtypeTag.textContent = fm.subtype;
             tags.appendChild(subtypeTag);
           }
+
+          // Add branch badge
+          var branchTag = document.createElement('span');
+          branchTag.className = 'entity-tag';
+          branchTag.textContent = entity.branchDisplayName;
+          tags.appendChild(branchTag);
 
           header.appendChild(name);
           header.appendChild(tags);
@@ -666,6 +775,86 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           gridEl.appendChild(card);
         });
       }
+
+      async function createBranch() {
+        var token = getToken();
+        var apiUrl = getApiUrl();
+
+        var name = document.getElementById('branch-name-input').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+        var displayName = document.getElementById('branch-display-name').value.trim() || name;
+        var description = document.getElementById('branch-desc-input').value.trim();
+
+        if (!name) {
+          alert('Branch name is required');
+          return;
+        }
+
+        var btn = document.getElementById('create-branch-btn');
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+
+        try {
+          var response = await fetch(apiUrl + '/staging/branches', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-DM-Token': token
+            },
+            body: JSON.stringify({ name: name, displayName: displayName, description: description })
+          });
+
+          if (!response.ok) {
+            var errorData = await response.json().catch(function() { return {}; });
+            throw new Error(errorData.error || 'Failed to create branch');
+          }
+
+          closeAllModals();
+          document.getElementById('new-branch-form').reset();
+          await loadAllEntities();
+          switchTab('organize');
+
+        } catch (error) {
+          alert('Error: ' + error.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Create Branch';
+        }
+      }
+
+      async function deleteBranch() {
+        if (!deleteTarget || deleteTarget.type !== 'branch') return;
+
+        var token = getToken();
+        var apiUrl = getApiUrl();
+        var branchName = deleteTarget.name;
+
+        var btn = document.getElementById('confirm-delete-btn');
+        btn.disabled = true;
+        btn.textContent = 'Deleting...';
+
+        try {
+          var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(branchName), {
+            method: 'DELETE',
+            headers: { 'X-DM-Token': token }
+          });
+
+          if (!response.ok) throw new Error('Failed to delete branch');
+
+          closeAllModals();
+          // Reload all data (branches and entities)
+          await loadAllEntities();
+
+        } catch (error) {
+          alert('Error: ' + error.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Delete';
+        }
+      }
+
+      // ===========================================
+      // Entity Operations
+      // ===========================================
 
       function openEditEntityModal(entity) {
         editingEntity = entity;
@@ -906,11 +1095,12 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       }
 
       async function saveEntity() {
-        if (!editingEntity || !currentBranch) return;
+        if (!editingEntity || !editingEntity.branchName) return;
 
         var token = getToken();
         var apiUrl = getApiUrl();
         var content = document.getElementById('edit-entity-content').value;
+        var branchName = editingEntity.branchName;
 
         var saveBtn = document.getElementById('save-entity-btn');
         var validateBtn = document.getElementById('validate-entity-btn');
@@ -955,7 +1145,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           });
 
           var response = await fetch(
-            apiUrl + '/staging/branches/' + encodeURIComponent(currentBranch) +
+            apiUrl + '/staging/branches/' + encodeURIComponent(branchName) +
             '/entities/' + encodeURIComponent(editingEntity.entityType) +
             '/' + encodeURIComponent(editingEntity.slug),
             {
@@ -971,7 +1161,13 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           if (!response.ok) throw new Error('Failed to save entity');
 
           closeAllModals();
-          await selectBranch(currentBranch); // Reload
+          // Update entity in allEntities array
+          var idx = allEntities.findIndex(function(e) { return e.slug === editingEntity.slug && e.branchName === branchName; });
+          if (idx !== -1) {
+            allEntities[idx] = updatedEntity;
+          }
+          renderAllEntities();
+          renderBranchCards();
 
         } catch (error) {
           alert('Error: ' + error.message);
@@ -983,17 +1179,18 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       }
 
       function confirmDeleteEntity(entity) {
-        deleteTarget = { type: 'entity', entityType: entity.entityType, slug: entity.slug, name: entity.frontmatter?.name || entity.slug };
+        deleteTarget = { type: 'entity', entityType: entity.entityType, slug: entity.slug, name: entity.frontmatter?.name || entity.slug, branchName: entity.branchName };
         document.getElementById('delete-confirm-message').textContent =
           'Are you sure you want to delete "' + deleteTarget.name + '"? This cannot be undone.';
         openModal('delete-confirm-modal');
       }
 
       async function deleteEntity() {
-        if (!deleteTarget || deleteTarget.type !== 'entity' || !currentBranch) return;
+        if (!deleteTarget || deleteTarget.type !== 'entity' || !deleteTarget.branchName) return;
 
         var token = getToken();
         var apiUrl = getApiUrl();
+        var branchName = deleteTarget.branchName;
 
         var btn = document.getElementById('confirm-delete-btn');
         btn.disabled = true;
@@ -1001,7 +1198,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
         try {
           var response = await fetch(
-            apiUrl + '/staging/branches/' + encodeURIComponent(currentBranch) +
+            apiUrl + '/staging/branches/' + encodeURIComponent(branchName) +
             '/entities/' + encodeURIComponent(deleteTarget.entityType) +
             '/' + encodeURIComponent(deleteTarget.slug),
             {
@@ -1013,7 +1210,13 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           if (!response.ok) throw new Error('Failed to delete entity');
 
           closeAllModals();
-          await selectBranch(currentBranch); // Reload
+          // Remove from allEntities
+          allEntities = allEntities.filter(function(e) {
+            return !(e.slug === deleteTarget.slug && e.branchName === branchName);
+          });
+          renderAllEntities();
+          renderBranchCards();
+          updateDashboardStats();
           await loadBranches(); // Update count
 
         } catch (error) {
@@ -1022,23 +1225,6 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           btn.disabled = false;
           btn.textContent = 'Delete';
         }
-      }
-
-      // ===========================================
-      // Tab Switching
-      // ===========================================
-
-      function switchTab(tab) {
-        currentTab = tab;
-        var tabs = document.querySelectorAll('.staging-tab');
-        tabs.forEach(function(t) {
-          var isActive = t.dataset.tab === tab;
-          t.classList.toggle('staging-tab--active', isActive);
-          t.setAttribute('aria-selected', isActive ? 'true' : 'false');
-        });
-
-        document.getElementById('entities-panel').style.display = tab === 'entities' ? 'block' : 'none';
-        document.getElementById('generator-panel').style.display = tab === 'generator' ? 'block' : 'none';
       }
 
       // ===========================================
@@ -1332,8 +1518,13 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       }
 
       async function addToBranch() {
-        if (!currentResult || !currentBranch) {
-          alert('Please select a branch and generate an entity first');
+        var targetBranch = document.getElementById('target-branch-select').value;
+        if (!currentResult) {
+          alert('Please generate an entity first');
+          return;
+        }
+        if (!targetBranch) {
+          alert('Please select a branch to add the entity to');
           return;
         }
 
@@ -1357,7 +1548,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             fullContent: document.getElementById('yaml-editor').value
           };
 
-          var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(currentBranch) + '/entities', {
+          var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(targetBranch) + '/entities', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1371,7 +1562,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             throw new Error(errData.error || 'Failed to add entity');
           }
 
-          // Success! Show feedback and switch to entities tab
+          // Success! Show feedback
           addBtn.textContent = 'Added!';
           addBtn.classList.add('btn--success');
 
@@ -1380,12 +1571,17 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           document.getElementById('generator-preview').style.display = 'none';
           currentResult = null;
 
-          // Refresh entity list and switch to entities tab
-          await selectBranch(currentBranch);
-          await loadBranches(); // Update count in sidebar
+          // Add to allEntities and refresh
+          var branch = allBranches.find(function(b) { return b.name === targetBranch; });
+          entityData.branchName = targetBranch;
+          entityData.branchDisplayName = branch ? (branch.displayName || branch.name) : targetBranch;
+          allEntities.push(entityData);
+          renderAllEntities();
+          renderBranchCards();
+          updateDashboardStats();
+          await loadBranches(); // Update count
 
           setTimeout(function() {
-            switchTab('entities');
             addBtn.textContent = 'Add to Branch';
             addBtn.classList.remove('btn--success');
           }, 1000);
@@ -1403,11 +1599,19 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       // ===========================================
 
       function initEventHandlers() {
-        // Tab switching
-        document.querySelectorAll('.staging-tab').forEach(function(tab) {
+        // Tab switching (dashboard tabs)
+        document.querySelectorAll('.dashboard-tab').forEach(function(tab) {
           tab.addEventListener('click', function() {
             switchTab(this.dataset.tab);
           });
+        });
+
+        // Filter event handlers
+        document.getElementById('filter-branch').addEventListener('change', applyFilters);
+        document.getElementById('filter-type').addEventListener('change', applyFilters);
+        document.getElementById('filter-search').addEventListener('input', function() {
+          clearTimeout(this._filterTimeout);
+          this._filterTimeout = setTimeout(applyFilters, 300);
         });
 
         // Generator event handlers
@@ -1442,16 +1646,6 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         // Create branch button
         document.getElementById('create-branch-btn').addEventListener('click', createBranch);
 
-        // Delete branch button
-        document.getElementById('delete-branch-btn').addEventListener('click', function() {
-          if (!currentBranch) return;
-          var branch = allBranches.find(function(b) { return b.name === currentBranch; });
-          deleteTarget = { type: 'branch', name: currentBranch, displayName: branch?.displayName || currentBranch };
-          document.getElementById('delete-confirm-message').textContent =
-            'Are you sure you want to delete branch "' + deleteTarget.displayName + '" and all its entities? This cannot be undone.';
-          openModal('delete-confirm-modal');
-        });
-
         // Save entity button
         document.getElementById('save-entity-btn').addEventListener('click', saveEntity);
 
@@ -1470,7 +1664,6 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         });
 
         // Publish button
-        document.getElementById('publish-branch-btn').addEventListener('click', openPublishModal);
         document.getElementById('confirm-publish-btn').addEventListener('click', publishToGitHub);
 
         // Edit entity content preview update
@@ -1505,8 +1698,10 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       // Publish Functions
       // ===========================================
 
-      function openPublishModal() {
-        if (!currentBranch || !currentBranchData) return;
+      function openPublishModal(branch) {
+        if (!branch) return;
+
+        selectedBranchForPublish = branch;
 
         // Reset modal state
         document.getElementById('publish-confirm').style.display = 'block';
@@ -1516,16 +1711,20 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         document.getElementById('publish-modal-footer').style.display = 'flex';
 
         // Populate summary
-        document.getElementById('publish-branch-name').textContent = currentBranchData.displayName || currentBranch;
-        document.getElementById('publish-entity-count').textContent = currentEntities.length + ' entities';
-        document.getElementById('publish-github-branch').textContent = 'staging/' + currentBranch;
+        var branchEntities = allEntities.filter(function(e) { return e.branchName === branch.name; });
+        document.getElementById('publish-branch-name').textContent = branch.displayName || branch.name;
+        document.getElementById('publish-entity-count').textContent = branchEntities.length + ' entities';
+        document.getElementById('publish-github-branch').textContent = 'staging/' + branch.name;
 
         openModal('publish-modal');
       }
 
       async function publishToGitHub() {
+        if (!selectedBranchForPublish) return;
+
         var token = getToken();
         var apiUrl = getApiUrl();
+        var branchName = selectedBranchForPublish.name;
 
         // Show progress
         document.getElementById('publish-confirm').style.display = 'none';
@@ -1534,7 +1733,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         document.getElementById('publish-error').style.display = 'none';
 
         try {
-          var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(currentBranch) + '/publish', {
+          var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(branchName) + '/publish', {
             method: 'POST',
             headers: { 'X-DM-Token': token }
           });
@@ -1551,22 +1750,15 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           document.getElementById('publish-success').style.display = 'block';
           document.getElementById('publish-pr-url').href = result.prUrl;
 
-          // Update branch status in UI
-          document.getElementById('branch-status').textContent = 'published';
-          document.getElementById('branch-status').className = 'meta-item status-badge status-badge--published';
+          // Update branch in allBranches
+          var branchIdx = allBranches.findIndex(function(b) { return b.name === branchName; });
+          if (branchIdx !== -1) {
+            allBranches[branchIdx].status = 'published';
+            allBranches[branchIdx].githubPrUrl = result.prUrl;
+          }
 
-          // Show PR link
-          var prLink = document.getElementById('branch-pr-link');
-          prLink.href = result.prUrl;
-          prLink.style.display = 'inline-flex';
-          document.getElementById('publish-branch-btn').textContent = 'Republish';
-
-          // Update currentBranchData
-          currentBranchData.status = 'published';
-          currentBranchData.githubPrUrl = result.prUrl;
-
-          // Refresh branch list to update status
-          await loadBranches();
+          // Refresh branch cards
+          renderBranchCards();
 
         } catch (error) {
           document.getElementById('publish-progress').style.display = 'none';
@@ -1590,7 +1782,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
         showContent();
         initEventHandlers();
-        loadBranches();
+        loadAllEntities(); // This loads branches and all entities
       }
 
       if (document.readyState === 'loading') {
@@ -1639,64 +1831,165 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       padding: var(--space-lg) 0;
     }
 
-    .staging-header {
-      margin-bottom: var(--space-xl);
+    /* ===========================================
+       Dashboard Header
+       =========================================== */
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-lg);
+      padding-bottom: var(--space-lg);
+      border-bottom: 1px solid var(--color-border);
+      flex-wrap: wrap;
+      gap: var(--space-md);
     }
 
-    .staging-header h1 {
+    .dashboard-header__info h1 {
       font-family: var(--font-display);
       color: var(--color-gold);
       margin: 0 0 var(--space-xs);
     }
 
-    .staging-subtitle {
+    .dashboard-subtitle {
       color: var(--color-text-muted);
       margin: 0;
     }
 
-    /* ===========================================
-       Two-Panel Layout
-       =========================================== */
-    .staging-layout {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: var(--space-xl);
-      min-height: 60vh;
+    .dashboard-stats {
+      display: flex;
+      gap: var(--space-md);
+    }
+
+    .stat-card {
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-sm) var(--space-lg);
+      text-align: center;
+      min-width: 80px;
+    }
+
+    .stat-value {
+      display: block;
+      font-size: var(--text-xl);
+      font-weight: 700;
+      color: var(--color-gold);
+    }
+
+    .stat-label {
+      display: block;
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
     }
 
     @media (max-width: 768px) {
-      .staging-layout {
-        grid-template-columns: 1fr;
+      .dashboard-header {
+        flex-direction: column;
+      }
+      .dashboard-stats {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .stat-card {
+        flex: 1;
+        min-width: 0;
+        padding: var(--space-sm);
       }
     }
 
     /* ===========================================
-       Branch Sidebar
+       Dashboard Tabs
        =========================================== */
-    .branch-sidebar {
+    .dashboard-tabs {
+      display: flex;
+      gap: var(--space-xs);
+      margin-bottom: var(--space-lg);
+      border-bottom: 2px solid var(--color-border);
+    }
+
+    .dashboard-tab {
+      padding: var(--space-md) var(--space-xl);
+      background: transparent;
+      border: none;
+      color: var(--color-text-secondary);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+      transition: all var(--transition-fast);
+    }
+
+    .dashboard-tab:hover {
+      color: var(--color-text);
+    }
+
+    .dashboard-tab--active {
+      color: var(--color-gold);
+    }
+
+    .dashboard-tab--active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--color-gold);
+    }
+
+    .dashboard-panel {
+      min-height: 400px;
+    }
+
+    /* ===========================================
+       Generator Compact
+       =========================================== */
+    .generator-compact {
       background: var(--color-bg-secondary);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
       padding: var(--space-md);
-      height: fit-content;
-      position: sticky;
-      top: var(--space-lg);
+      margin-bottom: var(--space-lg);
     }
 
-    .sidebar-header {
+    .generator-compact__header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: var(--space-md);
-      padding-bottom: var(--space-sm);
-      border-bottom: 1px solid var(--color-border);
     }
 
-    .sidebar-header h2 {
-      font-family: var(--font-display);
+    .generator-compact__header h2 {
       font-size: var(--text-lg);
-      margin: 0;
       color: var(--color-gold);
+      margin: 0;
+    }
+
+    .generator-compact__input {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .generator-compact__controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+    }
+
+    .btn--ghost {
+      background: transparent;
+      border: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+    }
+
+    .btn--ghost:hover {
+      background: var(--color-bg-tertiary);
+      color: var(--color-text);
     }
 
     .btn--sm {
@@ -1704,67 +1997,170 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       font-size: var(--text-xs);
     }
 
-    .branch-list {
+    .add-to-branch-group {
       display: flex;
-      flex-direction: column;
-      gap: var(--space-xs);
-    }
-
-    .branch-loading,
-    .branch-empty,
-    .branch-error {
-      padding: var(--space-md);
-      text-align: center;
-      color: var(--color-text-muted);
-      font-size: var(--text-sm);
-    }
-
-    .branch-error {
-      color: var(--color-error);
-    }
-
-    .branch-item {
-      display: flex;
-      justify-content: space-between;
+      gap: var(--space-sm);
       align-items: center;
+    }
+
+    .branch-select {
       padding: var(--space-sm) var(--space-md);
-      background: transparent;
-      border: 1px solid transparent;
-      border-radius: var(--radius-md);
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      text-align: left;
-      width: 100%;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      color: var(--color-text);
+      font-size: var(--text-sm);
+      min-width: 150px;
     }
 
-    .branch-item:hover {
-      background: var(--color-bg-tertiary);
-      border-color: var(--color-border);
-    }
-
-    .branch-item--active {
-      background: var(--color-bg-tertiary);
+    .branch-select:focus {
+      outline: none;
       border-color: var(--color-gold);
     }
 
-    .branch-item__name {
-      font-weight: 500;
-      color: var(--color-text);
+    /* ===========================================
+       Filter Bar
+       =========================================== */
+    .entities-filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-lg);
+      flex-wrap: wrap;
+      gap: var(--space-md);
     }
 
-    .branch-item__count {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
+    .entities-filter-bar h2 {
+      font-size: var(--text-lg);
+      color: var(--color-gold);
+      margin: 0;
+    }
+
+    .filter-controls {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+    }
+
+    .filter-select,
+    .filter-search {
+      padding: var(--space-sm) var(--space-md);
       background: var(--color-bg-secondary);
-      padding: 2px var(--space-xs);
+      border: 1px solid var(--color-border);
       border-radius: var(--radius-sm);
+      color: var(--color-text);
+      font-size: var(--text-sm);
+    }
+
+    .filter-select:focus,
+    .filter-search:focus {
+      outline: none;
+      border-color: var(--color-gold);
+    }
+
+    .filter-search {
+      min-width: 200px;
+    }
+
+    @media (max-width: 768px) {
+      .filter-controls {
+        width: 100%;
+      }
+      .filter-select,
+      .filter-search {
+        flex: 1;
+        min-width: 0;
+      }
     }
 
     /* ===========================================
-       Entity Main Area
+       Organize Panel - Branch Cards
        =========================================== */
-    .entity-main {
-      min-height: 400px;
+    .organize-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-lg);
+    }
+
+    .organize-header h2 {
+      font-size: var(--text-xl);
+      color: var(--color-gold);
+      margin: 0;
+    }
+
+    .branch-cards {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .branch-card {
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      transition: border-color var(--transition-fast);
+    }
+
+    .branch-card:hover {
+      border-color: var(--color-gold);
+    }
+
+    .branch-card__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-md);
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+    }
+
+    .branch-card__title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      color: var(--color-gold);
+      margin: 0;
+    }
+
+    .branch-card__meta {
+      display: flex;
+      gap: var(--space-sm);
+      align-items: center;
+    }
+
+    .branch-card__desc {
+      color: var(--color-text-muted);
+      margin: 0 0 var(--space-md);
+      font-size: var(--text-sm);
+    }
+
+    .branch-card__entities {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      margin-bottom: var(--space-md);
+    }
+
+    .entity-chip {
+      background: var(--color-bg-tertiary);
+      color: var(--color-text-secondary);
+      padding: 2px var(--space-sm);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+    }
+
+    .entity-chip--more {
+      background: var(--color-bg);
+      color: var(--color-text-muted);
+    }
+
+    .branch-card__actions {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+      padding-top: var(--space-md);
+      border-top: 1px solid var(--color-border);
     }
 
     .empty-state {

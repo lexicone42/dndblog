@@ -13,6 +13,9 @@ const allCharacters = await getCollection('characters');
 const activeParty = allCharacters
   .filter((c: typeof allCharacters[0]) => c.data.subtype === 'pc' && c.data.status === 'active')
   .sort((a: typeof allCharacters[0], b: typeof allCharacters[0]) => a.data.name.localeCompare(b.data.name));
+
+// API URL for token validation
+const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 ---
 
 <BaseLayout
@@ -181,20 +184,59 @@ const activeParty = allCharacters
   </div>
 </BaseLayout>
 
-<script is:inline>
+<script is:inline define:vars={{ apiUrl }}>
   (function() {
     var TOKEN_KEY = 'player-token';
+    var API_URL = apiUrl;
     var authGate = document.getElementById('auth-gate');
     var dashboardContent = document.getElementById('dashboard-content');
     var authForm = document.getElementById('auth-form');
     var authError = document.getElementById('auth-error');
     var tokenInput = document.getElementById('player-token');
     var logoutBtn = document.getElementById('logout-btn');
+    var submitBtn = authForm.querySelector('button[type="submit"]');
+    var btnTextSpan = submitBtn.querySelector('span') || submitBtn;
 
-    function checkAuth() {
+    // Validate token against server
+    async function validateToken(token) {
+      if (!API_URL) {
+        console.warn('API URL not configured, skipping server validation');
+        return true; // Graceful degradation for local dev
+      }
+
+      try {
+        var response = await fetch(API_URL + '/validate-player-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Player-Token': token,
+          },
+        });
+
+        if (!response.ok) {
+          return false;
+        }
+
+        var data = await response.json();
+        return data.valid === true;
+      } catch (error) {
+        console.error('Token validation error:', error);
+        return false;
+      }
+    }
+
+    async function checkAuth() {
       var token = localStorage.getItem(TOKEN_KEY);
       if (token) {
-        showDashboard();
+        // Validate stored token server-side
+        var isValid = await validateToken(token);
+        if (isValid) {
+          showDashboard();
+        } else {
+          // Invalid stored token, clear it
+          localStorage.removeItem(TOKEN_KEY);
+          showAuthGate();
+        }
       }
     }
 
@@ -208,16 +250,34 @@ const activeParty = allCharacters
       dashboardContent.style.display = 'none';
     }
 
-    authForm.addEventListener('submit', function(e) {
+    function setLoading(loading) {
+      submitBtn.disabled = loading;
+      // Find the text node or span to update
+      var textNode = submitBtn.lastChild;
+      if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+        textNode.textContent = loading ? 'Validating...' : ' Enter';
+      }
+    }
+
+    authForm.addEventListener('submit', async function(e) {
       e.preventDefault();
       var token = tokenInput.value.trim();
 
       if (token) {
-        // Store token and show dashboard
-        // Token validation happens when accessing actual API endpoints
-        localStorage.setItem(TOKEN_KEY, token);
+        setLoading(true);
         authError.style.display = 'none';
-        showDashboard();
+
+        var isValid = await validateToken(token);
+
+        setLoading(false);
+
+        if (isValid) {
+          localStorage.setItem(TOKEN_KEY, token);
+          showDashboard();
+        } else {
+          authError.textContent = 'Invalid token. Please try again.';
+          authError.style.display = 'block';
+        }
       }
     });
 

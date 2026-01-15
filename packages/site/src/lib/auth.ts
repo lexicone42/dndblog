@@ -273,6 +273,38 @@ export function isSsoAvailable(): boolean {
 // ==========================================================================
 
 /**
+ * Validate player token against server
+ * Returns true if token is valid, false otherwise
+ */
+export async function validatePlayerToken(token: string): Promise<boolean> {
+  const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL;
+  if (!apiUrl) {
+    console.warn('API URL not configured, skipping server validation');
+    return true; // Graceful degradation for local dev without API
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/validate-player-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Player-Token': token,
+      },
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+    return data.valid === true;
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return false;
+  }
+}
+
+/**
  * Exchange authorization code for tokens (used by callback page)
  */
 export async function exchangeCodeForTokens(code: string): Promise<AuthState> {
