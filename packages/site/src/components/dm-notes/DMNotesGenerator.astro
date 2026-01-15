@@ -294,15 +294,20 @@
     color: var(--color-text-muted);
   }
 
+  .entity-card-preview :global(.entity-details dl) {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-xs) var(--space-sm);
+    margin: 0;
+  }
+
   .entity-card-preview :global(.entity-details dt) {
     font-weight: 600;
     color: var(--color-text-secondary);
-    display: inline;
   }
 
   .entity-card-preview :global(.entity-details dd) {
-    display: inline;
-    margin: 0 var(--space-md) 0 var(--space-xs);
+    margin: 0;
   }
 
   /* Entity sections (abilities, relationships, details, markdown) */
