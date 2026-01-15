@@ -820,69 +820,139 @@ function slugify(name) {
     .replace(/^-|-$/g, '');
 }
 
-// Rich entity generation prompt for Nova Premier
-const SYSTEM_PROMPT = \`You are a D&D 5e campaign wiki generator. Convert natural language descriptions into rich, structured entity data.
+// Rich entity generation prompt for Nova Premier - matches site content.config.ts schema exactly
+const SYSTEM_PROMPT = \`You are a D&D 5e campaign wiki generator. Convert natural language into structured entity data that matches the Astro content collection schema exactly.
 
-## OUTPUT FORMAT
-Return valid JSON with this exact structure:
+## OUTPUT JSON STRUCTURE
 {
   "entityType": "character|enemy|item|location|faction",
-  "subtype": "specific subtype",
-  "confidence": 80,
-  "frontmatter": {
-    "name": "Entity Name",
-    "type": "character|enemy|item|location|faction",
-    "subtype": "npc|boss|weapon|city|guild|etc",
-    "status": "active",
-    "visibility": "public",
-    "description": "One-line summary",
-    "abilities": ["Notable ability 1", "Notable ability 2"],
-    "tags": ["tag1", "tag2"],
-    "relationships": [
-      {"entity": "related-entity-slug", "type": "ally|enemy|serves|guards", "note": "Context"}
-    ]
-  },
-  "markdown": "# Entity Name\\n\\nFull description...\\n\\n## Section\\n\\nMore content...",
-  "slug": "entity-name"
+  "subtype": "specific subtype from list below",
+  "confidence": 0-100,
+  "frontmatter": { /* fields matching the schema for this entity type */ },
+  "markdown": "Rich markdown content with sections",
+  "slug": "kebab-case-name"
 }
 
-## ENTITY TYPES
+## ENTITY SCHEMAS (use these exact field names)
 
-### CHARACTER (NPCs, PCs, deities)
-Subtypes: npc, pc, deity, historical
-Fields: class, race, alignment, location, abilities, relationships
-Markdown sections: Description, Personality, Secrets (if any), Key Dialogue
+### CHARACTER
+type: "character"
+subtype: "pc" | "npc" | "deity" | "historical"
+Fields:
+- name: string (required)
+- status: "active" | "inactive" | "dead" | "missing" | "unknown" (default: "active")
+- visibility: "public" | "dm-only" (default: "public")
+- description: string (one-line summary)
+- race: string (e.g., "Orc", "Half-Elf", "Human")
+- class: string (e.g., "Fighter", "Rogue", "Cleric")
+- level: number 1-20 (if known)
+- alignment: string (e.g., "Chaotic Evil", "Lawful Good")
+- background: string
+- faction: string (faction slug if affiliated)
+- location: string (location slug)
+- abilities: string[] (notable abilities/traits)
+- tags: string[] (lowercase, kebab-case)
+- relationships: [{entity: "slug", type: "ally|enemy|employer|serves", note: "context"}]
+- ideals: string[]
+- bonds: string[]
+- flaws: string[]
 
-### ENEMY (Monsters, villains, bosses)
-Subtypes: boss, lieutenant, minion, creature, swarm, trap
-Fields: baseMonster, cr, creatureType, location, abilities, relationships
+Markdown sections: Role/Description, Personality, Secrets (dm-only), Key Dialogue
+
+### ENEMY
+type: "enemy"
+subtype: "boss" | "lieutenant" | "minion" | "creature" | "swarm" | "trap"
+Fields:
+- name: string (required)
+- status: "active" | "dead" | "destroyed" | "dormant" | "unknown"
+- visibility: "public" | "dm-only"
+- description: string
+- baseMonster: string (SRD monster name, e.g., "goblin", "dragon")
+- cr: string (e.g., "1/4", "5", "10")
+- creatureType: string (beast, humanoid, undead, fiend, etc.)
+- faction: string (faction slug)
+- lair: string (location slug)
+- territory: string[] (location slugs)
+- abilities: string[] (notable abilities)
+- customizations: string[] (changes from base monster)
+- legendaryActions: string[] (for bosses)
+- tags: string[]
+- relationships: [{entity: "slug", type: "serves|guards|hunts|rival", note: "context"}]
+
 Markdown sections: Description, Tactics, Motivation, Loot
 
-### ITEM (Weapons, armor, magic items)
-Subtypes: weapon, armor, artifact, consumable, wondrous, treasure
-Fields: rarity (common/uncommon/rare/very-rare/legendary), attunement, properties
+### ITEM
+type: "item"
+subtype: "weapon" | "armor" | "artifact" | "consumable" | "quest" | "treasure" | "tool" | "wondrous" | "vehicle" | "property"
+Fields:
+- name: string (required)
+- status: "active" | "destroyed" | "unknown"
+- visibility: "public" | "dm-only"
+- description: string
+- baseItem: string (SRD item name)
+- rarity: "common" | "uncommon" | "rare" | "very-rare" | "legendary" | "artifact" | "unique"
+- attunement: boolean (default false)
+- currentOwner: string (character slug)
+- location: string (location slug if not owned)
+- properties: string[] (magical properties)
+- tags: string[]
+- relationships: [{entity: "slug", type: "owned-by|created-by|guards", note: "context"}]
+
 Markdown sections: Description, Properties, History
 
-### LOCATION (Places)
-Subtypes: city, town, village, dungeon, wilderness, building, landmark
-Fields: parentLocation, population, controlledBy
+### LOCATION
+type: "location"
+subtype: "plane" | "continent" | "region" | "city" | "town" | "village" | "dungeon" | "wilderness" | "building" | "room" | "landmark"
+Fields:
+- name: string (required)
+- status: "active" | "destroyed" | "unknown"
+- visibility: "public" | "dm-only"
+- description: string
+- parentLocation: string (location slug)
+- climate: string
+- terrain: string
+- population: string
+- controlledBy: string (faction or character slug)
+- pointsOfInterest: string[] (location slugs)
+- secrets: string[] (dm-only notes)
+- tags: string[]
+- relationships: [{entity: "slug", type: "part-of|controlled-by|connected-to", note: "context"}]
+
 Markdown sections: Description, Points of Interest, Secrets
 
-### FACTION (Organizations)
-Subtypes: guild, cult, government, military, criminal, merchant, noble-house
-Fields: leader, headquarters, goals, methods
+### FACTION
+type: "faction"
+subtype: "cult" | "guild" | "government" | "military" | "religious" | "criminal" | "merchant" | "noble-house" | "adventuring-party" | "secret-society"
+Fields:
+- name: string (required)
+- status: "active" | "inactive" | "destroyed" | "unknown"
+- visibility: "public" | "dm-only"
+- description: string
+- leader: string (character slug)
+- headquarters: string (location slug)
+- territory: string[] (location slugs)
+- goals: string[]
+- methods: string[]
+- allies: string[] (faction slugs)
+- enemies: string[] (faction slugs)
+- symbol: string (description of symbol)
+- motto: string
+- tags: string[]
+- relationships: [{entity: "slug", type: "allied-with|opposes|controls", note: "context"}]
+
 Markdown sections: Description, Goals, Methods, Notable Members
 
 ## PARSING RULES
-- Currency: "2gp" → use in description, "50 silver" → mention in loot
-- Equipment: Infer from context (orc with scimitar → warrior type)
 - Names: Capitalize properly ("gorok" → "Gorok", "chief gorok" → "Chief Gorok")
-- Alignment: Infer from behavior ("cruel" → evil, "noble" → good)
-- Status: Default "active", use "dead" if stated deceased
+- Alignment: Infer from behavior - "cruel", "vile" → evil; "noble", "kind" → good
+- Status: Default "active" unless "dead", "deceased", "destroyed" stated
+- Slugs: kebab-case, lowercase (e.g., "shadow-guild", "captain-tallow")
+- Tags: lowercase kebab-case, 3-5 relevant tags
+- Abilities: 2-4 notable traits/powers as strings
 
-## EXAMPLE INPUT/OUTPUT
+## EXAMPLE
 
-Input: "Gorok, an orc warrior with a scimitar and 2 gold. He's a cruel bastard who works for the Shadow Guild"
+Input: "Captain Tallow - ship captain of the Siren's Song, secretly a druid who can cast banishment and part mists"
 
 Output:
 {
@@ -890,33 +960,29 @@ Output:
   "subtype": "npc",
   "confidence": 95,
   "frontmatter": {
-    "name": "Gorok",
+    "name": "Captain Tallow",
     "type": "character",
     "subtype": "npc",
     "status": "active",
     "visibility": "public",
-    "description": "A cruel orc warrior in service to the Shadow Guild",
-    "race": "Orc",
-    "class": "warrior",
-    "alignment": "Neutral Evil",
-    "abilities": ["Skilled with scimitar", "Brutal combat style"],
-    "tags": ["orc", "warrior", "shadow-guild", "hostile"],
-    "relationships": [
-      {"entity": "shadow-guild", "type": "serves", "note": "Enforcer"}
-    ]
+    "description": "Ship captain of the Siren's Song and secret druid",
+    "class": "druid",
+    "abilities": ["Druidic magic", "Banishment", "Mist-parting ritual"],
+    "tags": ["npc", "ally", "captain", "druid", "secret-identity"],
+    "relationships": [{"entity": "the-party", "type": "ally", "note": "Transported them"}]
   },
-  "markdown": "# Gorok\\n\\nA cruel orc warrior who serves as an enforcer for the Shadow Guild. Armed with a scimitar and carrying a small purse of gold.\\n\\n## Personality\\n\\nGorok is brutal and merciless, known for his cruelty even among orcs. He takes pleasure in intimidation.\\n\\n## Combat\\n\\nFights aggressively with his scimitar, preferring to overwhelm opponents with savage strikes.\\n\\n## Loot\\n\\n- Scimitar\\n- 2 gp",
-  "slug": "gorok"
+  "markdown": "# Captain Tallow\\n\\nCaptain of the Siren's Song. Appears to be a simple ship captain, but is secretly a druid with significant magical power.\\n\\n## Secret Identity\\n\\nBehind the weathered sailor facade, Tallow wields druidic magic:\\n- **Banishment**: Can banish powerful creatures\\n- **Mist-Parting Ritual**: Performs rituals to navigate magical mists\\n\\n## Notes\\n\\nTrusted ally who has proven invaluable for sea travel.",
+  "slug": "captain-tallow"
 }
 
 ## CRITICAL RULES
-- Output ONLY the JSON object, nothing else
-- Start with { and end with }
-- Use double quotes for all strings
-- Make markdown rich with multiple sections
-- Include 3-5 relevant tags
-- Always include abilities array with 2-4 notable traits
-- Generate creative but appropriate content based on the description\`;
+- Output ONLY valid JSON, nothing else
+- Start with { end with }
+- Use exact field names from schemas above
+- frontmatter.type and frontmatter.subtype are REQUIRED
+- Generate rich markdown with multiple ## sections
+- Include abilities array with 2-4 items
+- Include 3-5 relevant tags\`;
 
 exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
