@@ -3,13 +3,16 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
 // Get all session posts (sorted by pubDate, oldest first)
-const allPosts = await getCollection('blog', ({ data }) => {
+const allPosts = await getCollection('blog', ({ data }: { data: { draft?: boolean; visibility?: string } }) => {
   return !data.draft && data.visibility === 'public';
 });
 
+// Type for blog entries
+type BlogEntry = typeof allPosts[0];
+
 const sessionPosts = allPosts
-  .filter(post => post.data.tags?.includes('session'))
-  .sort((a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf());
+  .filter((post: BlogEntry) => post.data.tags?.includes('session'))
+  .sort((a: BlogEntry, b: BlogEntry) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf());
 
 // Format date helper
 function formatDate(date: Date): string {
@@ -32,7 +35,7 @@ function formatDate(date: Date): string {
     </header>
 
     <div class="sessions-list">
-      {sessionPosts.map((post, index) => (
+      {sessionPosts.map((post: BlogEntry, index: number) => (
         <a href={`/blog/${post.id}`} class="session-card">
           <div class="session-card__number">{index + 1}</div>
           <div class="session-card__content">

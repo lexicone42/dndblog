@@ -9,8 +9,15 @@ const locations = await getCollection('locations');
 const factions = await getCollection('factions');
 const items = await getCollection('items');
 
+// Type aliases for entity collections
+type CharacterEntry = typeof characters[0];
+type EnemyEntry = typeof enemies[0];
+type LocationEntry = typeof locations[0];
+type FactionEntry = typeof factions[0];
+type ItemEntry = typeof items[0];
+
 // Sort each collection alphabetically by name
-const sortByName = (a: any, b: any) => a.data.name.localeCompare(b.data.name);
+const sortByName = <T extends { data: { name: string } }>(a: T, b: T) => a.data.name.localeCompare(b.data.name);
 characters.sort(sortByName);
 enemies.sort(sortByName);
 locations.sort(sortByName);
@@ -18,8 +25,8 @@ factions.sort(sortByName);
 items.sort(sortByName);
 
 // Group characters by subtype
-const partyMembers = characters.filter(c => c.data.subtype === 'pc');
-const npcs = characters.filter(c => c.data.subtype === 'npc');
+const partyMembers = characters.filter((c: CharacterEntry) => c.data.subtype === 'pc');
+const npcs = characters.filter((c: CharacterEntry) => c.data.subtype === 'npc');
 
 // Status badge colors
 const statusColors: Record<string, string> = {
@@ -65,7 +72,7 @@ function getStatusClass(status: string): string {
       <section id="party" class="reference-section">
         <h2 class="section-title">The Party</h2>
         <div class="entity-grid">
-          {partyMembers.map(entity => (
+          {partyMembers.map((entity: CharacterEntry) => (
             <a href={`/campaign/characters/${entity.id}`} class="entity-card">
               <div class="entity-card__header">
                 <h3 class="entity-card__name">{entity.data.name}</h3>
@@ -88,7 +95,7 @@ function getStatusClass(status: string): string {
       <section id="npcs" class="reference-section">
         <h2 class="section-title">NPCs</h2>
         <div class="entity-grid">
-          {npcs.map(entity => (
+          {npcs.map((entity: CharacterEntry) => (
             <a href={`/campaign/characters/${entity.id}`} class="entity-card">
               <div class="entity-card__header">
                 <h3 class="entity-card__name">{entity.data.name}</h3>
@@ -108,7 +115,7 @@ function getStatusClass(status: string): string {
       <section id="enemies" class="reference-section">
         <h2 class="section-title">Enemies</h2>
         <div class="entity-grid">
-          {enemies.map(entity => (
+          {enemies.map((entity: EnemyEntry) => (
             <a href={`/campaign/enemies/${entity.id}`} class="entity-card entity-card--enemy">
               <div class="entity-card__header">
                 <h3 class="entity-card__name">{entity.data.name}</h3>
@@ -131,7 +138,7 @@ function getStatusClass(status: string): string {
       <section id="locations" class="reference-section">
         <h2 class="section-title">Locations</h2>
         <div class="entity-grid">
-          {locations.map(entity => (
+          {locations.map((entity: LocationEntry) => (
             <a href={`/campaign/locations/${entity.id}`} class="entity-card entity-card--location">
               <div class="entity-card__header">
                 <h3 class="entity-card__name">{entity.data.name}</h3>
@@ -154,7 +161,7 @@ function getStatusClass(status: string): string {
       <section id="factions" class="reference-section">
         <h2 class="section-title">Factions</h2>
         <div class="entity-grid">
-          {factions.map(entity => (
+          {factions.map((entity: FactionEntry) => (
             <a href={`/campaign/factions/${entity.id}`} class="entity-card entity-card--faction">
               <div class="entity-card__header">
                 <h3 class="entity-card__name">{entity.data.name}</h3>
@@ -177,7 +184,7 @@ function getStatusClass(status: string): string {
       <section id="items" class="reference-section">
         <h2 class="section-title">Items & Artifacts</h2>
         <div class="entity-grid">
-          {items.map(entity => (
+          {items.map((entity: ItemEntry) => (
             <a href={`/campaign/items/${entity.id}`} class="entity-card entity-card--item">
               <div class="entity-card__header">
                 <h3 class="entity-card__name">{entity.data.name}</h3>

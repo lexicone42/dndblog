@@ -11,7 +11,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 const allTerms = await getCollection('glossary');
 
 // Sort alphabetically by name
-const sortedTerms = allTerms.sort((a, b) =>
+const sortedTerms = allTerms.sort((a: typeof allTerms[0], b: typeof allTerms[0]) =>
   a.data.name.localeCompare(b.data.name)
 );
 
@@ -19,9 +19,10 @@ const sortedTerms = allTerms.sort((a, b) =>
 type Category = 'action' | 'condition' | 'area-of-effect' | 'hazard' | 'attitude' | 'skill';
 
 // Extract unique categories (filter out undefined)
-const categories = [...new Set(
+type GlossaryEntry = typeof sortedTerms[0];
+const categories: Category[] = [...new Set(
   sortedTerms
-    .map(t => t.data.category)
+    .map((t: GlossaryEntry) => t.data.category)
     .filter((c): c is Category => c !== undefined)
 )].sort();
 
@@ -88,7 +89,7 @@ function formatCategory(cat: string): string {
 
     <!-- Terms List -->
     <div class="terms-list" id="terms-list">
-      {sortedTerms.map(term => (
+      {sortedTerms.map((term: GlossaryEntry) => (
         <a
           href={`/glossary/${term.data.slug}`}
           class="term-card"

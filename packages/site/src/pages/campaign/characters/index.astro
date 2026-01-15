@@ -11,18 +11,21 @@ import BreadcrumbNav from '@components/BreadcrumbNav.astro';
 // Get all characters
 const allCharacters = await getCollection('characters');
 
+// Type for character entries
+type CharacterEntry = typeof allCharacters[0];
+
 // Sort alphabetically by name
-const sortedCharacters = allCharacters.sort((a, b) =>
+const sortedCharacters = allCharacters.sort((a: CharacterEntry, b: CharacterEntry) =>
   a.data.name.localeCompare(b.data.name)
 );
 
 // Extract unique values for filters
-const subtypes = [...new Set(sortedCharacters.map(c => c.data.subtype).filter(Boolean))].sort();
-const statuses = [...new Set(sortedCharacters.map(c => c.data.status).filter(Boolean))].sort();
+const subtypes = [...new Set(sortedCharacters.map((c: CharacterEntry) => c.data.subtype).filter(Boolean))].sort();
+const statuses = [...new Set(sortedCharacters.map((c: CharacterEntry) => c.data.status).filter(Boolean))].sort();
 
 // Separate PCs from NPCs
-const pcs = sortedCharacters.filter(c => c.data.subtype === 'pc');
-const npcs = sortedCharacters.filter(c => c.data.subtype !== 'pc');
+const pcs = sortedCharacters.filter((c: CharacterEntry) => c.data.subtype === 'pc');
+const npcs = sortedCharacters.filter((c: CharacterEntry) => c.data.subtype !== 'pc');
 ---
 
 <BaseLayout
@@ -88,7 +91,7 @@ const npcs = sortedCharacters.filter(c => c.data.subtype !== 'pc');
       <section class="character-section" data-section="pc">
         <h2 class="section-title">The Party</h2>
         <div class="characters-grid">
-          {pcs.map(character => (
+          {pcs.map((character: CharacterEntry) => (
             <a
               href={`/campaign/characters/${character.id}`}
               class="character-card character-card--pc"
@@ -131,7 +134,7 @@ const npcs = sortedCharacters.filter(c => c.data.subtype !== 'pc');
       <section class="character-section" data-section="npc">
         <h2 class="section-title">NPCs</h2>
         <div class="characters-grid">
-          {npcs.map(character => (
+          {npcs.map((character: CharacterEntry) => (
             <a
               href={`/campaign/characters/${character.id}`}
               class="character-card"

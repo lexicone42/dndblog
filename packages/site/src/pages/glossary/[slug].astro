@@ -9,8 +9,9 @@ import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
   const entries = await getCollection('glossary');
+  type GlossaryEntry = typeof entries[0];
 
-  return entries.map(entry => ({
+  return entries.map((entry: GlossaryEntry) => ({
     params: { slug: entry.data.slug },
     props: { entry },
   }));
@@ -21,8 +22,9 @@ const { Content } = await render(entry);
 
 // Build lookup map for see also links
 const allEntries = await getCollection('glossary');
+type GlossaryEntry = typeof allEntries[0];
 const glossaryLookup: Record<string, string> = {};
-for (const e of allEntries) {
+for (const e of allEntries as GlossaryEntry[]) {
   glossaryLookup[e.data.name.toLowerCase()] = e.data.slug;
 }
 

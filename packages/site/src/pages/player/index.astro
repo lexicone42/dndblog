@@ -11,8 +11,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 // Get active party members (PCs with active status)
 const allCharacters = await getCollection('characters');
 const activeParty = allCharacters
-  .filter(c => c.data.subtype === 'pc' && c.data.status === 'active')
-  .sort((a, b) => a.data.name.localeCompare(b.data.name));
+  .filter((c: typeof allCharacters[0]) => c.data.subtype === 'pc' && c.data.status === 'active')
+  .sort((a: typeof allCharacters[0], b: typeof allCharacters[0]) => a.data.name.localeCompare(b.data.name));
 ---
 
 <BaseLayout
@@ -75,7 +75,7 @@ const activeParty = allCharacters
 
         {activeParty.length > 0 ? (
           <div class="party-grid">
-            {activeParty.map(character => (
+            {activeParty.map((character: typeof activeParty[0]) => (
               <a href={`/campaign/characters/${character.id}`} class="character-card">
                 <div class="character-header">
                   <h3 class="character-name">{character.data.name}</h3>

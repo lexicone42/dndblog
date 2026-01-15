@@ -14,8 +14,50 @@ interface EntityInfo {
   status?: string;
 }
 
+/**
+ * Character/Enemy entity structure from content collections.
+ */
+interface CollectionEntity {
+  id: string;
+  data: {
+    name: string;
+    subtype?: string;
+    status?: string;
+    description?: string;
+    firstAppearance?: string;
+  };
+}
+
+/**
+ * Blog post structure from content collection.
+ */
+interface BlogPost {
+  id: string;
+  body?: string;
+  data: {
+    title: string;
+    description: string;
+    pubDate: Date;
+    updatedDate?: Date;
+    heroImage?: string;
+    tags?: string[];
+    author?: string;
+    draft?: boolean;
+  };
+}
+
+/**
+ * Props passed from getStaticPaths to the page component.
+ */
+interface Props {
+  post: BlogPost;
+  sessionCharacters: CollectionEntity[];
+  sessionEnemies: CollectionEntity[];
+  entityLookup: Record<string, EntityInfo>;
+}
+
 export async function getStaticPaths() {
-  const posts = await getCollection('blog', ({ data }) => {
+  const posts = await getCollection('blog', ({ data }: { data: { draft?: boolean } }) => {
     // In production, exclude drafts
     return import.meta.env.PROD ? !data.draft : true;
   });
@@ -26,6 +68,14 @@ export async function getStaticPaths() {
   const locations = await getCollection('locations');
   const factions = await getCollection('factions');
   const items = await getCollection('items');
+
+  // Type definitions for collections (derived from actual data)
+  type BlogEntry = typeof posts[0];
+  type CharacterEntry = typeof characters[0];
+  type EnemyEntry = typeof enemies[0];
+  type LocationEntry = typeof locations[0];
+  type FactionEntry = typeof factions[0];
+  type ItemEntry = typeof items[0];
 
   // Build entity lookup map for auto-linking
   const entityLookup: Record<string, EntityInfo> = {};
@@ -116,10 +166,10 @@ export async function getStaticPaths() {
     }
   }
 
-  return posts.map((post) => {
+  return posts.map((post: BlogEntry) => {
     // Find entities that first appeared in this session
-    const sessionCharacters = characters.filter(c => c.data.firstAppearance === post.id);
-    const sessionEnemies = enemies.filter(e => e.data.firstAppearance === post.id);
+    const sessionCharacters = characters.filter((c: CharacterEntry) => c.data.firstAppearance === post.id);
+    const sessionEnemies = enemies.filter((e: EnemyEntry) => e.data.firstAppearance === post.id);
 
     return {
       params: { slug: post.id },
@@ -128,7 +178,7 @@ export async function getStaticPaths() {
   });
 }
 
-const { post, sessionCharacters, sessionEnemies, entityLookup } = Astro.props;
+const { post, sessionCharacters, sessionEnemies, entityLookup } = Astro.props as Props;
 
 const {
   title,
@@ -209,7 +259,7 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-US', {
     <meta name="DC.type" content="Text" />
     <meta name="DC.format" content="text/html" />
     <meta name="DC.language" content="en" />
-    {tags?.map((tag) => <meta name="DC.subject" content={tag} />)}
+    {tags?.map((tag: string) => <meta name="DC.subject" content={tag} />)}
     <meta name="DCTERMS.modified" content={(updatedDate || pubDate).toISOString().split('T')[0]} />
   </Fragment>
   <article class="post">
@@ -234,7 +284,7 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-US', {
 
         {tags && tags.length > 0 && (
           <ul class="post__tags">
-            {tags.map((tag) => (
+            {tags.map((tag: string) => (
               <li>
                 <a href={`/blog/tag/${tag}`} class="post__tag">
                   {tag}
@@ -268,7 +318,7 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-US', {
             <div class="entity-group">
               <h3 class="entity-group__title">Characters</h3>
               <ul class="entity-list">
-                {sessionCharacters.map((char) => (
+                {sessionCharacters.map((char: CollectionEntity) => (
                   <li class="entity-item">
                     <a href={`/campaign/characters/${char.id}`} class="entity-link">
                       <span class="entity-name">{char.data.name}</span>
@@ -290,7 +340,7 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-US', {
             <div class="entity-group">
               <h3 class="entity-group__title">Enemies</h3>
               <ul class="entity-list">
-                {sessionEnemies.map((enemy) => (
+                {sessionEnemies.map((enemy: CollectionEntity) => (
                   <li class="entity-item">
                     <a href={`/campaign/enemies/${enemy.id}`} class="entity-link">
                       <span class="entity-name">{enemy.data.name}</span>

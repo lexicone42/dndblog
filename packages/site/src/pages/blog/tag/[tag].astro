@@ -4,27 +4,34 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import PostCard from '@components/PostCard.astro';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('blog', ({ data }) => {
+  const posts = await getCollection('blog', ({ data }: { data: { draft?: boolean; visibility?: string } }) => {
     return !data.draft && data.visibility === 'public';
   });
 
+  // Type for blog entries
+  type BlogEntry = typeof posts[0];
+
   // Get all unique tags
-  const tags = [...new Set(posts.flatMap((post) => post.data.tags))];
+  const tags: string[] = [...new Set(posts.flatMap((post: BlogEntry) => post.data.tags))].filter((t): t is string => typeof t === 'string');
 
   return tags.map((tag) => ({
     params: { tag },
     props: {
       tag,
-      posts: posts.filter((post) => post.data.tags?.includes(tag)),
+      posts: posts.filter((post: BlogEntry) => post.data.tags?.includes(tag)),
     },
   }));
 }
 
-const { tag, posts } = Astro.props;
+// Type for blog entries (redefined at page scope)
+const allPostsForType = await getCollection('blog');
+type BlogEntry = typeof allPostsForType[0];
+
+const { tag, posts } = Astro.props as { tag: string; posts: BlogEntry[] };
 
 // Sort by date (newest first)
 const sortedPosts = posts.sort(
-  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+  (a: BlogEntry, b: BlogEntry) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 );
 
 // Calculate reading time
@@ -34,10 +41,10 @@ function getReadingTime(content: string): number {
 }
 
 // Get all tags for the navigation
-const allPosts = await getCollection('blog', ({ data }) => {
+const allPosts = await getCollection('blog', ({ data }: { data: { draft?: boolean; visibility?: string } }) => {
   return !data.draft && data.visibility === 'public';
 });
-const allTags = [...new Set(allPosts.flatMap((post) => post.data.tags))].sort();
+const allTags = [...new Set(allPosts.flatMap((post: BlogEntry) => post.data.tags))].sort();
 ---
 
 <BaseLayout
@@ -74,7 +81,7 @@ const allTags = [...new Set(allPosts.flatMap((post) => post.data.tags))].sort();
 
     {sortedPosts.length > 0 ? (
       <div class="posts-grid">
-        {sortedPosts.map((post, index) => (
+        {sortedPosts.map((post: BlogEntry, index: number) => (
           <PostCard
             title={post.data.title}
             description={post.data.description}

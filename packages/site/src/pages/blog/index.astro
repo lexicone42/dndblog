@@ -6,13 +6,16 @@ import PostCard from '@components/PostCard.astro';
 const POSTS_PER_PAGE = 10;
 
 // Get all public, non-draft posts
-const allPosts = await getCollection('blog', ({ data }) => {
+const allPosts = await getCollection('blog', ({ data }: { data: { draft?: boolean; visibility?: string } }) => {
   return !data.draft && data.visibility === 'public';
 });
 
+// Type for blog entries
+type BlogEntry = typeof allPosts[0];
+
 // Sort by date (newest first)
 const sortedPosts = allPosts.sort(
-  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+  (a: BlogEntry, b: BlogEntry) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 );
 
 // Get current page from URL
@@ -33,7 +36,7 @@ function getReadingTime(content: string): number {
 }
 
 // Collect all unique tags
-const allTags = [...new Set(sortedPosts.flatMap((post) => post.data.tags))].sort();
+const allTags = [...new Set(sortedPosts.flatMap((post: BlogEntry) => post.data.tags))].sort();
 ---
 
 <BaseLayout
@@ -66,7 +69,7 @@ const allTags = [...new Set(sortedPosts.flatMap((post) => post.data.tags))].sort
     {paginatedPosts.length > 0 ? (
       <>
         <div class="posts-grid">
-          {paginatedPosts.map((post, index) => (
+          {paginatedPosts.map((post: BlogEntry, index: number) => (
             <PostCard
               title={post.data.title}
               description={post.data.description}

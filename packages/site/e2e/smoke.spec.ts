@@ -130,6 +130,134 @@ test.describe('Post-deployment smoke tests', () => {
     });
   });
 
+  test.describe('Protected Pages', () => {
+    test('DM dashboard shows auth gate when not authenticated', async ({ page }) => {
+      await page.goto('/dm');
+
+      // Auth gate should be visible
+      const authGate = page.locator('#auth-gate');
+      await expect(authGate).toBeVisible();
+
+      // Should show "DM Access Required" message
+      await expect(page.getByText('DM Access Required')).toBeVisible();
+
+      // Dashboard content should be hidden
+      const dashboard = page.locator('#dashboard-content');
+      await expect(dashboard).toBeHidden();
+    });
+
+    test('DM notes shows access denied without token', async ({ page }) => {
+      await page.goto('/dm/notes');
+
+      // Access denied component should be visible
+      const accessDenied = page.locator('#access-denied');
+      await expect(accessDenied).toBeVisible();
+    });
+
+    test('DM entities shows access denied without token', async ({ page }) => {
+      await page.goto('/dm/entities');
+
+      // Access denied component should be visible
+      const accessDenied = page.locator('#access-denied');
+      await expect(accessDenied).toBeVisible();
+    });
+
+    test('Player hub shows auth gate when not authenticated', async ({ page }) => {
+      await page.goto('/player');
+
+      // Auth gate should be visible
+      const authGate = page.locator('#auth-gate');
+      await expect(authGate).toBeVisible();
+
+      // Dashboard content should be hidden
+      const dashboard = page.locator('#dashboard-content');
+      await expect(dashboard).toBeHidden();
+    });
+
+    test('Navigation hides DM/Player links when not authenticated', async ({ page }) => {
+      await page.goto('/');
+
+      // DM and Player nav links should be hidden (display: none)
+      const dmNav = page.locator('#nav-dm');
+      const playerNav = page.locator('#nav-player');
+
+      // They exist in DOM but are hidden
+      await expect(dmNav).toHaveCSS('display', 'none');
+      await expect(playerNav).toHaveCSS('display', 'none');
+    });
+
+    test('Navigation shows DM link when dm-token is set', async ({ page }) => {
+      // Set DM token before navigating
+      await page.goto('/');
+      await page.evaluate(() => {
+        localStorage.setItem('dm-token', 'test-token');
+      });
+
+      // Reload to trigger nav visibility update
+      await page.reload();
+
+      // Wait for JS to execute
+      await page.waitForTimeout(1500);
+
+      // DM nav link should be visible
+      const dmNav = page.locator('#nav-dm');
+      await expect(dmNav).not.toHaveCSS('display', 'none');
+
+      // Clean up
+      await page.evaluate(() => {
+        localStorage.removeItem('dm-token');
+      });
+    });
+
+    test('DM dashboard shows content when token is set', async ({ page }) => {
+      await page.goto('/dm');
+
+      // Enter token in the auth form
+      const tokenInput = page.locator('#dm-token');
+      await tokenInput.fill('test-token-value');
+
+      // Submit the form
+      await page.locator('#auth-form button[type="submit"]').click();
+
+      // Dashboard content should now be visible
+      const dashboard = page.locator('#dashboard-content');
+      await expect(dashboard).toBeVisible();
+
+      // Auth gate should be hidden
+      const authGate = page.locator('#auth-gate');
+      await expect(authGate).toBeHidden();
+
+      // Clean up token
+      await page.evaluate(() => {
+        localStorage.removeItem('dm-token');
+      });
+    });
+
+    test('DM notes loads content when token is in localStorage', async ({ page }) => {
+      // Set token first
+      await page.goto('/');
+      await page.evaluate(() => {
+        localStorage.setItem('dm-token', 'test-token');
+      });
+
+      // Navigate to DM notes
+      await page.goto('/dm/notes');
+
+      // Access denied should be hidden
+      const accessDenied = page.locator('#access-denied');
+      await expect(accessDenied).toBeHidden();
+
+      // Editor container should be visible
+      const editor = page.locator('#editor-container');
+      await expect(editor).toBeVisible();
+
+      // Clean up
+      await page.evaluate(() => {
+        localStorage.removeItem('dm-token');
+      });
+    });
+  });
+
   test.describe('Static Assets', () => {
     test('CSS loads correctly', async ({ page }) => {
       await page.goto('/');
