@@ -772,7 +772,7 @@ exports.handler = async (event) => {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       timeout: cdk.Duration.seconds(90), // Longer timeout for complex generation
-      memorySize: 512,
+      memorySize: 1024, // More memory = more CPU = faster SDK operations
       reservedConcurrentExecutions: 2, // Limit parallel invocations to control costs
       environment: {
         TOKEN_PARAMETER_NAME: tokenParameterName,

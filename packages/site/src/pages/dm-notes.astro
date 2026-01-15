@@ -884,11 +884,17 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           ? '<span class="entity-tag entity-tag--status entity-tag--' + escapeHtml(fm.status) + '">' + escapeHtml(fm.status) + '</span>'
           : '';
 
+        // Helper to render array as list
+        function renderList(arr) {
+          if (!arr || !arr.length) return null;
+          return arr.map(function(item) { return escapeHtml(item); }).join(', ');
+        }
+
         // Build key attribute tags based on entity type
         var attrTags = '';
         if (result.entityType === 'character') {
           if (fm.race) attrTags += '<span class="entity-tag">' + escapeHtml(fm.race) + '</span>';
-          if (fm.class) attrTags += '<span class="entity-tag">' + escapeHtml(fm.class) + '</span>';
+          if (fm.class) attrTags += '<span class="entity-tag">' + escapeHtml(fm.class) + (fm.subclass ? ' (' + escapeHtml(fm.subclass) + ')' : '') + '</span>';
           if (fm.level) attrTags += '<span class="entity-tag">Lvl ' + escapeHtml(String(fm.level)) + '</span>';
           if (fm.alignment) attrTags += '<span class="entity-tag">' + escapeHtml(fm.alignment) + '</span>';
         } else if (result.entityType === 'enemy') {
@@ -898,9 +904,11 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         } else if (result.entityType === 'item') {
           if (fm.rarity) attrTags += '<span class="entity-tag entity-tag--' + escapeHtml(fm.rarity) + '">' + escapeHtml(fm.rarity) + '</span>';
           if (fm.attunement) attrTags += '<span class="entity-tag">requires attunement</span>';
+          if (fm.baseItem) attrTags += '<span class="entity-tag">' + escapeHtml(fm.baseItem) + '</span>';
         } else if (result.entityType === 'location') {
           if (fm.terrain) attrTags += '<span class="entity-tag">' + escapeHtml(fm.terrain) + '</span>';
-          if (fm.population) attrTags += '<span class="entity-tag">' + escapeHtml(fm.population) + '</span>';
+          if (fm.climate) attrTags += '<span class="entity-tag">' + escapeHtml(fm.climate) + '</span>';
+          if (fm.population) attrTags += '<span class="entity-tag">Pop: ' + escapeHtml(fm.population) + '</span>';
         } else if (result.entityType === 'faction') {
           if (fm.leader) attrTags += '<span class="entity-tag">Led by: ' + escapeHtml(fm.leader) + '</span>';
         }
@@ -927,29 +935,56 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           relationshipsHtml += '</ul></div>';
         }
 
-        // Build type-specific details
+        // Build comprehensive type-specific details
         var detailsHtml = '<div class="entity-section entity-details"><h4>Details</h4><dl>';
         var hasDetails = false;
 
         if (result.entityType === 'character') {
+          if (fm.background) { detailsHtml += '<dt>Background:</dt><dd>' + escapeHtml(fm.background) + '</dd>'; hasDetails = true; }
           if (fm.faction) { detailsHtml += '<dt>Faction:</dt><dd>' + escapeHtml(fm.faction) + '</dd>'; hasDetails = true; }
           if (fm.location) { detailsHtml += '<dt>Location:</dt><dd>' + escapeHtml(fm.location) + '</dd>'; hasDetails = true; }
-          if (fm.background) { detailsHtml += '<dt>Background:</dt><dd>' + escapeHtml(fm.background) + '</dd>'; hasDetails = true; }
+          if (fm.homeLocation) { detailsHtml += '<dt>Home:</dt><dd>' + escapeHtml(fm.homeLocation) + '</dd>'; hasDetails = true; }
+          if (fm.player) { detailsHtml += '<dt>Player:</dt><dd>' + escapeHtml(fm.player) + '</dd>'; hasDetails = true; }
+          if (fm.ideals && fm.ideals.length) { detailsHtml += '<dt>Ideals:</dt><dd>' + renderList(fm.ideals) + '</dd>'; hasDetails = true; }
+          if (fm.bonds && fm.bonds.length) { detailsHtml += '<dt>Bonds:</dt><dd>' + renderList(fm.bonds) + '</dd>'; hasDetails = true; }
+          if (fm.flaws && fm.flaws.length) { detailsHtml += '<dt>Flaws:</dt><dd>' + renderList(fm.flaws) + '</dd>'; hasDetails = true; }
         } else if (result.entityType === 'enemy') {
           if (fm.faction) { detailsHtml += '<dt>Faction:</dt><dd>' + escapeHtml(fm.faction) + '</dd>'; hasDetails = true; }
           if (fm.lair) { detailsHtml += '<dt>Lair:</dt><dd>' + escapeHtml(fm.lair) + '</dd>'; hasDetails = true; }
+          if (fm.territory && fm.territory.length) { detailsHtml += '<dt>Territory:</dt><dd>' + renderList(fm.territory) + '</dd>'; hasDetails = true; }
+          if (fm.customizations && fm.customizations.length) { detailsHtml += '<dt>Customizations:</dt><dd>' + renderList(fm.customizations) + '</dd>'; hasDetails = true; }
+          if (fm.legendaryActions && fm.legendaryActions.length) { detailsHtml += '<dt>Legendary:</dt><dd>' + renderList(fm.legendaryActions) + '</dd>'; hasDetails = true; }
+          if (fm.lairActions && fm.lairActions.length) { detailsHtml += '<dt>Lair Actions:</dt><dd>' + renderList(fm.lairActions) + '</dd>'; hasDetails = true; }
         } else if (result.entityType === 'item') {
           if (fm.currentOwner) { detailsHtml += '<dt>Owner:</dt><dd>' + escapeHtml(fm.currentOwner) + '</dd>'; hasDetails = true; }
-          if (fm.properties && fm.properties.length) { detailsHtml += '<dt>Properties:</dt><dd>' + escapeHtml(fm.properties.join(', ')) + '</dd>'; hasDetails = true; }
+          if (fm.location) { detailsHtml += '<dt>Location:</dt><dd>' + escapeHtml(fm.location) + '</dd>'; hasDetails = true; }
+          if (fm.properties && fm.properties.length) { detailsHtml += '<dt>Properties:</dt><dd>' + renderList(fm.properties) + '</dd>'; hasDetails = true; }
+          if (fm.attunementRequirements) { detailsHtml += '<dt>Attunement:</dt><dd>' + escapeHtml(fm.attunementRequirements) + '</dd>'; hasDetails = true; }
+          if (fm.charges) { detailsHtml += '<dt>Charges:</dt><dd>' + escapeHtml(String(fm.charges)) + (fm.maxCharges ? '/' + escapeHtml(String(fm.maxCharges)) : '') + '</dd>'; hasDetails = true; }
+          if (fm.creator) { detailsHtml += '<dt>Creator:</dt><dd>' + escapeHtml(fm.creator) + '</dd>'; hasDetails = true; }
+          if (fm.significance) { detailsHtml += '<dt>Significance:</dt><dd>' + escapeHtml(fm.significance) + '</dd>'; hasDetails = true; }
+          if (fm.secrets && fm.secrets.length) { detailsHtml += '<dt>Secrets:</dt><dd class="dm-only">' + renderList(fm.secrets) + '</dd>'; hasDetails = true; }
         } else if (result.entityType === 'location') {
           if (fm.parentLocation) { detailsHtml += '<dt>Part of:</dt><dd>' + escapeHtml(fm.parentLocation) + '</dd>'; hasDetails = true; }
           if (fm.controlledBy) { detailsHtml += '<dt>Controlled by:</dt><dd>' + escapeHtml(fm.controlledBy) + '</dd>'; hasDetails = true; }
-          if (fm.climate) { detailsHtml += '<dt>Climate:</dt><dd>' + escapeHtml(fm.climate) + '</dd>'; hasDetails = true; }
+          if (fm.childLocations && fm.childLocations.length) { detailsHtml += '<dt>Contains:</dt><dd>' + renderList(fm.childLocations) + '</dd>'; hasDetails = true; }
+          if (fm.pointsOfInterest && fm.pointsOfInterest.length) { detailsHtml += '<dt>Points of Interest:</dt><dd>' + renderList(fm.pointsOfInterest) + '</dd>'; hasDetails = true; }
+          if (fm.dungeonLevel) { detailsHtml += '<dt>Dungeon Level:</dt><dd>' + escapeHtml(String(fm.dungeonLevel)) + '</dd>'; hasDetails = true; }
+          if (fm.notableEvents && fm.notableEvents.length) { detailsHtml += '<dt>Notable Events:</dt><dd>' + renderList(fm.notableEvents) + '</dd>'; hasDetails = true; }
+          if (fm.secrets && fm.secrets.length) { detailsHtml += '<dt>Secrets:</dt><dd class="dm-only">' + renderList(fm.secrets) + '</dd>'; hasDetails = true; }
         } else if (result.entityType === 'faction') {
           if (fm.headquarters) { detailsHtml += '<dt>HQ:</dt><dd>' + escapeHtml(fm.headquarters) + '</dd>'; hasDetails = true; }
-          if (fm.goals && fm.goals.length) { detailsHtml += '<dt>Goals:</dt><dd>' + escapeHtml(fm.goals.join(', ')) + '</dd>'; hasDetails = true; }
-          if (fm.methods && fm.methods.length) { detailsHtml += '<dt>Methods:</dt><dd>' + escapeHtml(fm.methods.join(', ')) + '</dd>'; hasDetails = true; }
+          if (fm.parentOrganization) { detailsHtml += '<dt>Parent Org:</dt><dd>' + escapeHtml(fm.parentOrganization) + '</dd>'; hasDetails = true; }
+          if (fm.symbol) { detailsHtml += '<dt>Symbol:</dt><dd>' + escapeHtml(fm.symbol) + '</dd>'; hasDetails = true; }
           if (fm.motto) { detailsHtml += '<dt>Motto:</dt><dd>"' + escapeHtml(fm.motto) + '"</dd>'; hasDetails = true; }
+          if (fm.goals && fm.goals.length) { detailsHtml += '<dt>Goals:</dt><dd>' + renderList(fm.goals) + '</dd>'; hasDetails = true; }
+          if (fm.methods && fm.methods.length) { detailsHtml += '<dt>Methods:</dt><dd>' + renderList(fm.methods) + '</dd>'; hasDetails = true; }
+          if (fm.territory && fm.territory.length) { detailsHtml += '<dt>Territory:</dt><dd>' + renderList(fm.territory) + '</dd>'; hasDetails = true; }
+          if (fm.allies && fm.allies.length) { detailsHtml += '<dt>Allies:</dt><dd>' + renderList(fm.allies) + '</dd>'; hasDetails = true; }
+          if (fm.enemies && fm.enemies.length) { detailsHtml += '<dt>Enemies:</dt><dd>' + renderList(fm.enemies) + '</dd>'; hasDetails = true; }
+          if (fm.notableMembers && fm.notableMembers.length) { detailsHtml += '<dt>Members:</dt><dd>' + renderList(fm.notableMembers) + '</dd>'; hasDetails = true; }
+          if (fm.resources && fm.resources.length) { detailsHtml += '<dt>Resources:</dt><dd>' + renderList(fm.resources) + '</dd>'; hasDetails = true; }
+          if (fm.secrets && fm.secrets.length) { detailsHtml += '<dt>Secrets:</dt><dd class="dm-only">' + renderList(fm.secrets) + '</dd>'; hasDetails = true; }
         }
         detailsHtml += '</dl></div>';
         if (!hasDetails) detailsHtml = '';
