@@ -2,12 +2,19 @@ import * as cdk from 'aws-cdk-lib';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as apigateway from 'aws-cdk-lib/aws-apigatewayv2';
 import * as apigatewayIntegrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+// ESM-compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ==========================================================================
 // Auth Configuration Types
@@ -2158,6 +2165,69 @@ exports.handler = async (event) => {
       alarmName: `${cdk.Names.uniqueId(this)}-github-publish-errors`,
       alarmDescription: 'GitHub publish function errors',
       metric: githubPublishFunction.metricErrors({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    // ==========================================================================
+    // Entity Validation Function - Zod schema validation for staged entities
+    // ==========================================================================
+    //
+    // Uses NodejsFunction to bundle Zod schemas from content-pipeline.
+    // This enables the staging editor to validate entities before saving.
+    //
+    // ==========================================================================
+
+    const validationFunction = new lambdaNodejs.NodejsFunction(this, 'ValidationFunction', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handler',
+      entry: path.join(__dirname, '../lambdas/validation/index.ts'),
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 256,
+      environment: {
+        TOKEN_PARAMETER_NAME: tokenParameterName,
+        ALLOWED_ORIGIN: props.allowedOrigin,
+      },
+      bundling: {
+        // Include Zod and related dependencies
+        externalModules: ['@aws-sdk/*'],
+        minify: true,
+        sourceMap: false,
+      },
+    });
+
+    // Grant SSM parameter read access to validation function
+    validationFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: tokenParameterName.replace(/^\//, ''),
+        }),
+      ],
+    }));
+
+    // Add validation route
+    this.api.addRoutes({
+      path: '/staging/validate',
+      methods: [apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'ValidationIntegration',
+        validationFunction
+      ),
+    });
+
+    // Validation Function Alarm
+    new cloudwatch.Alarm(this, 'ValidationFunctionErrors', {
+      alarmName: `${cdk.Names.uniqueId(this)}-validation-errors`,
+      alarmDescription: 'Entity validation function errors',
+      metric: validationFunction.metricErrors({
         statistic: 'Sum',
         period: cdk.Duration.minutes(5),
       }),

@@ -48,12 +48,18 @@ importers:
 
   packages/infra:
     dependencies:
+      '@dndblog/content-pipeline':
+        specifier: workspace:^
+        version: link:../content-pipeline
       aws-cdk-lib:
         specifier: ^2.175.0
         version: 2.234.1(constructs@10.4.4)
       constructs:
         specifier: ^10.4.2
         version: 10.4.4
+      zod:
+        specifier: ^4.3.5
+        version: 4.3.5
     devDependencies:
       '@types/node':
         specifier: ^25.0.8
@@ -61,6 +67,9 @@ importers:
       aws-cdk:
         specifier: ^2.175.0
         version: 2.1100.3
+      esbuild:
+        specifier: ^0.27.2
+        version: 0.27.2
       glob:
         specifier: ^13.0.0
         version: 13.0.0
