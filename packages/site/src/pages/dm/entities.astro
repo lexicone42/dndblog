@@ -332,6 +332,10 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       var currentTab = 'entities'; // 'entities' or 'generator'
 
       function getToken() {
+        // Check localStorage first (set by DM dashboard)
+        var storedToken = localStorage.getItem('dm-token');
+        if (storedToken) return storedToken;
+        // Fall back to URL query param for backwards compatibility
         var params = new URLSearchParams(window.location.search);
         return params.get('token');
       }
