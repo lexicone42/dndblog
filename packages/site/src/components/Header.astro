@@ -9,6 +9,12 @@ const navLinks = [
   { href: '/reference', label: 'Reference' },
 ];
 
+// Role-based nav links (shown conditionally via client-side JS)
+const roleNavLinks = {
+  dm: { href: '/dm', label: 'DM' },
+  player: { href: '/player', label: 'Player' },
+};
+
 function isActive(href: string): boolean {
   if (href === '/') {
     return currentPath === '/';
@@ -36,6 +42,25 @@ function isActive(href: string): boolean {
             </a>
           </li>
         ))}
+        <!-- Role-based nav links (hidden by default, shown via JS) -->
+        <li id="nav-dm" class="header__nav-role" style="display: none;">
+          <a
+            href={roleNavLinks.dm.href}
+            class:list={['header__nav-link', 'header__nav-link--dm', { 'header__nav-link--active': isActive(roleNavLinks.dm.href) }]}
+            aria-current={isActive(roleNavLinks.dm.href) ? 'page' : undefined}
+          >
+            {roleNavLinks.dm.label}
+          </a>
+        </li>
+        <li id="nav-player" class="header__nav-role" style="display: none;">
+          <a
+            href={roleNavLinks.player.href}
+            class:list={['header__nav-link', 'header__nav-link--player', { 'header__nav-link--active': isActive(roleNavLinks.player.href) }]}
+            aria-current={isActive(roleNavLinks.player.href) ? 'page' : undefined}
+          >
+            {roleNavLinks.player.label}
+          </a>
+        </li>
       </ul>
     </nav>
 
@@ -152,6 +177,20 @@ function isActive(href: string): boolean {
   }
 
   .header__nav-link--active {
+    color: var(--color-accent);
+  }
+
+  /* Role-based nav links */
+  .header__nav-link--dm {
+    color: var(--color-gold);
+  }
+
+  .header__nav-link--dm:hover {
+    color: var(--color-gold);
+    background-color: rgba(var(--color-gold-rgb, 201, 162, 39), 0.1);
+  }
+
+  .header__nav-link--player {
     color: var(--color-accent);
   }
 
@@ -274,6 +313,34 @@ function isActive(href: string): boolean {
 </style>
 
 <script>
+  // Role-based navigation visibility
+  (function() {
+    const dmNav = document.getElementById('nav-dm');
+    const playerNav = document.getElementById('nav-player');
+
+    function updateRoleNav() {
+      const hasDmToken = localStorage.getItem('dm-token');
+      const hasPlayerToken = localStorage.getItem('player-token');
+
+      if (dmNav) {
+        dmNav.style.display = hasDmToken ? '' : 'none';
+      }
+      if (playerNav) {
+        playerNav.style.display = hasPlayerToken ? '' : 'none';
+      }
+    }
+
+    // Check on load
+    updateRoleNav();
+
+    // Listen for storage changes (e.g., login/logout in another tab)
+    window.addEventListener('storage', updateRoleNav);
+
+    // Also check periodically in case of same-tab login/logout
+    // This handles the case where user logs in on a different page
+    setInterval(updateRoleNav, 1000);
+  })();
+
   // Theme toggle functionality
   const toggle = document.getElementById('theme-toggle');
 

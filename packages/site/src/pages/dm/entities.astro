@@ -2,12 +2,12 @@
 /**
  * Entity Staging Page
  *
- * Manage staged entities organized by feature branches.
+ * Complete entity management hub: generate, organize, edit, and publish.
  * Features:
  * - Branch sidebar: Create, select, delete staging branches
- * - Entity grid: View, edit, delete entities within a branch
- * - Integration with Entity Generator (save to staging)
- * - Future: Publish to GitHub feature branches
+ * - Entities tab: View, edit, delete entities within a branch
+ * - Generator tab: AI-powered entity creation, add directly to branch
+ * - Publish to GitHub: Create feature branches and PRs
  *
  * Token-gated access (same pattern as dm-notes)
  *
@@ -54,7 +54,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           </div>
         </aside>
 
-        <!-- Entity Grid -->
+        <!-- Main Content Area -->
         <main class="entity-main">
           <div id="no-branch-selected" class="empty-state">
             <div class="empty-state__icon">📂</div>
@@ -63,34 +63,123 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           </div>
 
           <div id="branch-detail" class="branch-detail" style="display: none;">
-            <div class="branch-detail__header">
-              <div class="branch-detail__info">
-                <h2 id="branch-title">Branch Name</h2>
-                <p id="branch-description" class="branch-description">Description</p>
-                <div class="branch-meta">
-                  <span id="branch-entity-count" class="meta-item">0 entities</span>
-                  <span id="branch-status" class="meta-item status-badge">draft</span>
+            <!-- Tab Navigation -->
+            <nav class="staging-tabs" role="tablist" aria-label="Staging sections">
+              <button class="staging-tab staging-tab--active" data-tab="entities" role="tab" aria-selected="true" aria-controls="entities-panel">
+                Entities
+              </button>
+              <button class="staging-tab" data-tab="generator" role="tab" aria-selected="false" aria-controls="generator-panel">
+                + Generate New
+              </button>
+            </nav>
+
+            <!-- Entities Panel -->
+            <div id="entities-panel" class="staging-panel" role="tabpanel" aria-labelledby="tab-entities">
+              <div class="branch-detail__header">
+                <div class="branch-detail__info">
+                  <h2 id="branch-title">Branch Name</h2>
+                  <p id="branch-description" class="branch-description">Description</p>
+                  <div class="branch-meta">
+                    <span id="branch-entity-count" class="meta-item">0 entities</span>
+                    <span id="branch-status" class="meta-item status-badge">draft</span>
+                  </div>
+                </div>
+                <div class="branch-detail__actions">
+                  <a id="branch-pr-link" href="#" target="_blank" class="btn btn--secondary" style="display: none;">
+                    View PR
+                  </a>
+                  <button id="publish-branch-btn" class="btn btn--primary">
+                    Publish to GitHub
+                  </button>
+                  <button id="delete-branch-btn" class="btn btn--danger btn--sm">Delete Branch</button>
                 </div>
               </div>
-              <div class="branch-detail__actions">
-                <a id="branch-pr-link" href="#" target="_blank" class="btn btn--secondary" style="display: none;">
-                  View PR
-                </a>
-                <button id="publish-branch-btn" class="btn btn--primary">
-                  Publish to GitHub
-                </button>
-                <button id="delete-branch-btn" class="btn btn--danger btn--sm">Delete Branch</button>
+
+              <div id="entity-grid" class="entity-grid">
+                <!-- Entities will be rendered here -->
+              </div>
+
+              <div id="no-entities" class="empty-state" style="display: none;">
+                <div class="empty-state__icon">✨</div>
+                <h3>No Entities Yet</h3>
+                <p>Use the <strong>+ Generate New</strong> tab to create entities and add them to this branch.</p>
               </div>
             </div>
 
-            <div id="entity-grid" class="entity-grid">
-              <!-- Entities will be rendered here -->
-            </div>
+            <!-- Generator Panel -->
+            <div id="generator-panel" class="staging-panel" role="tabpanel" aria-labelledby="tab-generator" style="display: none;">
+              <div class="generator-section">
+                <header class="generator-header">
+                  <h2>Entity Generator</h2>
+                  <p class="generator-subtitle">Describe an entity in plain text and let AI structure it</p>
+                </header>
 
-            <div id="no-entities" class="empty-state" style="display: none;">
-              <div class="empty-state__icon">✨</div>
-              <h3>No Entities Yet</h3>
-              <p>Use the <a href="/dm-notes" class="link">Entity Generator</a> to create entities and save them to this branch.</p>
+                <!-- Input Section -->
+                <div class="generator-input">
+                  <label for="entity-input" class="visually-hidden">Entity description</label>
+                  <textarea
+                    id="entity-input"
+                    class="entity-input"
+                    placeholder="orc 2gold one scimitar named gorok, real piece of shit&#10;&#10;OR try:&#10;• tavern called the Rusty Anchor in Sharn&#10;• +1 longsword of flame, legendary&#10;• cult of shadow worshippers led by Malzak"
+                    rows="4"
+                  ></textarea>
+
+                  <div class="generator-controls">
+                    <div class="hint-selector">
+                      <label for="entity-type-hint">Type hint:</label>
+                      <select id="entity-type-hint" class="type-hint-select">
+                        <option value="">Auto-detect</option>
+                        <option value="character">Character (NPC)</option>
+                        <option value="enemy">Enemy</option>
+                        <option value="item">Item</option>
+                        <option value="location">Location</option>
+                        <option value="faction">Faction</option>
+                      </select>
+                    </div>
+                    <button id="generate-btn" class="btn btn--primary">Generate Entity</button>
+                  </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="generator-loading" class="generator-loading" role="status" aria-live="polite" style="display: none;">
+                  <span class="loading-spinner" aria-hidden="true"></span>
+                  <span>Generating entity...</span>
+                </div>
+
+                <!-- Error State -->
+                <div id="generator-error" class="generator-error" role="alert" aria-live="assertive" style="display: none;"></div>
+
+                <!-- Preview Section -->
+                <div id="generator-preview" class="generator-preview" style="display: none;">
+                  <div class="preview-header">
+                    <h3>Generated Entity</h3>
+                    <span id="confidence-badge" class="confidence-badge"></span>
+                  </div>
+
+                  <!-- Entity Card Preview -->
+                  <div id="entity-card-preview" class="entity-card-preview"></div>
+
+                  <!-- Suggestions -->
+                  <div id="suggestions-panel" class="suggestions-panel" style="display: none;">
+                    <h4>Suggestions</h4>
+                    <ul id="suggestions-list" class="suggestions-list"></ul>
+                  </div>
+
+                  <!-- YAML Editor (collapsible) -->
+                  <details class="yaml-editor-section">
+                    <summary>View/Edit YAML Frontmatter</summary>
+                    <textarea id="yaml-editor" class="yaml-editor" rows="15"></textarea>
+                  </details>
+
+                  <!-- Actions -->
+                  <div class="preview-actions">
+                    <button id="regenerate-btn" class="btn btn--secondary">Regenerate</button>
+                    <button id="copy-btn" class="btn btn--secondary">Copy to Clipboard</button>
+                    <button id="download-btn" class="btn btn--secondary">Download .md</button>
+                    <button id="add-to-branch-btn" class="btn btn--primary">Add to Branch</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </main>
@@ -239,6 +328,8 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       var currentEntities = [];
       var editingEntity = null;
       var deleteTarget = null; // { type: 'branch' | 'entity', ... }
+      var currentResult = null; // Generator result
+      var currentTab = 'entities'; // 'entities' or 'generator'
 
       function getToken() {
         var params = new URLSearchParams(window.location.search);
@@ -930,10 +1021,415 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       }
 
       // ===========================================
+      // Tab Switching
+      // ===========================================
+
+      function switchTab(tab) {
+        currentTab = tab;
+        var tabs = document.querySelectorAll('.staging-tab');
+        tabs.forEach(function(t) {
+          var isActive = t.dataset.tab === tab;
+          t.classList.toggle('staging-tab--active', isActive);
+          t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        document.getElementById('entities-panel').style.display = tab === 'entities' ? 'block' : 'none';
+        document.getElementById('generator-panel').style.display = tab === 'generator' ? 'block' : 'none';
+      }
+
+      // ===========================================
+      // Generator Functions
+      // ===========================================
+
+      function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = String(text);
+        return div.innerHTML;
+      }
+
+      function showGeneratorLoading(show) {
+        document.getElementById('generator-loading').style.display = show ? 'flex' : 'none';
+      }
+
+      function showGeneratorError(message) {
+        var errorEl = document.getElementById('generator-error');
+        if (message) {
+          errorEl.textContent = message;
+          errorEl.style.display = 'block';
+        } else {
+          errorEl.style.display = 'none';
+        }
+      }
+
+      function renderEntityPreview(result) {
+        var previewEl = document.getElementById('entity-card-preview');
+        var fm = result.frontmatter || {};
+
+        // Build entity type and subtype badges
+        var typeTag = '<span class="entity-tag entity-tag--type">' + escapeHtml(result.entityType || 'unknown') + '</span>';
+        var subtypeTag = fm.subtype
+          ? '<span class="entity-tag entity-tag--subtype">' + escapeHtml(fm.subtype) + '</span>'
+          : '';
+
+        // Build status badge if not active
+        var statusTag = (fm.status && fm.status !== 'active')
+          ? '<span class="entity-tag entity-tag--status entity-tag--' + escapeHtml(fm.status) + '">' + escapeHtml(fm.status) + '</span>'
+          : '';
+
+        // Helper to render array as list
+        function renderList(arr) {
+          if (!arr || !arr.length) return null;
+          return arr.map(function(item) { return escapeHtml(item); }).join(', ');
+        }
+
+        // Build key attribute tags based on entity type
+        var attrTags = '';
+        if (result.entityType === 'character') {
+          if (fm.race) attrTags += '<span class="entity-tag">' + escapeHtml(fm.race) + '</span>';
+          if (fm.class) attrTags += '<span class="entity-tag">' + escapeHtml(fm.class) + (fm.subclass ? ' (' + escapeHtml(fm.subclass) + ')' : '') + '</span>';
+          if (fm.level) attrTags += '<span class="entity-tag">Lvl ' + escapeHtml(String(fm.level)) + '</span>';
+          if (fm.alignment) attrTags += '<span class="entity-tag">' + escapeHtml(fm.alignment) + '</span>';
+        } else if (result.entityType === 'enemy') {
+          if (fm.cr) attrTags += '<span class="entity-tag">CR ' + escapeHtml(fm.cr) + '</span>';
+          if (fm.creatureType) attrTags += '<span class="entity-tag">' + escapeHtml(fm.creatureType) + '</span>';
+          if (fm.baseMonster) attrTags += '<span class="entity-tag">' + escapeHtml(fm.baseMonster) + '</span>';
+        } else if (result.entityType === 'item') {
+          if (fm.rarity) attrTags += '<span class="entity-tag entity-tag--' + escapeHtml(fm.rarity) + '">' + escapeHtml(fm.rarity) + '</span>';
+          if (fm.attunement) attrTags += '<span class="entity-tag">requires attunement</span>';
+          if (fm.baseItem) attrTags += '<span class="entity-tag">' + escapeHtml(fm.baseItem) + '</span>';
+        } else if (result.entityType === 'location') {
+          if (fm.terrain) attrTags += '<span class="entity-tag">' + escapeHtml(fm.terrain) + '</span>';
+          if (fm.climate) attrTags += '<span class="entity-tag">' + escapeHtml(fm.climate) + '</span>';
+          if (fm.population) attrTags += '<span class="entity-tag">Pop: ' + escapeHtml(fm.population) + '</span>';
+        } else if (result.entityType === 'faction') {
+          if (fm.leader) attrTags += '<span class="entity-tag">Led by: ' + escapeHtml(fm.leader) + '</span>';
+        }
+
+        // Build abilities section
+        var abilitiesHtml = '';
+        if (fm.abilities && fm.abilities.length > 0) {
+          abilitiesHtml = '<div class="entity-section"><h4>Abilities</h4><ul class="entity-abilities">';
+          fm.abilities.forEach(function(ability) {
+            abilitiesHtml += '<li>' + escapeHtml(ability) + '</li>';
+          });
+          abilitiesHtml += '</ul></div>';
+        }
+
+        // Build relationships section
+        var relationshipsHtml = '';
+        if (fm.relationships && fm.relationships.length > 0) {
+          relationshipsHtml = '<div class="entity-section"><h4>Relationships</h4><ul class="entity-relationships">';
+          fm.relationships.forEach(function(rel) {
+            var relText = '<strong>' + escapeHtml(rel.type) + '</strong>: ' + escapeHtml(rel.entity);
+            if (rel.note) relText += ' <span class="rel-note">(' + escapeHtml(rel.note) + ')</span>';
+            relationshipsHtml += '<li>' + relText + '</li>';
+          });
+          relationshipsHtml += '</ul></div>';
+        }
+
+        // Build comprehensive type-specific details
+        var detailsHtml = '<div class="entity-section entity-details"><h4>Details</h4><dl>';
+        var hasDetails = false;
+
+        if (result.entityType === 'character') {
+          if (fm.background) { detailsHtml += '<dt>Background:</dt><dd>' + escapeHtml(fm.background) + '</dd>'; hasDetails = true; }
+          if (fm.faction) { detailsHtml += '<dt>Faction:</dt><dd>' + escapeHtml(fm.faction) + '</dd>'; hasDetails = true; }
+          if (fm.location) { detailsHtml += '<dt>Location:</dt><dd>' + escapeHtml(fm.location) + '</dd>'; hasDetails = true; }
+        } else if (result.entityType === 'enemy') {
+          if (fm.faction) { detailsHtml += '<dt>Faction:</dt><dd>' + escapeHtml(fm.faction) + '</dd>'; hasDetails = true; }
+          if (fm.lair) { detailsHtml += '<dt>Lair:</dt><dd>' + escapeHtml(fm.lair) + '</dd>'; hasDetails = true; }
+        } else if (result.entityType === 'item') {
+          if (fm.currentOwner) { detailsHtml += '<dt>Owner:</dt><dd>' + escapeHtml(fm.currentOwner) + '</dd>'; hasDetails = true; }
+          if (fm.location) { detailsHtml += '<dt>Location:</dt><dd>' + escapeHtml(fm.location) + '</dd>'; hasDetails = true; }
+        } else if (result.entityType === 'location') {
+          if (fm.parentLocation) { detailsHtml += '<dt>Part of:</dt><dd>' + escapeHtml(fm.parentLocation) + '</dd>'; hasDetails = true; }
+          if (fm.controlledBy) { detailsHtml += '<dt>Controlled by:</dt><dd>' + escapeHtml(fm.controlledBy) + '</dd>'; hasDetails = true; }
+        } else if (result.entityType === 'faction') {
+          if (fm.headquarters) { detailsHtml += '<dt>HQ:</dt><dd>' + escapeHtml(fm.headquarters) + '</dd>'; hasDetails = true; }
+          if (fm.goals && fm.goals.length) { detailsHtml += '<dt>Goals:</dt><dd>' + renderList(fm.goals) + '</dd>'; hasDetails = true; }
+        }
+        detailsHtml += '</dl></div>';
+        if (!hasDetails) detailsHtml = '';
+
+        // Build tags section
+        var tagsHtml = '';
+        if (fm.tags && fm.tags.length > 0) {
+          tagsHtml = '<div class="entity-tags">';
+          fm.tags.forEach(function(tag) {
+            tagsHtml += '<span class="entity-tag entity-tag--user">' + escapeHtml(tag) + '</span>';
+          });
+          tagsHtml += '</div>';
+        }
+
+        // Build full markdown content with basic rendering
+        var markdownHtml = '';
+        if (result.markdown) {
+          var md = result.markdown;
+          var htmlLines = [];
+          var inList = false;
+          md.split('\n').forEach(function(line) {
+            var trimmed = line.trim();
+            if (!trimmed) {
+              if (inList) { htmlLines.push('</ul>'); inList = false; }
+              return;
+            }
+            if (trimmed.startsWith('# ')) return;
+            if (trimmed.startsWith('## ')) {
+              if (inList) { htmlLines.push('</ul>'); inList = false; }
+              htmlLines.push('<h4 class="md-section">' + escapeHtml(trimmed.substring(3)) + '</h4>');
+              return;
+            }
+            if (trimmed.startsWith('### ')) {
+              if (inList) { htmlLines.push('</ul>'); inList = false; }
+              htmlLines.push('<h5 class="md-subsection">' + escapeHtml(trimmed.substring(4)) + '</h5>');
+              return;
+            }
+            if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+              if (!inList) { htmlLines.push('<ul class="md-list">'); inList = true; }
+              var itemText = escapeHtml(trimmed.substring(2));
+              itemText = itemText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+              htmlLines.push('<li>' + itemText + '</li>');
+              return;
+            }
+            if (inList) { htmlLines.push('</ul>'); inList = false; }
+            var paraText = escapeHtml(trimmed);
+            paraText = paraText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            htmlLines.push('<p>' + paraText + '</p>');
+          });
+          if (inList) htmlLines.push('</ul>');
+
+          if (htmlLines.length > 0) {
+            markdownHtml = '<div class="entity-section entity-markdown-full">' + htmlLines.join('') + '</div>';
+          }
+        }
+
+        previewEl.innerHTML =
+          '<h3 class="entity-name">' + escapeHtml(fm.name || 'Unnamed Entity') + '</h3>' +
+          '<div class="entity-meta">' + typeTag + subtypeTag + statusTag + attrTags + '</div>' +
+          '<p class="entity-description">' + escapeHtml(fm.description || 'No description') + '</p>' +
+          abilitiesHtml +
+          relationshipsHtml +
+          detailsHtml +
+          markdownHtml +
+          tagsHtml;
+      }
+
+      function renderConfidenceBadge(confidence) {
+        var badgeEl = document.getElementById('confidence-badge');
+        var level = confidence >= 80 ? 'high' : confidence >= 50 ? 'medium' : 'low';
+        badgeEl.textContent = 'Confidence: ' + confidence + '%';
+        badgeEl.className = 'confidence-badge confidence-badge--' + level;
+      }
+
+      function renderSuggestions(suggestions) {
+        var panel = document.getElementById('suggestions-panel');
+        var list = document.getElementById('suggestions-list');
+
+        if (!suggestions || suggestions.length === 0) {
+          panel.style.display = 'none';
+          return;
+        }
+
+        list.innerHTML = '';
+        suggestions.forEach(function(s) {
+          var li = document.createElement('li');
+          li.textContent = s;
+          list.appendChild(li);
+        });
+        panel.style.display = 'block';
+      }
+
+      async function generateEntity() {
+        var token = getToken();
+        var apiUrl = getApiUrl();
+
+        if (!token || !apiUrl) {
+          showGeneratorError('Missing token or API configuration');
+          return;
+        }
+
+        var input = document.getElementById('entity-input').value.trim();
+        if (!input) {
+          showGeneratorError('Please enter an entity description');
+          return;
+        }
+
+        var hint = document.getElementById('entity-type-hint').value || null;
+
+        var generateBtn = document.getElementById('generate-btn');
+        generateBtn.disabled = true;
+        showGeneratorLoading(true);
+        showGeneratorError(null);
+        document.getElementById('generator-preview').style.display = 'none';
+
+        try {
+          var response = await fetch(apiUrl + '/generate-entity', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-DM-Token': token
+            },
+            body: JSON.stringify({ input: input, hint: hint })
+          });
+
+          if (!response.ok) {
+            var errorData = await response.json().catch(function() { return {}; });
+            throw new Error(errorData.error || 'Generation failed');
+          }
+
+          var result = await response.json();
+          currentResult = result;
+
+          // Render preview
+          renderEntityPreview(result);
+          renderConfidenceBadge(result.confidence || 80);
+          renderSuggestions(result.suggestions);
+
+          // Populate YAML editor
+          document.getElementById('yaml-editor').value = result.fullContent || '';
+
+          document.getElementById('generator-preview').style.display = 'block';
+
+        } catch (error) {
+          showGeneratorError('Error: ' + error.message);
+        } finally {
+          showGeneratorLoading(false);
+          generateBtn.disabled = false;
+        }
+      }
+
+      function copyToClipboard() {
+        var content = document.getElementById('yaml-editor').value;
+        navigator.clipboard.writeText(content).then(function() {
+          var btn = document.getElementById('copy-btn');
+          var originalText = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(function() { btn.textContent = originalText; }, 2000);
+        }).catch(function(err) {
+          alert('Failed to copy: ' + err.message);
+        });
+      }
+
+      function downloadFile() {
+        if (!currentResult) return;
+
+        var content = document.getElementById('yaml-editor').value;
+        var slug = currentResult.slug || 'entity';
+        var filename = slug + '.md';
+
+        var blob = new Blob([content], { type: 'text/markdown' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      async function addToBranch() {
+        if (!currentResult || !currentBranch) {
+          alert('Please select a branch and generate an entity first');
+          return;
+        }
+
+        var token = getToken();
+        var apiUrl = getApiUrl();
+
+        var addBtn = document.getElementById('add-to-branch-btn');
+        addBtn.disabled = true;
+        addBtn.textContent = 'Adding...';
+
+        try {
+          // Build entity data
+          var entityData = {
+            id: currentResult.slug || Date.now().toString(),
+            entityType: currentResult.entityType || 'character',
+            name: currentResult.frontmatter?.name || 'Unnamed',
+            slug: currentResult.slug,
+            subtype: currentResult.frontmatter?.subtype || null,
+            description: currentResult.frontmatter?.description || '',
+            frontmatter: currentResult.frontmatter,
+            fullContent: document.getElementById('yaml-editor').value
+          };
+
+          var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(currentBranch) + '/entities', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-DM-Token': token
+            },
+            body: JSON.stringify(entityData)
+          });
+
+          if (!response.ok) {
+            var errData = await response.json().catch(function() { return {}; });
+            throw new Error(errData.error || 'Failed to add entity');
+          }
+
+          // Success! Show feedback and switch to entities tab
+          addBtn.textContent = 'Added!';
+          addBtn.classList.add('btn--success');
+
+          // Clear generator form
+          document.getElementById('entity-input').value = '';
+          document.getElementById('generator-preview').style.display = 'none';
+          currentResult = null;
+
+          // Refresh entity list and switch to entities tab
+          await selectBranch(currentBranch);
+          await loadBranches(); // Update count in sidebar
+
+          setTimeout(function() {
+            switchTab('entities');
+            addBtn.textContent = 'Add to Branch';
+            addBtn.classList.remove('btn--success');
+          }, 1000);
+
+        } catch (error) {
+          alert('Error: ' + error.message);
+          addBtn.textContent = 'Add to Branch';
+        } finally {
+          addBtn.disabled = false;
+        }
+      }
+
+      // ===========================================
       // Event Handlers
       // ===========================================
 
       function initEventHandlers() {
+        // Tab switching
+        document.querySelectorAll('.staging-tab').forEach(function(tab) {
+          tab.addEventListener('click', function() {
+            switchTab(this.dataset.tab);
+          });
+        });
+
+        // Generator event handlers
+        var generateBtn = document.getElementById('generate-btn');
+        var regenerateBtn = document.getElementById('regenerate-btn');
+        var copyBtn = document.getElementById('copy-btn');
+        var downloadBtn = document.getElementById('download-btn');
+        var addToBranchBtn = document.getElementById('add-to-branch-btn');
+
+        if (generateBtn) generateBtn.addEventListener('click', generateEntity);
+        if (regenerateBtn) regenerateBtn.addEventListener('click', generateEntity);
+        if (copyBtn) copyBtn.addEventListener('click', copyToClipboard);
+        if (downloadBtn) downloadBtn.addEventListener('click', downloadFile);
+        if (addToBranchBtn) addToBranchBtn.addEventListener('click', addToBranch);
+
+        // Allow Enter key to generate
+        var entityInput = document.getElementById('entity-input');
+        if (entityInput) {
+          entityInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+              e.preventDefault();
+              generateEntity();
+            }
+          });
+        }
+
         // New branch button
         document.getElementById('new-branch-btn').addEventListener('click', function() {
           openModal('new-branch-modal');
@@ -1798,6 +2294,426 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
     .error-message {
       color: var(--color-text-secondary);
+    }
+
+    /* ===========================================
+       Tab Navigation
+       =========================================== */
+    .staging-tabs {
+      display: flex;
+      gap: var(--space-xs);
+      margin-bottom: var(--space-lg);
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: var(--space-xs);
+    }
+
+    .staging-tab {
+      padding: var(--space-sm) var(--space-lg);
+      background: transparent;
+      border: none;
+      color: var(--color-text-secondary);
+      font-size: var(--text-base);
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      transition: all var(--transition-fast);
+      position: relative;
+    }
+
+    .staging-tab:hover {
+      color: var(--color-text);
+      background: var(--color-bg-tertiary);
+    }
+
+    .staging-tab--active {
+      color: var(--color-gold);
+      background: var(--color-bg-secondary);
+    }
+
+    .staging-tab--active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--color-gold);
+    }
+
+    .staging-panel {
+      min-height: 300px;
+    }
+
+    /* ===========================================
+       Generator Styles
+       =========================================== */
+    .generator-section {
+      max-width: 900px;
+    }
+
+    .generator-header {
+      margin-bottom: var(--space-lg);
+    }
+
+    .generator-header h2 {
+      font-size: var(--text-xl);
+      color: var(--color-gold);
+      margin: 0 0 var(--space-xs);
+    }
+
+    .generator-subtitle {
+      color: var(--color-text-muted);
+      margin: 0;
+    }
+
+    .generator-input {
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-lg);
+    }
+
+    .entity-input {
+      width: 100%;
+      padding: var(--space-md);
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      color: var(--color-text);
+      font-size: var(--text-base);
+      font-family: inherit;
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .entity-input:focus {
+      outline: none;
+      border-color: var(--color-gold);
+    }
+
+    .entity-input::placeholder {
+      color: var(--color-text-muted);
+      opacity: 0.7;
+    }
+
+    .generator-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: var(--space-md);
+      gap: var(--space-md);
+      flex-wrap: wrap;
+    }
+
+    .hint-selector {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .hint-selector label {
+      color: var(--color-text-secondary);
+      font-size: var(--text-sm);
+    }
+
+    .type-hint-select {
+      padding: var(--space-sm) var(--space-md);
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      color: var(--color-text);
+      font-size: var(--text-sm);
+      cursor: pointer;
+    }
+
+    .type-hint-select:focus {
+      outline: none;
+      border-color: var(--color-gold);
+    }
+
+    .generator-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-md);
+      padding: var(--space-2xl);
+      color: var(--color-text-muted);
+    }
+
+    .generator-error {
+      padding: var(--space-lg);
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--color-error);
+      border-radius: var(--radius-md);
+      color: var(--color-error);
+      margin-bottom: var(--space-lg);
+    }
+
+    .generator-preview {
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-lg);
+    }
+
+    .preview-header h3 {
+      font-size: var(--text-lg);
+      color: var(--color-gold);
+      margin: 0;
+    }
+
+    .confidence-badge {
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+
+    .confidence-badge--high {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--color-success);
+    }
+
+    .confidence-badge--medium {
+      background: rgba(234, 179, 8, 0.2);
+      color: var(--color-warning);
+    }
+
+    .confidence-badge--low {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--color-error);
+    }
+
+    #entity-card-preview {
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-lg);
+    }
+
+    #entity-card-preview .entity-name {
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--color-gold);
+      margin: 0 0 var(--space-sm);
+    }
+
+    #entity-card-preview .entity-meta {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-md);
+    }
+
+    #entity-card-preview .entity-description {
+      color: var(--color-text-secondary);
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    #entity-card-preview .entity-section {
+      margin-top: var(--space-md);
+      padding-top: var(--space-md);
+      border-top: 1px solid var(--color-border);
+    }
+
+    #entity-card-preview .entity-section h4 {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 var(--space-sm);
+    }
+
+    #entity-card-preview .entity-abilities,
+    #entity-card-preview .entity-relationships {
+      margin: 0;
+      padding-left: var(--space-lg);
+      font-size: var(--text-sm);
+      color: var(--color-text);
+    }
+
+    #entity-card-preview .entity-abilities li,
+    #entity-card-preview .entity-relationships li {
+      margin-bottom: var(--space-xs);
+    }
+
+    #entity-card-preview .rel-note {
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
+
+    #entity-card-preview .entity-details dl {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: var(--space-xs) var(--space-sm);
+      margin: 0;
+      font-size: var(--text-sm);
+    }
+
+    #entity-card-preview .entity-details dt {
+      font-weight: 600;
+      color: var(--color-text-secondary);
+    }
+
+    #entity-card-preview .entity-details dd {
+      margin: 0;
+    }
+
+    #entity-card-preview .entity-tags {
+      margin-top: var(--space-md);
+      padding-top: var(--space-md);
+      border-top: 1px solid var(--color-border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+    }
+
+    #entity-card-preview .entity-markdown-full {
+      margin-top: var(--space-lg);
+      padding-top: var(--space-lg);
+      border-top: 2px solid var(--color-border);
+    }
+
+    #entity-card-preview .md-section {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--color-gold);
+      margin: var(--space-lg) 0 var(--space-sm);
+    }
+
+    #entity-card-preview .md-section:first-child {
+      margin-top: 0;
+    }
+
+    #entity-card-preview .md-subsection {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      margin: var(--space-md) 0 var(--space-xs);
+    }
+
+    #entity-card-preview .entity-markdown-full p {
+      font-size: var(--text-sm);
+      color: var(--color-text);
+      line-height: 1.7;
+      margin: 0 0 var(--space-sm);
+    }
+
+    #entity-card-preview .md-list {
+      margin: var(--space-xs) 0 var(--space-md);
+      padding-left: var(--space-lg);
+      font-size: var(--text-sm);
+      color: var(--color-text);
+    }
+
+    #entity-card-preview .md-list li {
+      margin-bottom: var(--space-xs);
+      line-height: 1.5;
+    }
+
+    #entity-card-preview .entity-markdown-full strong {
+      color: var(--color-gold);
+      font-weight: 600;
+    }
+
+    .suggestions-panel {
+      background: rgba(234, 179, 8, 0.1);
+      border: 1px solid var(--color-warning);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      margin-bottom: var(--space-lg);
+    }
+
+    .suggestions-panel h4 {
+      font-size: var(--text-sm);
+      color: var(--color-warning);
+      margin: 0 0 var(--space-sm);
+    }
+
+    .suggestions-list {
+      margin: 0;
+      padding-left: var(--space-lg);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .suggestions-list li {
+      margin-bottom: var(--space-xs);
+    }
+
+    .yaml-editor-section {
+      margin-bottom: var(--space-lg);
+    }
+
+    .yaml-editor-section summary {
+      cursor: pointer;
+      color: var(--color-text-secondary);
+      font-size: var(--text-sm);
+      padding: var(--space-sm);
+      background: var(--color-bg);
+      border-radius: var(--radius-sm);
+    }
+
+    .yaml-editor-section summary:hover {
+      color: var(--color-text);
+    }
+
+    .yaml-editor-section[open] summary {
+      margin-bottom: var(--space-sm);
+    }
+
+    #generator-panel .yaml-editor {
+      width: 100%;
+      padding: var(--space-md);
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      color: var(--color-text);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+      resize: vertical;
+    }
+
+    #generator-panel .yaml-editor:focus {
+      outline: none;
+      border-color: var(--color-gold);
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn--success {
+      background: var(--color-success) !important;
+      border-color: var(--color-success) !important;
+      color: white !important;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
   </style>
 </BaseLayout>
