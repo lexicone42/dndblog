@@ -197,12 +197,12 @@ function getCharactersWithSpells(): Array<{
 
 describe('Content Validation', () => {
   let spellNames: Set<string>;
-  let itemIds: Set<string>;
+  let _itemIds: Set<string>; // Reserved for future item reference validation
   let entityIds: Set<string>;
 
   beforeAll(() => {
     spellNames = getSpellNames();
-    itemIds = getItemIds();
+    _itemIds = getItemIds();
     entityIds = getEntityIds();
   });
 

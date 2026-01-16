@@ -200,7 +200,6 @@ const npcs = sortedCharacters.filter((c: CharacterEntry) => c.data.subtype !== '
 
     // Hide sections with no visible cards
     sections.forEach(section => {
-      const sectionType = section.dataset.section;
       const visibleCards = section.querySelectorAll('.character-card:not([style*="display: none"])');
       section.style.display = visibleCards.length > 0 ? '' : 'none';
     });

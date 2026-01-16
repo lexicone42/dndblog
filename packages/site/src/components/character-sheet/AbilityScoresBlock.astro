@@ -71,7 +71,7 @@ const abilities = [
       <RuleTerm term="Ability Score and Modifier" lookup={glossaryLookup}>Ability Scores</RuleTerm>
     </h3>
     <div class="ability-scores__grid">
-      {abilities.map(({ key, name, abbr }) => {
+      {abilities.map(({ key, abbr }) => {
         const score = abilityScores[key];
         const mod = getModifier(score);
         const saveBonus = getSaveBonus(key);

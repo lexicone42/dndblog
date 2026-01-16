@@ -1,5 +1,5 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import BaseLayout from '@layouts/BaseLayout.astro';
 import SessionContent from '@components/SessionContent.astro';
 
@@ -73,9 +73,6 @@ export async function getStaticPaths() {
   type BlogEntry = typeof posts[0];
   type CharacterEntry = typeof characters[0];
   type EnemyEntry = typeof enemies[0];
-  type LocationEntry = typeof locations[0];
-  type FactionEntry = typeof factions[0];
-  type ItemEntry = typeof items[0];
 
   // Build entity lookup map for auto-linking
   const entityLookup: Record<string, EntityInfo> = {};
