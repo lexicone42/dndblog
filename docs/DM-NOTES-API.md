@@ -59,45 +59,48 @@ https://chronicles.mawframe.ninja/dm-notes?token=your-token
 
 ### Client-Side Auth Module
 
-The frontend uses `@lib/auth.ts` for authentication state management. It supports both legacy token auth and Cognito SSO.
+The frontend uses `@lib/auth.ts` for Cognito authentication with automatic token refresh.
 
 **Available Functions:**
 
 | Function | Description |
 |----------|-------------|
-| `getAuthState()` | Get current auth state (token or Cognito) |
-| `setAuthState(auth)` | Save Cognito auth to localStorage |
-| `clearAuth()` | Clear all auth state (logout) |
-| `getAuthHeaders()` | Get headers for API calls (`X-DM-Token` or `Authorization: Bearer`) |
+| `getAuthState()` | Get current auth state (synchronous) |
+| `ensureValidAuth()` | Refresh tokens if needed before API calls (async) |
+| `setAuthState(auth)` | Save auth to localStorage |
+| `clearAuth()` | Clear auth state (logout) |
+| `getAuthHeaders()` | Get `Authorization: Bearer` header for API calls |
 | `getLoginUrl(returnUrl?)` | Get Cognito hosted UI login URL |
 | `getLogoutUrl(returnPath?)` | Get Cognito logout URL |
 | `getPasskeyRegistrationUrl()` | Get URL to register a passkey |
-| `isSsoAvailable()` | Check if Cognito SSO is configured |
+| `upgradeToPasskeySession()` | Upgrade session to 30 days after passkey registration |
 | `exchangeCodeForTokens(code)` | Exchange OAuth code for tokens (callback page) |
 
 **Auth State Structure:**
 
 ```typescript
 interface AuthState {
-  method: 'token' | 'cognito';
+  method: 'cognito';
   roles: {
     isDm: boolean;
     isPlayer: boolean;
   };
   accessToken: string;
-  idToken?: string;           // Cognito only
-  refreshToken?: string;      // Cognito only
-  expiresAt?: number;         // Cognito only
-  userId?: string;            // Cognito only
-  email?: string;             // Cognito only
-  characterSlug?: string;     // Player's assigned character
+  idToken?: string;
+  refreshToken?: string;
+  expiresAt?: number;           // Access token expiry
+  sessionExpiresAt?: number;    // Session expiry (30d passkey, 1d password)
+  hasPasskey?: boolean;         // True if authenticated with passkey
+  userId?: string;
+  email?: string;
+  characterSlug?: string;       // Player's assigned character
 }
 ```
 
 **Usage Example:**
 
 ```typescript
-import { getAuthState, getAuthHeaders, getLoginUrl } from '@lib/auth';
+import { getAuthState, ensureValidAuth, getAuthHeaders, getLoginUrl } from '@lib/auth';
 
 // Check if user is logged in
 const auth = getAuthState();
@@ -111,19 +114,24 @@ if (auth.roles.isDm) {
   // Show DM features
 }
 
-// Make authenticated API call
+// Make authenticated API call (ensures token is fresh)
+const validAuth = await ensureValidAuth();
+if (!validAuth) {
+  // Session expired, redirect to login
+  window.location.href = getLoginUrl();
+  return;
+}
 const response = await fetch(`${API_URL}/player/drafts`, {
   headers: getAuthHeaders(),
 });
 ```
 
-**Dual-Mode Authentication:**
+**Session Duration by Auth Method:**
 
-The system supports both token and Cognito auth simultaneously:
-- **Token auth**: DM token stored in `localStorage['dm-token']`, player token in `localStorage['player-token']`
-- **Cognito auth**: JWT stored in `localStorage['dndblog-cognito-auth']`
-
-When both are present, token auth takes precedence in `getAuthState()`.
+- **Passkey authentication**: 30-day sessions with automatic token refresh
+- **Password authentication**: 1-day sessions with automatic token refresh
+- Access tokens are refreshed automatically 5 minutes before expiry
+- When session expires, user must re-authenticate
 
 ## API Endpoints
 
