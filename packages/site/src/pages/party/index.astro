@@ -133,7 +133,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         )}
       </section>
 
-      <!-- Coming Soon Tools -->
+      <!-- Player Tools -->
       <section class="tools-section">
         <h2 class="section-title">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -144,6 +144,21 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         </h2>
 
         <div class="tools-grid">
+          <!-- Party Synergies -->
+          <a href="/party/synergies" class="tool-card">
+            <div class="tool-icon tool-icon--active">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+              </svg>
+            </div>
+            <div class="tool-content">
+              <h3 class="tool-title">Party Synergies</h3>
+              <p class="tool-description">Combat combos, weapon masteries, and tactical tips for working together.</p>
+            </div>
+          </a>
+
           <!-- Character Sheets (Coming Soon) -->
           <div class="tool-card tool-card--disabled">
             <div class="tool-icon">
@@ -624,6 +639,27 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
   .tool-card--disabled {
     opacity: 0.6;
+  }
+
+  a.tool-card {
+    text-decoration: none;
+    color: inherit;
+    transition: all var(--transition-fast);
+  }
+
+  a.tool-card:hover {
+    border-color: var(--color-gold);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  a.tool-card:hover .tool-title {
+    color: var(--color-gold);
+  }
+
+  .tool-icon--active {
+    background: var(--color-gold);
+    color: var(--color-bg);
   }
 
   .tool-icon {

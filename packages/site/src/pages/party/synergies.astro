@@ -1,0 +1,1028 @@
+---
+/**
+ * Party Synergies Page
+ *
+ * Educational page showing how party members work together using 5e 2024 mechanics.
+ * Explains weapon masteries, combat combos, and party composition analysis.
+ */
+
+import { getCollection } from 'astro:content';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+// Get active party members
+const allCharacters = await getCollection('characters');
+const activeParty = allCharacters
+  .filter((c: typeof allCharacters[0]) => c.data.subtype === 'pc' && c.data.status === 'active')
+  .sort((a: typeof allCharacters[0], b: typeof allCharacters[0]) => {
+    // Sort by combat role: tanks first, then damage, then support
+    const roleOrder = { Fighter: 1, Paladin: 2, Ranger: 3, Wizard: 4, Cleric: 5 };
+    const aOrder = roleOrder[a.data.class as keyof typeof roleOrder] || 99;
+    const bOrder = roleOrder[b.data.class as keyof typeof roleOrder] || 99;
+    return aOrder - bOrder;
+  });
+
+// Define weapon masteries for reference
+const weaponMasteries = {
+  topple: {
+    name: 'Topple',
+    effect: 'Target must succeed on CON save or be knocked Prone',
+    synergy: 'Melee attackers get Advantage against Prone targets',
+    icon: '⬇️',
+  },
+  vex: {
+    name: 'Vex',
+    effect: 'Gain Advantage on your next attack against the same target',
+    synergy: 'Chain attacks for consistent advantage cycling',
+    icon: '🎯',
+  },
+  sap: {
+    name: 'Sap',
+    effect: 'Target has Disadvantage on its next attack roll',
+    synergy: 'Stack with multiple allies to shut down dangerous enemies',
+    icon: '💫',
+  },
+  slow: {
+    name: 'Slow',
+    effect: "Target's speed reduced by 10 ft until your next turn",
+    synergy: 'Prevent enemies from reaching backline or escaping',
+    icon: '🐌',
+  },
+  nick: {
+    name: 'Nick',
+    effect: 'Make extra light weapon attack as part of Attack action',
+    synergy: 'More attacks = more chances for effects and damage',
+    icon: '⚡',
+  },
+  cleave: {
+    name: 'Cleave',
+    effect: 'On hit, attack another creature within 5 ft (once per turn)',
+    synergy: 'Efficient against clustered enemies',
+    icon: '🌀',
+  },
+  graze: {
+    name: 'Graze',
+    effect: 'On miss, still deal ability modifier damage',
+    synergy: 'Consistent chip damage even when unlucky',
+    icon: '✨',
+  },
+  push: {
+    name: 'Push',
+    effect: 'Push target 10 ft away (if Large or smaller)',
+    synergy: 'Create distance or push into hazards',
+    icon: '👊',
+  },
+};
+
+// Type for processed character data
+interface PartyMember {
+  id: string;
+  name: string;
+  class: string;
+  subclass: string | undefined;
+  level: number | undefined;
+  role: string;
+  roleIcon: string;
+  masteries: string[];
+  hp: number | undefined;
+  ac: number | undefined;
+  keyAbility: { name: string; value: number | undefined } | null;
+  features: { name: string }[];
+}
+
+// Build character data with weapon masteries
+const partyData: PartyMember[] = activeParty.map((char: typeof activeParty[0]) => {
+  const masteries: string[] = [];
+  const equipment = char.data.equipment?.equipped || [];
+  equipment.forEach((item: { mastery?: string }) => {
+    if (item.mastery) masteries.push(item.mastery);
+  });
+
+  // Determine role
+  let role = 'Support';
+  let roleIcon = '🎭';
+  if (char.data.class === 'Fighter' || char.data.class === 'Paladin') {
+    role = 'Frontline';
+    roleIcon = '🛡️';
+  } else if (char.data.class === 'Ranger') {
+    role = 'Scout/Striker';
+    roleIcon = '🎯';
+  } else if (char.data.class === 'Wizard') {
+    role = 'Blaster/Control';
+    roleIcon = '🔥';
+  } else if (char.data.class === 'Cleric') {
+    role = 'Healer/Support';
+    roleIcon = '💚';
+  }
+
+  return {
+    id: char.id,
+    name: char.data.name,
+    class: char.data.class,
+    subclass: char.data.subclass,
+    level: char.data.level,
+    role,
+    roleIcon,
+    masteries,
+    hp: char.data.combat?.hp,
+    ac: char.data.combat?.ac,
+    keyAbility: getKeyAbility(char),
+    features: getKeyFeatures(char),
+  };
+});
+
+function getKeyAbility(char: typeof activeParty[0]) {
+  const scores = char.data.abilityScores;
+  if (!scores) return null;
+  const abilities = [
+    { name: 'STR', value: scores.str },
+    { name: 'DEX', value: scores.dex },
+    { name: 'CON', value: scores.con },
+    { name: 'INT', value: scores.int },
+    { name: 'WIS', value: scores.wis },
+    { name: 'CHA', value: scores.cha },
+  ];
+  return abilities.sort((a, b) => (b.value || 0) - (a.value || 0))[0];
+}
+
+function getKeyFeatures(char: typeof activeParty[0]) {
+  const features = char.data.features || [];
+  // Get notable combat features
+  const notable = features.filter((f: { name: string }) =>
+    [
+      'Sculpt Spells',
+      'Turn Undead',
+      'Action Surge',
+      'Improved Critical',
+      'Dread Ambusher',
+      'Umbral Sight',
+      'Lay on Hands',
+      'Aura of Protection',
+      'Extra Attack',
+    ].includes(f.name)
+  );
+  return notable.slice(0, 3);
+}
+
+// Define combat combos
+const combos = [
+  {
+    name: 'The Prone Chain',
+    rating: 5,
+    participants: ['Kei Eaglesnout', 'Accoa Krigsdottir', 'Stol', 'Rudiger'],
+    setup: "Kei uses Battleaxe (Topple) to knock an enemy Prone",
+    payoff: "All melee attackers (Kei, Accoa, Stol) get Advantage on their attacks against the Prone target. Even Rudiger's Quarterstaff can Topple!",
+    tip: "Best against single tough enemies. Prone targets have disadvantage on attacks too.",
+  },
+  {
+    name: 'Sculpt & Strike',
+    rating: 5,
+    participants: ['Rudiger', 'Kei Eaglesnout', 'Accoa Krigsdottir', 'Stol'],
+    setup: "Frontline (Kei, Accoa, Stol) engages enemies in melee",
+    payoff: "Rudiger casts Fireball centered on the melee. Sculpt Spells lets him choose allies who automatically succeed their saves and take ZERO damage. Enemies take full 8d6 fire.",
+    tip: "Don't be afraid to Fireball your friends - Rudiger has their backs!",
+  },
+  {
+    name: 'The Sap Defense',
+    rating: 4,
+    participants: ['Stol', 'Accoa Krigsdottir'],
+    setup: "Stol hits a dangerous enemy with his Mace of Disruption (Sap mastery)",
+    payoff: "Target has Disadvantage on its next attack. If Accoa also hits with her Dragon's Wrath (Sap), the debuff continues. The enemy is effectively neutered.",
+    tip: "Focus both Sap attacks on the biggest threat each round.",
+  },
+  {
+    name: 'Gloom Stalker Ambush',
+    rating: 5,
+    participants: ['Skid Demon', 'Rudiger'],
+    setup: "Skid casts Pass without Trace (+10 Stealth to entire party). Party approaches in darkness.",
+    payoff: "Skid is invisible to creatures using darkvision. Surprise round: Skid's Dread Ambusher gives +3 initiative and an extra attack dealing +1d8. Rudiger follows with Fireball on clustered, surprised enemies.",
+    tip: "Best when you can choose the engagement. Plan ambushes around darkness.",
+  },
+  {
+    name: 'Slow & Lock',
+    rating: 3,
+    participants: ['Skid Demon', 'Kei Eaglesnout', 'Accoa Krigsdottir'],
+    setup: "Skid opens combat with his Dryad's Bow (Slow mastery)",
+    payoff: "Target loses 10 ft of movement. This can prevent enemies from reaching Rudiger in the backline, or stop a fleeing enemy from escaping.",
+    tip: "Prioritize Slow on enemies trying to reach your casters.",
+  },
+  {
+    name: 'Vex Advantage Cycling',
+    rating: 4,
+    participants: ['Kei Eaglesnout'],
+    setup: "Kei attacks with his +1 Hand Axe (Vex mastery)",
+    payoff: "Hit grants Advantage on Kei's next attack. Kei then attacks with +1 Shortsword (also Vex). This chains: each hit sets up the next with Advantage. With Action Surge, Kei can make 4 attacks, all with cycling advantage!",
+    tip: "Action Surge turns are devastating. Save it for when you really need consistent hits.",
+  },
+  {
+    name: 'Double Divine vs Undead',
+    rating: 5,
+    participants: ['Stol', 'Accoa Krigsdottir'],
+    setup: "Party encounters undead enemies",
+    payoff: "Stol uses Turn Undead + Sear Undead (Channel Divinity) to deal radiant damage and potentially destroy weak undead. Accoa's Divine Smites deal extra d8 against undead. Stol's Mace of Disruption deals 2d6 extra to undead.",
+    tip: "Against undead, lead with Stol's Channel Divinity to thin the herd, then Accoa smites survivors.",
+  },
+];
+
+// Party gaps analysis
+const gaps = [
+  {
+    area: 'Initiative',
+    status: 'warning',
+    issue: "Only Skid (+6) is fast. Accoa has +0 initiative.",
+    mitigation: "Skid's Dread Ambusher adds +3. Consider Alert feat for others.",
+  },
+  {
+    area: 'Crowd Control',
+    status: 'ok',
+    issue: "Rudiger focuses on damage over disables.",
+    mitigation: "Accoa's Nature's Wrath restrains. Stol could prepare Hold Person.",
+  },
+  {
+    area: 'Ranged Damage',
+    status: 'ok',
+    issue: "Only Skid for sustained ranged damage.",
+    mitigation: "Accoa has longbow. Rudiger's Fire Bolt cantrip is reliable.",
+  },
+  {
+    area: 'Intelligence',
+    status: 'good',
+    issue: "Only Rudiger has high INT (18).",
+    mitigation: "Rudiger handles all Arcana/Investigation checks with expertise.",
+  },
+  {
+    area: 'Healing',
+    status: 'good',
+    issue: "Two healers with different resource pools.",
+    mitigation: "Stol has spell-based healing. Accoa has 30 HP Lay on Hands pool.",
+  },
+];
+---
+
+<BaseLayout
+  title="Party Synergies - Rudiger's Evocation of Events"
+  description="Learn how the party works together using 5e 2024 weapon masteries and combat tactics."
+>
+  <div class="synergies-page">
+    <header class="page-header">
+      <nav class="breadcrumb">
+        <a href="/party">Player Hub</a>
+        <span class="breadcrumb-sep">/</span>
+        <span>Party Synergies</span>
+      </nav>
+      <h1 class="page-title">Party Synergies</h1>
+      <p class="page-subtitle">
+        Understanding how the party works together using D&D 5e 2024 mechanics
+      </p>
+    </header>
+
+    <!-- Party Composition Overview -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">⚔️</span>
+        Party Composition
+      </h2>
+
+      <div class="party-grid">
+        {partyData.map((char: PartyMember) => (
+          <a href={`/campaign/characters/${char.id}`} class="char-card">
+            <div class="char-header">
+              <span class="char-role-icon">{char.roleIcon}</span>
+              <div class="char-info">
+                <h3 class="char-name">{char.name}</h3>
+                <p class="char-class">
+                  {char.class} ({char.subclass}) · Lvl {char.level}
+                </p>
+              </div>
+            </div>
+
+            <div class="char-stats">
+              <span class="stat">
+                <span class="stat-label">AC</span>
+                <span class="stat-value">{char.ac}</span>
+              </span>
+              <span class="stat">
+                <span class="stat-label">HP</span>
+                <span class="stat-value">{char.hp}</span>
+              </span>
+              {char.keyAbility && (
+                <span class="stat stat--primary">
+                  <span class="stat-label">{char.keyAbility.name}</span>
+                  <span class="stat-value">{char.keyAbility.value}</span>
+                </span>
+              )}
+            </div>
+
+            <div class="char-role">
+              <span class="role-badge">{char.role}</span>
+            </div>
+
+            {char.masteries.length > 0 && (
+              <div class="char-masteries">
+                <span class="mastery-label">Weapon Masteries:</span>
+                <div class="mastery-list">
+                  {char.masteries.map((m: string) => {
+                    const mastery = weaponMasteries[m as keyof typeof weaponMasteries];
+                    return mastery ? (
+                      <span class="mastery-tag" title={mastery.effect}>
+                        {mastery.icon} {mastery.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
+
+            {char.features.length > 0 && (
+              <div class="char-features">
+                {char.features.map((f: { name: string }) => (
+                  <span class="feature-tag">{f.name}</span>
+                ))}
+              </div>
+            )}
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- Weapon Mastery Reference -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">🗡️</span>
+        5e 2024 Weapon Masteries
+      </h2>
+
+      <p class="section-intro">
+        In D&D 5e 2024, each weapon has a <strong>Mastery</strong> property that grants a special
+        effect when you hit. Understanding these masteries is key to maximizing party synergy.
+      </p>
+
+      <div class="mastery-grid">
+        {Object.values(weaponMasteries).map((mastery) => (
+          <div class="mastery-card">
+            <div class="mastery-header">
+              <span class="mastery-icon">{mastery.icon}</span>
+              <h3 class="mastery-name">{mastery.name}</h3>
+            </div>
+            <p class="mastery-effect">{mastery.effect}</p>
+            <p class="mastery-synergy">
+              <strong>Synergy:</strong> {mastery.synergy}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Combat Combos -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">💥</span>
+        Combat Combos
+      </h2>
+
+      <p class="section-intro">
+        These are the party's most effective tactical combinations. Use them to dominate encounters!
+      </p>
+
+      <div class="combo-list">
+        {combos.map((combo) => (
+          <div class="combo-card">
+            <div class="combo-header">
+              <h3 class="combo-name">{combo.name}</h3>
+              <div class="combo-rating">
+                {Array.from({ length: combo.rating }).map(() => (
+                  <span class="star">★</span>
+                ))}
+                {Array.from({ length: 5 - combo.rating }).map(() => (
+                  <span class="star star--empty">☆</span>
+                ))}
+              </div>
+            </div>
+
+            <div class="combo-participants">
+              {combo.participants.map((p) => (
+                <span class="participant-tag">{p}</span>
+              ))}
+            </div>
+
+            <div class="combo-steps">
+              <div class="combo-step">
+                <span class="step-label">Setup</span>
+                <p class="step-text">{combo.setup}</p>
+              </div>
+              <div class="combo-arrow">→</div>
+              <div class="combo-step combo-step--payoff">
+                <span class="step-label">Payoff</span>
+                <p class="step-text">{combo.payoff}</p>
+              </div>
+            </div>
+
+            <div class="combo-tip">
+              <span class="tip-icon">💡</span>
+              <span class="tip-text">{combo.tip}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Party Gaps Analysis -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">📊</span>
+        Party Analysis
+      </h2>
+
+      <p class="section-intro">
+        Understanding the party's strengths and gaps helps with tactical planning.
+      </p>
+
+      <div class="gaps-list">
+        {gaps.map((gap) => (
+          <div class={`gap-card gap-card--${gap.status}`}>
+            <div class="gap-header">
+              <h3 class="gap-area">{gap.area}</h3>
+              <span class={`gap-status gap-status--${gap.status}`}>
+                {gap.status === 'good' ? '✓ Strong' : gap.status === 'warning' ? '⚠ Watch' : '○ OK'}
+              </span>
+            </div>
+            <p class="gap-issue">{gap.issue}</p>
+            <p class="gap-mitigation">
+              <strong>Mitigation:</strong> {gap.mitigation}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Quick Reference -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">📋</span>
+        Quick Reference
+      </h2>
+
+      <div class="reference-grid">
+        <div class="reference-card">
+          <h3 class="reference-title">Optimal Turn Order</h3>
+          <ol class="turn-order">
+            <li><strong>Skid</strong> - Scout, apply Slow to threats</li>
+            <li><strong>Kei</strong> - Topple enemies Prone</li>
+            <li><strong>Accoa/Stol</strong> - Advantage attacks on Prone</li>
+            <li><strong>Rudiger</strong> - Fireball with Sculpt Spells</li>
+          </ol>
+        </div>
+
+        <div class="reference-card">
+          <h3 class="reference-title">Damage Types Covered</h3>
+          <ul class="damage-types">
+            <li><span class="damage-icon">🔥</span> Fire (Rudiger)</li>
+            <li><span class="damage-icon">⚡</span> Lightning (Rudiger)</li>
+            <li><span class="damage-icon">✨</span> Radiant (Stol, Accoa)</li>
+            <li><span class="damage-icon">🗡️</span> Slashing/Piercing (Kei, Skid)</li>
+            <li><span class="damage-icon">💀</span> Necrotic Resist (Accoa)</li>
+          </ul>
+        </div>
+
+        <div class="reference-card">
+          <h3 class="reference-title">Resource Pools</h3>
+          <ul class="resources">
+            <li><strong>Spell Slots:</strong> Rudiger, Stol, Skid, Accoa</li>
+            <li><strong>Channel Divinity:</strong> Stol (3), Accoa (1)</li>
+            <li><strong>Lay on Hands:</strong> Accoa (30 HP)</li>
+            <li><strong>Action Surge:</strong> Kei (1/short rest)</li>
+            <li><strong>Second Wind:</strong> Kei (1d10+6 HP)</li>
+            <li><strong>Dreadful Strike:</strong> Skid (3/long rest)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .synergies-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-lg);
+  }
+
+  /* Header */
+  .page-header {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .breadcrumb {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-md);
+  }
+
+  .breadcrumb a {
+    color: var(--color-link);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .breadcrumb-sep {
+    margin: 0 var(--space-sm);
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .page-subtitle {
+    color: var(--color-text-secondary);
+    font-size: var(--text-lg);
+    margin: 0;
+  }
+
+  /* Sections */
+  .section {
+    margin-bottom: var(--space-3xl);
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-lg);
+    padding-bottom: var(--space-sm);
+    border-bottom: 2px solid var(--color-gold);
+  }
+
+  .section-icon {
+    font-size: var(--text-2xl);
+  }
+
+  .section-intro {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-lg);
+    line-height: 1.6;
+  }
+
+  /* Party Grid */
+  .party-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .char-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: inherit;
+    transition: all var(--transition-fast);
+  }
+
+  .char-card:hover {
+    border-color: var(--color-gold);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .char-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .char-role-icon {
+    font-size: var(--text-2xl);
+  }
+
+  .char-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0;
+  }
+
+  .char-class {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  .char-stats {
+    display: flex;
+    gap: var(--space-md);
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+  }
+
+  .stat--primary {
+    background: var(--color-accent);
+    color: white;
+  }
+
+  .stat-label {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+
+  .stat-value {
+    font-weight: 700;
+    font-size: var(--text-base);
+  }
+
+  .char-role {
+    margin-top: var(--space-xs);
+  }
+
+  .role-badge {
+    display: inline-block;
+    padding: 2px var(--space-sm);
+    background: var(--color-gold);
+    color: var(--color-bg);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .char-masteries {
+    margin-top: var(--space-sm);
+  }
+
+  .mastery-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    display: block;
+    margin-bottom: var(--space-xs);
+  }
+
+  .mastery-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .mastery-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px var(--space-sm);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+    cursor: help;
+  }
+
+  .char-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-top: var(--space-sm);
+  }
+
+  .feature-tag {
+    padding: 2px var(--space-sm);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  /* Mastery Grid */
+  .mastery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .mastery-card {
+    padding: var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .mastery-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+  }
+
+  .mastery-icon {
+    font-size: var(--text-xl);
+  }
+
+  .mastery-name {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .mastery-effect {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .mastery-synergy {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* Combo List */
+  .combo-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+  }
+
+  .combo-card {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  .combo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+  }
+
+  .combo-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0;
+  }
+
+  .combo-rating {
+    display: flex;
+    gap: 2px;
+  }
+
+  .star {
+    color: var(--color-gold);
+  }
+
+  .star--empty {
+    color: var(--color-border);
+  }
+
+  .combo-participants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-md);
+  }
+
+  .participant-tag {
+    padding: 2px var(--space-sm);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+  }
+
+  .combo-steps {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--space-md);
+    align-items: start;
+    margin-bottom: var(--space-md);
+  }
+
+  .combo-step {
+    padding: var(--space-md);
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+  }
+
+  .combo-step--payoff {
+    background: color-mix(in srgb, var(--color-success) 10%, var(--color-bg));
+    border: 1px solid var(--color-success);
+  }
+
+  .step-label {
+    display: block;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-xs);
+  }
+
+  .combo-step--payoff .step-label {
+    color: var(--color-success);
+  }
+
+  .step-text {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .combo-arrow {
+    font-size: var(--text-xl);
+    color: var(--color-gold);
+    align-self: center;
+  }
+
+  .combo-tip {
+    display: flex;
+    align-items: start;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: color-mix(in srgb, var(--color-warning) 10%, var(--color-bg));
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+  }
+
+  .tip-icon {
+    flex-shrink: 0;
+  }
+
+  .tip-text {
+    color: var(--color-text-secondary);
+  }
+
+  /* Gaps List */
+  .gaps-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .gap-card {
+    padding: var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--color-border);
+  }
+
+  .gap-card--good {
+    border-left-color: var(--color-success);
+  }
+
+  .gap-card--warning {
+    border-left-color: var(--color-warning);
+  }
+
+  .gap-card--ok {
+    border-left-color: var(--color-accent);
+  }
+
+  .gap-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+  }
+
+  .gap-area {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .gap-status {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    padding: 2px var(--space-sm);
+    border-radius: var(--radius-sm);
+  }
+
+  .gap-status--good {
+    background: color-mix(in srgb, var(--color-success) 20%, transparent);
+    color: var(--color-success);
+  }
+
+  .gap-status--warning {
+    background: color-mix(in srgb, var(--color-warning) 20%, transparent);
+    color: var(--color-warning);
+  }
+
+  .gap-status--ok {
+    background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    color: var(--color-accent);
+  }
+
+  .gap-issue {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .gap-mitigation {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  /* Reference Grid */
+  .reference-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .reference-card {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .reference-title {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .turn-order {
+    margin: 0;
+    padding-left: var(--space-lg);
+  }
+
+  .turn-order li {
+    margin-bottom: var(--space-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+  }
+
+  .damage-types,
+  .resources {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .damage-types li,
+  .resources li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+  }
+
+  .damage-icon {
+    width: 20px;
+    text-align: center;
+  }
+
+  /* Mobile Adjustments */
+  @media (max-width: 768px) {
+    .combo-steps {
+      grid-template-columns: 1fr;
+    }
+
+    .combo-arrow {
+      transform: rotate(90deg);
+      justify-self: center;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .party-grid,
+    .mastery-grid,
+    .gaps-list,
+    .reference-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
