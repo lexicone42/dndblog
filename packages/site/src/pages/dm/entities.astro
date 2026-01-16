@@ -822,12 +822,33 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         pendingAutosave = null;
       }
 
+      function updateCardSummary(card) {
+        // Update the collapsed summary with current form values
+        var nameInput = card.querySelector('[data-field-key="name"]');
+        var descInput = card.querySelector('[data-field-key="description"]');
+
+        if (nameInput) {
+          var nameEl = card.querySelector('.entity-card__name');
+          if (nameEl && nameInput.value) {
+            nameEl.textContent = nameInput.value;
+          }
+        }
+
+        if (descInput) {
+          var descEl = card.querySelector('.entity-card__desc');
+          if (descEl) {
+            descEl.textContent = descInput.value || 'No description';
+          }
+        }
+      }
+
       function toggleCardExpand(card, entity) {
         var details = card.querySelector('.entity-card__details');
         var expandBtn = card.querySelector('.entity-card__expand-btn');
 
         if (card.classList.contains('entity-card--expanded')) {
-          // Collapse this card
+          // Collapse this card - update summary with current form values
+          updateCardSummary(card);
           card.classList.remove('entity-card--expanded');
           details.style.display = 'none';
           expandBtn.textContent = '▼';
@@ -835,6 +856,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         } else {
           // Collapse any previously expanded card
           if (expandedCard && expandedCard !== card) {
+            updateCardSummary(expandedCard);
             expandedCard.classList.remove('entity-card--expanded');
             expandedCard.querySelector('.entity-card__details').style.display = 'none';
             expandedCard.querySelector('.entity-card__expand-btn').textContent = '▼';
