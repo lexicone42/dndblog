@@ -4,43 +4,40 @@ const currentYear = new Date().getFullYear();
 
 <footer class="footer">
   <div class="container footer__container">
-    <div class="footer__content">
-      <p class="footer__copyright">
-        &copy; {currentYear} Rudiger's Evocation of Events. All rights reserved.
-      </p>
-      <nav class="footer__nav" aria-label="Footer navigation">
-        <a href="/rss.xml" class="footer__link">RSS</a>
-        <span class="footer__separator" aria-hidden="true">·</span>
-        <a href="https://github.com/lexicone42/dndblog" class="footer__link" rel="noopener noreferrer">
-          GitHub
-        </a>
-      </nav>
-    </div>
-    <p class="footer__tagline">
-      Built with <a href="https://astro.build" class="footer__link" rel="noopener noreferrer">Astro</a>
+    <p class="footer__copyright">
+      &copy; {currentYear} Rudiger's Evocation of Events
     </p>
+    <nav class="footer__nav" aria-label="Footer navigation">
+      <a href="/rss.xml" class="footer__link">RSS</a>
+      <span class="footer__separator" aria-hidden="true">·</span>
+      <a href="https://github.com/lexicone42/dndblog" class="footer__link" rel="noopener noreferrer">
+        GitHub
+      </a>
+      <span class="footer__separator" aria-hidden="true">·</span>
+      <span class="footer__tagline">
+        Built with <a href="https://astro.build" class="footer__link" rel="noopener noreferrer">Astro</a>
+      </span>
+    </nav>
   </div>
 </footer>
 
 <style>
   .footer {
-    border-top: 2px solid var(--color-border);
-    padding: var(--space-xl) 0;
+    border-top: 1px solid var(--color-border);
+    height: var(--header-height);
     margin-top: auto;
     background-color: var(--color-bg-secondary);
+    display: flex;
+    align-items: center;
   }
 
   .footer__container {
-    text-align: center;
-  }
-
-  .footer__content {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    gap: var(--space-md);
-    margin-bottom: var(--space-sm);
+    gap: var(--space-sm);
+    width: 100%;
   }
 
   .footer__copyright {
@@ -74,8 +71,15 @@ const currentYear = new Date().getFullYear();
 
   .footer__tagline {
     color: var(--color-text-muted);
-    font-size: var(--text-xs);
-    margin: 0;
+    font-size: var(--text-sm);
     font-style: italic;
+  }
+
+  /* Stack vertically on mobile */
+  @media (max-width: 640px) {
+    .footer__container {
+      justify-content: center;
+      text-align: center;
+    }
   }
 </style>
