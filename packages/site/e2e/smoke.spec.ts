@@ -162,16 +162,15 @@ test.describe('Post-deployment smoke tests', () => {
       await expect(accessDenied).toBeVisible();
     });
 
-    test('Party hub shows auth gate when not authenticated', async ({ page }) => {
-      await page.goto('/party');
+    test('Party hub is publicly accessible', async ({ page }) => {
+      const response = await page.goto('/party');
+      expect(response?.status()).toBe(200);
 
-      // Auth gate should be visible
-      const authGate = page.locator('#auth-gate');
-      await expect(authGate).toBeVisible();
+      // Page should show party content without auth
+      await expect(page.locator('h1')).toContainText('Player Hub');
 
-      // Dashboard content should be hidden
-      const dashboard = page.locator('#dashboard-content');
-      await expect(dashboard).toBeHidden();
+      // Should show party section
+      await expect(page.getByText('The Party')).toBeVisible();
     });
 
     test('Navigation hides DM/Player links when not authenticated', async ({ page }) => {
