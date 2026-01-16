@@ -329,3 +329,320 @@ After deployment, the API URL is output and should be set in the site's environm
 ```bash
 PUBLIC_DM_NOTES_API_URL=https://xxx.execute-api.us-west-2.amazonaws.com
 ```
+
+---
+
+## Entity Staging API
+
+The staging API allows the DM to create, edit, and publish campaign entities (characters, items, locations, enemies, factions) through a branch-based workflow.
+
+### Architecture
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────┐
+│  entities.astro │────▶│  API Gateway     │────▶│   Lambda    │
+│  (DM Editor)    │     │  (HTTP API)      │     │  Functions  │
+└─────────────────┘     └──────────────────┘     └──────┬──────┘
+                                                        │
+                        ┌──────────────────┐            │
+                        │   S3 Bucket      │◀───────────┤
+                        │   (staging/)     │            │
+                        └──────────────────┘            │
+                                                        ▼
+                        ┌──────────────────┐     ┌─────────────┐
+                        │   GitHub API     │◀────│  Publish    │
+                        │   (PR creation)  │     │  Lambda     │
+                        └──────────────────┘     └─────────────┘
+```
+
+### Staging Workflow
+
+1. **Create Branch**: DM creates a staging branch for a group of related edits
+2. **Add/Edit Entities**: DM adds or modifies entities within the branch
+3. **Review**: DM reviews all pending changes
+4. **Publish**: Creates a GitHub PR with the changes
+5. **Merge**: PR triggers site rebuild when merged
+
+### Staging Endpoints
+
+All staging endpoints require `X-DM-Token` header.
+
+#### GET /staging/branches
+
+List all staging branches.
+
+**Response:**
+```json
+{
+  "branches": [
+    {
+      "name": "session-42-entities",
+      "displayName": "Session 42 Entities",
+      "createdAt": "2026-01-15T10:00:00Z",
+      "entityCount": 3
+    }
+  ]
+}
+```
+
+#### POST /staging/branches
+
+Create a new staging branch.
+
+**Request:**
+```json
+{
+  "name": "session-42-entities",
+  "displayName": "Session 42 Entities"
+}
+```
+
+#### GET /staging/branches/{name}
+
+Get branch details including all entities.
+
+**Response:**
+```json
+{
+  "name": "session-42-entities",
+  "displayName": "Session 42 Entities",
+  "createdAt": "2026-01-15T10:00:00Z",
+  "entities": [
+    {
+      "slug": "new-character",
+      "entityType": "character",
+      "frontmatter": { "name": "New Character", ... }
+    }
+  ]
+}
+```
+
+#### DELETE /staging/branches/{name}
+
+Delete a staging branch and all its entities.
+
+#### POST /staging/branches/{name}/entities
+
+Add a new entity to a branch.
+
+**Request:**
+```json
+{
+  "slug": "new-character",
+  "entityType": "character",
+  "frontmatter": {
+    "name": "New Character",
+    "description": "A mysterious stranger",
+    "status": "active"
+  }
+}
+```
+
+#### PUT /staging/branches/{name}/entities/{type}/{slug}
+
+Update an existing entity.
+
+**Request:**
+```json
+{
+  "frontmatter": {
+    "name": "Updated Name",
+    "description": "Updated description"
+  }
+}
+```
+
+#### DELETE /staging/branches/{name}/entities/{type}/{slug}
+
+Remove an entity from a branch.
+
+#### POST /staging/branches/{name}/publish
+
+Publish all entities in the branch to GitHub.
+
+**Response:**
+```json
+{
+  "success": true,
+  "prUrl": "https://github.com/org/repo/pull/123",
+  "entitiesPublished": 3
+}
+```
+
+### Entity Types
+
+Valid entity types and their fields:
+
+| Type | Required Fields | Optional Fields |
+|------|-----------------|-----------------|
+| `character` | name, status | description, subtype, tags |
+| `item` | name, itemType | rarity, attunement, status, description |
+| `location` | name, status | locationType, region, description |
+| `enemy` | name, status | subtype, cr, baseMonster, description |
+| `faction` | name, status | factionType, alignment, description |
+
+---
+
+## Player Hub API
+
+The Player Hub provides authenticated access for players to view party resources and manage session data.
+
+### Authentication
+
+Players authenticate with a shared player token stored in SSM:
+
+```bash
+# Set player hub token
+aws ssm put-parameter \
+  --name "/dndblog/player-notes-token" \
+  --value "shared-player-token" \
+  --type SecureString \
+  --overwrite
+```
+
+### Endpoints
+
+#### POST /validate-player-token
+
+Validate a player token.
+
+**Request Headers:**
+```
+X-Player-Token: shared-player-token
+```
+
+**Response:**
+```json
+{
+  "valid": true
+}
+```
+
+---
+
+## Session Tracker API (Per-Character)
+
+The Session Tracker allows individual players to track HP, spell slots, and conditions during gameplay.
+
+### Per-Character Authentication
+
+Each player has their own token associated with a character:
+
+```bash
+# Set per-character token
+aws ssm put-parameter \
+  --name "/dndblog/player-token/rudiger" \
+  --value "rudigers-secret-token" \
+  --type SecureString \
+  --overwrite
+```
+
+### Endpoints
+
+#### POST /validate-character-token
+
+Validate a character-specific token and return which character can be edited.
+
+**Request Headers:**
+```
+X-Player-Token: rudigers-secret-token
+```
+
+**Response:**
+```json
+{
+  "valid": true,
+  "characterSlug": "rudiger"
+}
+```
+
+#### GET /player/drafts/{slug}
+
+Load a player's draft session data.
+
+**Request Headers:**
+```
+X-Player-Token: character-token
+```
+
+**Response:**
+```json
+{
+  "characterSlug": "rudiger",
+  "combat": {
+    "hp": 45,
+    "tempHp": 5
+  },
+  "spellSlots": [
+    { "level": 1, "expended": 2 },
+    { "level": 2, "expended": 1 }
+  ],
+  "activeConditions": [
+    { "name": "Poisoned", "duration": "1 hour" }
+  ],
+  "savedAt": "2026-01-15T20:00:00Z"
+}
+```
+
+#### PUT /player/drafts/{slug}
+
+Save session data as a draft.
+
+**Request:**
+```json
+{
+  "combat": { "hp": 45, "tempHp": 5 },
+  "spellSlots": [...],
+  "activeConditions": [...]
+}
+```
+
+#### DELETE /player/drafts/{slug}
+
+Discard a draft.
+
+### Draft Approval Flow (DM)
+
+Pending player drafts can be approved by the DM to publish to the site.
+
+#### GET /player/drafts (DM only)
+
+List all pending player drafts.
+
+**Request Headers:**
+```
+X-DM-Token: dm-token
+```
+
+**Response:**
+```json
+{
+  "drafts": [
+    {
+      "characterSlug": "rudiger",
+      "characterName": "Rudiger",
+      "savedAt": "2026-01-15T20:00:00Z",
+      "changes": ["HP: 52 → 45", "Added condition: Poisoned"]
+    }
+  ]
+}
+```
+
+#### POST /player/drafts/{slug}/approve (DM only)
+
+Approve and publish a player's draft changes.
+
+#### POST /player/drafts/{slug}/reject (DM only)
+
+Reject a player's draft changes.
+
+---
+
+## Frontend Pages
+
+| Page | Purpose | Auth |
+|------|---------|------|
+| `/dm` | DM Dashboard - notes, entities, drafts | DM Token |
+| `/dm/entities` | Entity editor with staging branches | DM Token |
+| `/player` | Player Hub - party resources | Player Token |
+| `/player/session/{slug}` | Session Tracker for a character | Character Token |

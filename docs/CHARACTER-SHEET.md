@@ -269,15 +269,51 @@ const csheetSchema = z.object({
 
 Build fails if character frontmatter doesn't match schema.
 
+## Session Tracker Integration
+
+The Session Tracker (`/player/session/{slug}`) provides real-time character state management during gameplay sessions.
+
+### Features
+- **HP Management**: Track current HP, temp HP with +/- buttons
+- **Spell Slot Tracking**: Click to toggle slots between available/expended
+- **Condition Manager**: Add/remove active conditions with duration
+- **Rest Buttons**: Short/Long rest to restore resources
+
+### Architecture
+```
+Player (authenticated) → Session Tracker UI
+                              ↓
+                         Save Draft
+                              ↓
+                         S3 (player drafts)
+                              ↓
+                         DM Approval
+                              ↓
+                         GitHub PR → Site Rebuild
+```
+
+### Data Flow
+1. Player authenticates with character-specific token
+2. Loads existing draft or character's current stats
+3. Makes changes during session
+4. Saves draft to S3 staging
+5. DM reviews and approves changes
+6. Changes merged to site via GitHub PR
+
+See [DM-NOTES-API.md](./DM-NOTES-API.md#session-tracker-api-per-character) for API documentation.
+
+---
+
 ## Future Enhancements
 
 ### Planned
 - [ ] Print stylesheet for paper character sheets
 - [ ] PDF export functionality
-- [ ] Interactive HP tracker (localStorage)
-- [ ] Spell slot toggle (localStorage)
+- [x] ~~Interactive HP tracker~~ → Implemented via Session Tracker
+- [x] ~~Spell slot toggle~~ → Implemented via Session Tracker
 
 ### Considered
 - [ ] Character comparison view
 - [ ] Level-up wizard
 - [ ] Integration with D&D Beyond import
+- [ ] Real-time WebSocket sync during sessions
