@@ -1,0 +1,1001 @@
+---
+/**
+ * DM Party Tracker Page
+ * Real-time view of party status during sessions.
+ * Shows HP, conditions, features, and death saves for all active PCs.
+ * Polls for updates every 30 seconds.
+ */
+
+import { getCollection, type CollectionEntry } from 'astro:content';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
+
+// Type for party member data
+interface PartyFeature {
+  name: string;
+  max: number;
+  recharge: string;
+}
+
+interface PartyMember {
+  slug: string;
+  name: string;
+  level: number;
+  class: string;
+  subclass: string | null;
+  race?: string;
+  maxHp: number;
+  currentHp: number;
+  features: PartyFeature[];
+}
+
+// Get all active PC characters
+const characters = await getCollection('characters');
+const partyMembers: PartyMember[] = characters
+  .filter((c: CollectionEntry<'characters'>) => c.data.subtype === 'pc' && c.data.status === 'active')
+  .sort((a: CollectionEntry<'characters'>, b: CollectionEntry<'characters'>) => a.data.name.localeCompare(b.data.name))
+  .map((c: CollectionEntry<'characters'>) => ({
+    slug: c.id,
+    name: c.data.name,
+    level: c.data.level || 1,
+    class: c.data.class || 'Unknown',
+    subclass: c.data.subclass || null,
+    race: c.data.race,
+    maxHp: c.data.combat?.maxHp ?? 10,
+    currentHp: c.data.combat?.hp ?? c.data.combat?.maxHp ?? 10,
+    features: (c.data.features || [])
+      .filter((f: { uses?: unknown }) => f.uses)
+      .map((f: { name: string; uses: { current?: number; max?: number; recharge?: string } }) => ({
+        name: f.name,
+        max: f.uses?.max ?? 0,
+        recharge: f.uses?.recharge ?? 'long-rest',
+      })),
+  }));
+---
+
+<BaseLayout
+  title="Party Tracker - DM Dashboard"
+  description="Real-time party status tracking for the Dungeon Master."
+>
+  <div class="party-tracker">
+    <!-- Auth Gate -->
+    <div id="auth-gate" class="auth-gate">
+      <div class="auth-content">
+        <div class="auth-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <h1 class="auth-title">Party Tracker</h1>
+        <p class="auth-description">Enter your DM token to view party status.</p>
+        <form id="auth-form" class="auth-form">
+          <label for="dm-token" class="visually-hidden">DM Token</label>
+          <input
+            type="password"
+            id="dm-token"
+            class="auth-input"
+            placeholder="Enter DM token..."
+            autocomplete="off"
+            required
+          />
+          <button type="submit" class="auth-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+              <polyline points="10 17 15 12 10 7"></polyline>
+              <line x1="15" y1="12" x2="3" y2="12"></line>
+            </svg>
+            Enter
+          </button>
+        </form>
+        <p id="auth-error" class="auth-error" style="display: none;"></p>
+      </div>
+    </div>
+
+    <!-- Tracker Content -->
+    <div id="tracker-content" class="tracker-content" style="display: none;">
+      <header class="tracker-header">
+        <div class="header-main">
+          <a href="/dm" class="back-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            DM Dashboard
+          </a>
+          <h1 class="tracker-title">Party Status</h1>
+          <div id="refresh-indicator" class="refresh-indicator">
+            <span class="refresh-time">Updated just now</span>
+            <button id="refresh-btn" class="refresh-btn" title="Refresh now">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div id="party-grid" class="party-grid">
+        {partyMembers.map((member) => (
+          <div class="character-card" data-slug={member.slug}>
+            <div class="card-header">
+              <div class="character-identity">
+                <h2 class="character-name">{member.name}</h2>
+                <span class="character-class">
+                  Level {member.level} {member.class}
+                  {member.subclass && ` (${member.subclass})`}
+                </span>
+              </div>
+              <div class="draft-status" data-status="none">
+                <span class="status-badge status-badge--none">No draft</span>
+              </div>
+            </div>
+
+            <div class="hp-section">
+              <div class="hp-header">
+                <span class="hp-label">HP</span>
+                <span class="hp-value">{member.currentHp}/{member.maxHp}</span>
+              </div>
+              <div class="hp-bar" data-max={member.maxHp}>
+                <div class="hp-bar-fill" style={`width: ${(member.currentHp / member.maxHp) * 100}%`}></div>
+              </div>
+            </div>
+
+            <!-- Death Saves (hidden by default) -->
+            <div class="death-saves" style="display: none;">
+              <span class="death-saves-warning">DEATH SAVES</span>
+              <div class="death-saves-display">
+                <span class="death-label">Successes:</span>
+                <span class="death-pips death-pips--success">
+                  <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+                </span>
+                <span class="death-label">Failures:</span>
+                <span class="death-pips death-pips--failure">
+                  <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Conditions -->
+            <div class="conditions-section">
+              <div class="conditions-list">
+                <span class="no-conditions">No conditions</span>
+              </div>
+            </div>
+
+            <!-- Features (if any) -->
+            {member.features.length > 0 && (
+              <div class="features-section">
+                <div class="features-list">
+                  {member.features.map((feature) => (
+                    <div class="feature-item" data-feature={feature.name} data-recharge={feature.recharge}>
+                      <span class="feature-name">{feature.name}</span>
+                      <span class="feature-pips" data-max={feature.max}>
+                        {[...Array(feature.max)].map(() => (
+                          <span class="pip pip--available"></span>
+                        ))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <a href={`/party/session/${member.slug}`} class="view-tracker-link" target="_blank">
+              Open Session Tracker
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+          </div>
+        ))}
+      </div>
+
+      <footer class="tracker-footer">
+        <span class="auto-refresh-note">Auto-refreshes every 30 seconds</span>
+        <button id="logout-btn" class="logout-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Sign Out
+        </button>
+      </footer>
+    </div>
+  </div>
+</BaseLayout>
+
+<script is:inline define:vars={{ apiUrl, partyMembers }}>
+(function() {
+  var TOKEN_KEY = 'dm-token';
+  var API_URL = apiUrl;
+  var REFRESH_INTERVAL = 30000; // 30 seconds
+  var refreshTimer = null;
+  var lastRefresh = Date.now();
+
+  // DOM elements
+  var authGate = document.getElementById('auth-gate');
+  var trackerContent = document.getElementById('tracker-content');
+  var authForm = document.getElementById('auth-form');
+  var authError = document.getElementById('auth-error');
+  var tokenInput = document.getElementById('dm-token');
+  var refreshBtn = document.getElementById('refresh-btn');
+  var refreshTime = document.querySelector('.refresh-time');
+
+  // ============================================
+  // Authentication
+  // ============================================
+
+  async function validateToken(token) {
+    if (!API_URL) return false;
+
+    try {
+      var response = await fetch(API_URL + '/validate-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-DM-Token': token,
+        },
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Token validation error:', error);
+      return false;
+    }
+  }
+
+  async function checkAuth() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      var isValid = await validateToken(token);
+      if (isValid) {
+        showTracker();
+        loadDrafts();
+        startAutoRefresh();
+      } else {
+        localStorage.removeItem(TOKEN_KEY);
+        showAuthGate();
+      }
+    }
+  }
+
+  function showTracker() {
+    authGate.style.display = 'none';
+    trackerContent.style.display = 'block';
+  }
+
+  function showAuthGate() {
+    authGate.style.display = 'flex';
+    trackerContent.style.display = 'none';
+  }
+
+  authForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var token = tokenInput.value.trim();
+
+    if (token) {
+      authError.style.display = 'none';
+      var isValid = await validateToken(token);
+
+      if (isValid) {
+        localStorage.setItem(TOKEN_KEY, token);
+        showTracker();
+        loadDrafts();
+        startAutoRefresh();
+      } else {
+        authError.textContent = 'Invalid token. Please try again.';
+        authError.style.display = 'block';
+      }
+    }
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', function() {
+    stopAutoRefresh();
+    localStorage.removeItem(TOKEN_KEY);
+    showAuthGate();
+    tokenInput.value = '';
+  });
+
+  // ============================================
+  // Auto-refresh
+  // ============================================
+
+  function startAutoRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(function() {
+      loadDrafts();
+    }, REFRESH_INTERVAL);
+  }
+
+  function stopAutoRefresh() {
+    if (refreshTimer) {
+      clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+  }
+
+  function updateRefreshTime() {
+    var seconds = Math.floor((Date.now() - lastRefresh) / 1000);
+    if (seconds < 5) {
+      refreshTime.textContent = 'Updated just now';
+    } else if (seconds < 60) {
+      refreshTime.textContent = 'Updated ' + seconds + 's ago';
+    } else {
+      var minutes = Math.floor(seconds / 60);
+      refreshTime.textContent = 'Updated ' + minutes + 'm ago';
+    }
+  }
+
+  setInterval(updateRefreshTime, 5000);
+
+  refreshBtn.addEventListener('click', function() {
+    refreshBtn.classList.add('spinning');
+    loadDrafts().then(function() {
+      setTimeout(function() {
+        refreshBtn.classList.remove('spinning');
+      }, 500);
+    });
+  });
+
+  // ============================================
+  // Load and display drafts
+  // ============================================
+
+  async function loadDrafts() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    if (!token || !API_URL) return;
+
+    try {
+      var response = await fetch(API_URL + '/player/drafts', {
+        method: 'GET',
+        headers: {
+          'X-DM-Token': token,
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Failed to load drafts');
+        return;
+      }
+
+      var data = await response.json();
+      lastRefresh = Date.now();
+      updateRefreshTime();
+      applyDraftsToCards(data.drafts || []);
+
+    } catch (error) {
+      console.error('Error loading drafts:', error);
+    }
+  }
+
+  function applyDraftsToCards(drafts) {
+    // Create a map for quick lookup
+    var draftMap = {};
+    drafts.forEach(function(d) {
+      draftMap[d.characterSlug] = d;
+    });
+
+    // Update each character card
+    partyMembers.forEach(function(member) {
+      var card = document.querySelector('.character-card[data-slug="' + member.slug + '"]');
+      if (!card) return;
+
+      var draft = draftMap[member.slug];
+
+      // Update draft status badge
+      var statusBadge = card.querySelector('.status-badge');
+      if (draft) {
+        statusBadge.className = 'status-badge status-badge--draft';
+        statusBadge.textContent = 'Has draft';
+      } else {
+        statusBadge.className = 'status-badge status-badge--none';
+        statusBadge.textContent = 'No draft';
+      }
+
+      // Update HP
+      var hp = draft && draft.combat ? draft.combat.hp : member.currentHp;
+      var tempHp = draft && draft.combat ? (draft.combat.tempHp || 0) : 0;
+      var maxHp = member.maxHp;
+
+      var hpValue = card.querySelector('.hp-value');
+      hpValue.textContent = hp + '/' + maxHp + (tempHp > 0 ? ' (+' + tempHp + ')' : '');
+
+      var hpBarFill = card.querySelector('.hp-bar-fill');
+      var percent = Math.min(100, (hp / maxHp) * 100);
+      hpBarFill.style.width = percent + '%';
+
+      // Update HP bar color
+      var hpBar = card.querySelector('.hp-bar');
+      hpBar.classList.remove('hp-bar--critical', 'hp-bar--warning', 'hp-bar--healthy');
+      if (percent <= 0) {
+        hpBar.classList.add('hp-bar--dead');
+      } else if (percent <= 25) {
+        hpBar.classList.add('hp-bar--critical');
+      } else if (percent <= 50) {
+        hpBar.classList.add('hp-bar--warning');
+      } else {
+        hpBar.classList.add('hp-bar--healthy');
+      }
+
+      // Update death saves
+      var deathSavesSection = card.querySelector('.death-saves');
+      if (hp === 0 && draft && draft.deathSaves) {
+        deathSavesSection.style.display = 'block';
+        var successPips = card.querySelectorAll('.death-pips--success .pip');
+        var failurePips = card.querySelectorAll('.death-pips--failure .pip');
+
+        successPips.forEach(function(pip, i) {
+          pip.classList.toggle('pip--filled', i < draft.deathSaves.successes);
+        });
+        failurePips.forEach(function(pip, i) {
+          pip.classList.toggle('pip--filled', i < draft.deathSaves.failures);
+        });
+      } else {
+        deathSavesSection.style.display = 'none';
+      }
+
+      // Update conditions
+      var conditionsList = card.querySelector('.conditions-list');
+      while (conditionsList.firstChild) {
+        conditionsList.removeChild(conditionsList.firstChild);
+      }
+
+      var conditions = draft && draft.activeConditions ? draft.activeConditions : [];
+      if (conditions.length === 0) {
+        var noConditions = document.createElement('span');
+        noConditions.className = 'no-conditions';
+        noConditions.textContent = 'No conditions';
+        conditionsList.appendChild(noConditions);
+      } else {
+        conditions.forEach(function(condition) {
+          var tag = document.createElement('span');
+          tag.className = 'condition-tag' + (condition.beneficial ? ' condition-tag--beneficial' : '');
+          tag.textContent = condition.name;
+          conditionsList.appendChild(tag);
+        });
+      }
+
+      // Update features
+      var featuresSection = card.querySelector('.features-section');
+      if (featuresSection && draft && draft.features) {
+        draft.features.forEach(function(draftFeature) {
+          var featureItem = card.querySelector('.feature-item[data-feature="' + draftFeature.name + '"]');
+          if (featureItem) {
+            var pips = featureItem.querySelectorAll('.pip');
+            pips.forEach(function(pip, i) {
+              pip.classList.toggle('pip--available', i < draftFeature.current);
+              pip.classList.toggle('pip--used', i >= draftFeature.current);
+            });
+          }
+        });
+      }
+    });
+  }
+
+  // ============================================
+  // Initialize
+  // ============================================
+
+  checkAuth();
+})();
+</script>
+
+<style>
+  .party-tracker {
+    min-height: 80vh;
+  }
+
+  /* Auth Gate */
+  .auth-gate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    padding: var(--space-xl);
+  }
+
+  .auth-content {
+    text-align: center;
+    max-width: 400px;
+  }
+
+  .auth-icon {
+    color: var(--color-accent);
+    margin-bottom: var(--space-lg);
+  }
+
+  .auth-title {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .auth-description {
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-xl);
+  }
+
+  .auth-form {
+    display: flex;
+    gap: var(--space-sm);
+  }
+
+  .auth-input {
+    flex: 1;
+    padding: var(--space-md);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+    font-size: var(--text-base);
+  }
+
+  .auth-input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  .auth-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .auth-btn:hover {
+    background: var(--color-accent-hover);
+  }
+
+  .auth-error {
+    color: var(--color-error);
+    margin-top: var(--space-md);
+    font-size: var(--text-sm);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Tracker Content */
+  .tracker-content {
+    padding: var(--space-lg);
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .tracker-header {
+    margin-bottom: var(--space-xl);
+  }
+
+  .header-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    flex-wrap: wrap;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    transition: color var(--transition-fast);
+  }
+
+  .back-link:hover {
+    color: var(--color-accent);
+  }
+
+  .tracker-title {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    color: var(--color-gold);
+    margin: 0;
+    flex: 1;
+    text-align: center;
+  }
+
+  .refresh-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .refresh-time {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .refresh-btn {
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .refresh-btn:hover {
+    background: var(--color-bg-secondary);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .refresh-btn.spinning svg {
+    animation: spin 0.5s linear;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Party Grid */
+  .party-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+  }
+
+  .character-card {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    transition: all var(--transition-fast);
+  }
+
+  .character-card:hover {
+    border-color: var(--color-gold);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+
+  .character-identity {
+    flex: 1;
+  }
+
+  .character-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-xs);
+  }
+
+  .character-class {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .status-badge {
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .status-badge--none {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-muted);
+  }
+
+  .status-badge--draft {
+    background: var(--color-info, #3b82f6);
+    color: white;
+  }
+
+  /* HP Section */
+  .hp-section {
+    padding: var(--space-sm) 0;
+  }
+
+  .hp-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--space-xs);
+  }
+
+  .hp-label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+
+  .hp-value {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hp-bar {
+    height: 12px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .hp-bar-fill {
+    height: 100%;
+    background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+    transition: width 0.3s ease, background 0.3s ease;
+  }
+
+  .hp-bar--healthy .hp-bar-fill {
+    background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+  }
+
+  .hp-bar--warning .hp-bar-fill {
+    background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+  }
+
+  .hp-bar--critical .hp-bar-fill {
+    background: linear-gradient(180deg, #f87171 0%, #ef4444 100%);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+    animation: pulse-critical 1s ease-in-out infinite;
+  }
+
+  .hp-bar--dead .hp-bar-fill {
+    width: 0 !important;
+  }
+
+  @keyframes pulse-critical {
+    0%, 100% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); }
+    50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.9); }
+  }
+
+  /* Death Saves */
+  .death-saves {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm);
+    animation: death-appear 0.3s ease-out;
+  }
+
+  @keyframes death-appear {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .death-saves-warning {
+    display: block;
+    text-align: center;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--color-error);
+    margin-bottom: var(--space-xs);
+    letter-spacing: 0.1em;
+  }
+
+  .death-saves-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
+  .death-label {
+    color: var(--color-text-muted);
+  }
+
+  .death-pips {
+    display: flex;
+    gap: 4px;
+  }
+
+  .death-pips .pip {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--color-text-muted);
+    background: transparent;
+  }
+
+  .death-pips--success .pip.pip--filled {
+    background: var(--color-success, #10b981);
+    border-color: var(--color-success, #10b981);
+  }
+
+  .death-pips--failure .pip.pip--filled {
+    background: var(--color-error);
+    border-color: var(--color-error);
+  }
+
+  /* Conditions */
+  .conditions-section {
+    min-height: 28px;
+  }
+
+  .conditions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .no-conditions {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  .condition-tag {
+    padding: 2px 8px;
+    background: var(--color-error);
+    color: white;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+  }
+
+  .condition-tag--beneficial {
+    background: var(--color-success, #10b981);
+  }
+
+  /* Features */
+  .features-section {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-sm);
+  }
+
+  .features-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--text-xs);
+  }
+
+  .feature-name {
+    color: var(--color-text-secondary);
+  }
+
+  .feature-pips {
+    display: flex;
+    gap: 4px;
+  }
+
+  .feature-pips .pip {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--color-gold);
+  }
+
+  .feature-pips .pip--available {
+    background: var(--color-gold);
+  }
+
+  .feature-pips .pip--used {
+    background: transparent;
+    opacity: 0.4;
+  }
+
+  /* View Link */
+  .view-tracker-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    margin-top: auto;
+  }
+
+  .view-tracker-link:hover {
+    background: var(--color-bg);
+    color: var(--color-accent);
+  }
+
+  /* Footer */
+  .tracker-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .auto-refresh-note {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .logout-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .logout-btn:hover {
+    border-color: var(--color-error);
+    color: var(--color-error);
+  }
+
+  @media (max-width: 640px) {
+    .tracker-content {
+      padding: var(--space-md);
+    }
+
+    .header-main {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .back-link {
+      align-self: flex-start;
+    }
+
+    .refresh-indicator {
+      align-self: flex-end;
+    }
+
+    .party-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .tracker-footer {
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+  }
+</style>

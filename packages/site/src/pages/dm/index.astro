@@ -78,6 +78,27 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           </div>
         </a>
 
+        <!-- Party Tracker -->
+        <a href="/dm/party-tracker" class="tool-card">
+          <div class="tool-icon tool-icon--party">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <div class="tool-content">
+            <h2 class="tool-title">Party Tracker</h2>
+            <p class="tool-description">View real-time party status during sessions: HP, conditions, spell slots, and features.</p>
+          </div>
+          <div class="tool-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+        </a>
+
         <!-- Entity Staging -->
         <a href="/dm/entities" class="tool-card">
           <div class="tool-icon tool-icon--entities">
@@ -594,6 +615,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
   }
 
   .tool-icon--notes { color: var(--color-accent); }
+  .tool-icon--party { color: var(--color-success, #10b981); }
   .tool-icon--entities { color: var(--color-gold); }
   .tool-icon--publish { color: var(--color-text-muted); }
 

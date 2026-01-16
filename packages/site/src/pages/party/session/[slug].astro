@@ -66,7 +66,18 @@ const characterData = {
     pactSlots: character.data.spellcasting.pactSlots || null,
   } : null,
   activeConditions: character.data.activeConditions || [],
-  features: (character.data.features || []).filter((f: { uses?: unknown }) => f.uses),
+  features: (character.data.features || [])
+    .filter((f: { uses?: { current?: number; max?: number; recharge?: string } }) => f.uses)
+    .map((f: { name: string; uses: { current?: number; max?: number; recharge?: string } }) => ({
+      name: f.name,
+      current: f.uses?.current ?? f.uses?.max ?? 0,
+      max: f.uses?.max ?? 0,
+      recharge: f.uses?.recharge ?? 'long-rest',
+    })),
+  deathSaves: {
+    successes: 0,
+    failures: 0,
+  },
 };
 ---
 
@@ -122,7 +133,9 @@ const characterData = {
             </div>
           </div>
           <div id="draft-indicator" class="draft-indicator" style="display: none;">
-            <span class="draft-badge">Unsaved</span>
+            <span class="draft-badge draft-badge--unsaved">Unsaved</span>
+            <span class="draft-badge draft-badge--saving" style="display: none;">Saving...</span>
+            <span class="draft-badge draft-badge--saved" style="display: none;">Saved ✓</span>
           </div>
         </div>
         <nav class="dashboard-nav">
@@ -244,6 +257,100 @@ const characterData = {
               </div>
             );
           })()}
+        </section>
+      )}
+
+      <!-- Death Saves Section (only shows when HP = 0) -->
+      <section id="death-saves-section" class="death-saves-section" style="display: none;">
+        <h2 class="section-title section-title--danger">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+            <path d="M9 9h.01"></path>
+            <path d="M15 9h.01"></path>
+            <path d="M8 13c0 2 2 4 4 4s4-2 4-4"></path>
+          </svg>
+          Death Saves
+        </h2>
+
+        <div class="death-saves-container">
+          <div class="death-saves-row">
+            <span class="death-saves-label death-saves-label--success">Successes</span>
+            <div class="death-saves-pips" data-type="successes">
+              <button class="death-pip" data-index="0" title="Toggle success"><span class="pip-marker">●</span></button>
+              <button class="death-pip" data-index="1" title="Toggle success"><span class="pip-marker">●</span></button>
+              <button class="death-pip" data-index="2" title="Toggle success"><span class="pip-marker">●</span></button>
+            </div>
+            <span id="death-successes-count" class="death-saves-count">(0/3)</span>
+          </div>
+          <div class="death-saves-row">
+            <span class="death-saves-label death-saves-label--failure">Failures</span>
+            <div class="death-saves-pips" data-type="failures">
+              <button class="death-pip death-pip--failure" data-index="0" title="Toggle failure"><span class="pip-marker">●</span></button>
+              <button class="death-pip death-pip--failure" data-index="1" title="Toggle failure"><span class="pip-marker">●</span></button>
+              <button class="death-pip death-pip--failure" data-index="2" title="Toggle failure"><span class="pip-marker">●</span></button>
+            </div>
+            <span id="death-failures-count" class="death-saves-count">(0/3)</span>
+          </div>
+        </div>
+
+        <div class="death-saves-actions">
+          <button id="death-success-btn" class="death-action-btn death-action-btn--success">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            +Success
+          </button>
+          <button id="death-failure-btn" class="death-action-btn death-action-btn--failure">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            +Failure
+          </button>
+          <button id="stabilize-btn" class="death-action-btn death-action-btn--stabilize">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            Stabilize
+          </button>
+        </div>
+      </section>
+
+      <!-- Features Section (only for characters with trackable features) -->
+      {characterData.features.length > 0 && (
+        <section class="features-section">
+          <h2 class="section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            Class Features
+          </h2>
+
+          <div id="features-container" class="features-grid">
+            {characterData.features.map((feature: { name: string; current: number; max: number; recharge: string }) => (
+              <div class="feature-row" data-feature={feature.name} data-recharge={feature.recharge}>
+                <div class="feature-info">
+                  <span class="feature-name">{feature.name}</span>
+                  <span class={`feature-recharge feature-recharge--${feature.recharge}`}>
+                    {feature.recharge === 'short-rest' ? 'Short Rest' : 'Long Rest'}
+                  </span>
+                </div>
+                <div class="feature-pips">
+                  {[...Array(feature.max)].map((_, i) => (
+                    <button
+                      class={`feature-pip ${i >= feature.current ? 'feature-pip--used' : ''}`}
+                      data-index={i}
+                      data-feature={feature.name}
+                      title={i >= feature.current ? 'Restore use' : 'Use feature'}
+                    >
+                      <span class="pip-fill"></span>
+                    </button>
+                  ))}
+                </div>
+                <span class="feature-count">{feature.current}/{feature.max}</span>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
@@ -388,8 +495,15 @@ const characterData = {
     spellSlots: characterData.spellcasting ? [...characterData.spellcasting.spellSlots] : [],
     pactSlots: characterData.spellcasting?.pactSlots ? {...characterData.spellcasting.pactSlots} : null,
     activeConditions: [...characterData.activeConditions],
+    features: characterData.features.map(function(f) { return {...f}; }),
+    deathSaves: { successes: 0, failures: 0 },
     isDirty: false,
+    isAutoSaving: false,
   };
+
+  // Auto-save configuration
+  var AUTO_SAVE_DELAY = 3000; // 3 seconds
+  var autoSaveTimeout = null;
 
   // DOM Elements
   var authGate = document.getElementById('auth-gate');
@@ -539,6 +653,20 @@ const characterData = {
       hpBarContainer.classList.add('hp-bar--warning');
     } else {
       hpBarContainer.classList.add('hp-bar--healthy');
+    }
+
+    // Show/hide death saves section based on HP
+    var wasAtZero = deathSavesSection && deathSavesSection.style.display !== 'none';
+    var isNowAtZero = state.hp === 0;
+
+    if (deathSavesSection) {
+      deathSavesSection.style.display = isNowAtZero ? 'block' : 'none';
+    }
+
+    // If HP went from 0 to positive, reset death saves
+    if (wasAtZero && !isNowAtZero && state.hp > 0) {
+      state.deathSaves = { successes: 0, failures: 0 };
+      updateDeathSavesDisplay();
     }
 
     markDirty();
@@ -770,19 +898,27 @@ const characterData = {
   // ============================================
 
   document.getElementById('short-rest-btn').addEventListener('click', function() {
-    if (confirm('Take a short rest? This will restore Warlock pact slots.')) {
+    if (confirm('Take a short rest? This will restore Warlock pact slots and short rest features.')) {
       // Restore pact slots
       if (state.pactSlots) {
         state.pactSlots.expended = 0;
       }
+      // Restore short rest features
+      state.features.forEach(function(f) {
+        if (f.recharge === 'short-rest') {
+          f.current = f.max;
+        }
+      });
       updateSlotDisplay();
+      updateFeaturesDisplay();
+      markDirty();
       saveStatus.textContent = 'Short rest taken';
       setTimeout(function() { saveStatus.textContent = ''; }, 2000);
     }
   });
 
   document.getElementById('long-rest-btn').addEventListener('click', function() {
-    if (confirm('Take a long rest? This will restore all HP and spell slots, and clear temporary conditions.')) {
+    if (confirm('Take a long rest? This will restore all HP, spell slots, features, and clear conditions/death saves.')) {
       // Restore HP
       state.hp = state.maxHp;
       state.tempHp = 0;
@@ -798,6 +934,16 @@ const characterData = {
       }
       updateSlotDisplay();
 
+      // Restore all features
+      state.features.forEach(function(f) {
+        f.current = f.max;
+      });
+      updateFeaturesDisplay();
+
+      // Reset death saves
+      state.deathSaves = { successes: 0, failures: 0 };
+      updateDeathSavesDisplay();
+
       // Clear non-permanent conditions (keep only beneficial ones marked as "permanent")
       state.activeConditions = state.activeConditions.filter(function(c) {
         return c.duration === 'permanent';
@@ -811,15 +957,199 @@ const characterData = {
   });
 
   // ============================================
+  // Features
+  // ============================================
+
+  function updateFeaturesDisplay() {
+    state.features.forEach(function(feature) {
+      var row = document.querySelector('.feature-row[data-feature="' + feature.name + '"]');
+      if (!row) return;
+
+      var pips = row.querySelectorAll('.feature-pip');
+      pips.forEach(function(pip, i) {
+        pip.classList.toggle('feature-pip--used', i >= feature.current);
+      });
+
+      var count = row.querySelector('.feature-count');
+      if (count) count.textContent = feature.current + '/' + feature.max;
+    });
+  }
+
+  document.querySelectorAll('.feature-pip').forEach(function(pip) {
+    pip.addEventListener('click', function() {
+      var featureName = this.dataset.feature;
+      var index = parseInt(this.dataset.index);
+      var feature = state.features.find(function(f) { return f.name === featureName; });
+
+      if (!feature) return;
+
+      // Toggle: if clicking on an available pip (index < current), use it
+      // If clicking on a used pip (index >= current), restore up to that point
+      if (index < feature.current) {
+        feature.current = index;
+      } else {
+        feature.current = index + 1;
+      }
+
+      updateFeaturesDisplay();
+      markDirty();
+    });
+  });
+
+  // ============================================
+  // Death Saves
+  // ============================================
+
+  var deathSavesSection = document.getElementById('death-saves-section');
+
+  function updateDeathSavesDisplay() {
+    // Update success pips
+    var successPips = document.querySelectorAll('.death-saves-pips[data-type="successes"] .death-pip');
+    successPips.forEach(function(pip, i) {
+      pip.classList.toggle('death-pip--filled', i < state.deathSaves.successes);
+    });
+    var successCount = document.getElementById('death-successes-count');
+    if (successCount) successCount.textContent = '(' + state.deathSaves.successes + '/3)';
+
+    // Update failure pips
+    var failurePips = document.querySelectorAll('.death-saves-pips[data-type="failures"] .death-pip');
+    failurePips.forEach(function(pip, i) {
+      pip.classList.toggle('death-pip--filled', i < state.deathSaves.failures);
+    });
+    var failureCount = document.getElementById('death-failures-count');
+    if (failureCount) failureCount.textContent = '(' + state.deathSaves.failures + '/3)';
+
+    // Show/hide section based on HP
+    if (deathSavesSection) {
+      deathSavesSection.style.display = state.hp === 0 ? 'block' : 'none';
+    }
+  }
+
+  // Death save pip click handlers
+  document.querySelectorAll('.death-saves-pips[data-type="successes"] .death-pip').forEach(function(pip) {
+    pip.addEventListener('click', function() {
+      var index = parseInt(this.dataset.index);
+      if (index < state.deathSaves.successes) {
+        state.deathSaves.successes = index;
+      } else {
+        state.deathSaves.successes = Math.min(3, index + 1);
+      }
+      updateDeathSavesDisplay();
+      markDirty();
+    });
+  });
+
+  document.querySelectorAll('.death-saves-pips[data-type="failures"] .death-pip').forEach(function(pip) {
+    pip.addEventListener('click', function() {
+      var index = parseInt(this.dataset.index);
+      if (index < state.deathSaves.failures) {
+        state.deathSaves.failures = index;
+      } else {
+        state.deathSaves.failures = Math.min(3, index + 1);
+      }
+      updateDeathSavesDisplay();
+      markDirty();
+    });
+  });
+
+  // Quick action buttons
+  var deathSuccessBtn = document.getElementById('death-success-btn');
+  var deathFailureBtn = document.getElementById('death-failure-btn');
+  var stabilizeBtn = document.getElementById('stabilize-btn');
+
+  if (deathSuccessBtn) {
+    deathSuccessBtn.addEventListener('click', function() {
+      if (state.deathSaves.successes < 3) {
+        state.deathSaves.successes++;
+        updateDeathSavesDisplay();
+        markDirty();
+
+        if (state.deathSaves.successes >= 3) {
+          saveStatus.textContent = 'Stabilized! Character is unconscious but stable.';
+          setTimeout(function() { saveStatus.textContent = ''; }, 3000);
+        }
+      }
+    });
+  }
+
+  if (deathFailureBtn) {
+    deathFailureBtn.addEventListener('click', function() {
+      if (state.deathSaves.failures < 3) {
+        state.deathSaves.failures++;
+        updateDeathSavesDisplay();
+        markDirty();
+
+        if (state.deathSaves.failures >= 3) {
+          saveStatus.textContent = '💀 Character has died...';
+          saveStatus.className = 'save-status save-status--error';
+          setTimeout(function() {
+            saveStatus.textContent = '';
+            saveStatus.className = 'save-status';
+          }, 5000);
+        }
+      }
+    });
+  }
+
+  if (stabilizeBtn) {
+    stabilizeBtn.addEventListener('click', function() {
+      state.deathSaves.successes = 3;
+      state.deathSaves.failures = 0;
+      updateDeathSavesDisplay();
+      markDirty();
+      saveStatus.textContent = 'Stabilized! Character is unconscious but stable.';
+      setTimeout(function() { saveStatus.textContent = ''; }, 3000);
+    });
+  }
+
+  // ============================================
   // Draft Save/Load
   // ============================================
 
-  function markDirty() {
-    state.isDirty = true;
+  function scheduleAutoSave() {
+    if (autoSaveTimeout) {
+      clearTimeout(autoSaveTimeout);
+    }
+    autoSaveTimeout = setTimeout(function() {
+      autoSaveDraft();
+    }, AUTO_SAVE_DELAY);
+  }
+
+  function showDraftBadge(type) {
+    var badges = draftIndicator.querySelectorAll('.draft-badge');
+    badges.forEach(function(b) { b.style.display = 'none'; });
+    var badge = draftIndicator.querySelector('.draft-badge--' + type);
+    if (badge) badge.style.display = 'inline-flex';
     draftIndicator.style.display = 'inline-flex';
   }
 
-  async function saveDraft() {
+  function markDirty() {
+    state.isDirty = true;
+    if (!state.isAutoSaving) {
+      showDraftBadge('unsaved');
+    }
+    scheduleAutoSave();
+  }
+
+  async function autoSaveDraft() {
+    if (!state.isDirty) return;
+    state.isAutoSaving = true;
+    showDraftBadge('saving');
+
+    await saveDraft(true); // true = silent mode
+
+    state.isAutoSaving = false;
+    if (!state.isDirty) {
+      showDraftBadge('saved');
+      setTimeout(function() {
+        if (!state.isDirty) {
+          draftIndicator.style.display = 'none';
+        }
+      }, 2000);
+    }
+  }
+
+  async function saveDraft(silent) {
     var token = localStorage.getItem(TOKEN_KEY);
     if (!token || !API_URL) return;
 
@@ -832,6 +1162,8 @@ const characterData = {
       spellSlots: state.spellSlots,
       pactSlots: state.pactSlots,
       activeConditions: state.activeConditions,
+      features: state.features,
+      deathSaves: state.deathSaves,
     };
 
     try {
@@ -846,23 +1178,31 @@ const characterData = {
 
       if (response.ok) {
         state.isDirty = false;
-        draftIndicator.style.display = 'none';
-        saveStatus.textContent = 'Draft saved!';
-        saveStatus.className = 'save-status save-status--success';
+        if (!silent) {
+          draftIndicator.style.display = 'none';
+          saveStatus.textContent = 'Draft saved!';
+          saveStatus.className = 'save-status save-status--success';
+        }
       } else {
-        saveStatus.textContent = 'Failed to save draft';
-        saveStatus.className = 'save-status save-status--error';
+        if (!silent) {
+          saveStatus.textContent = 'Failed to save draft';
+          saveStatus.className = 'save-status save-status--error';
+        }
       }
     } catch (error) {
       console.error('Save error:', error);
-      saveStatus.textContent = 'Error saving draft';
-      saveStatus.className = 'save-status save-status--error';
+      if (!silent) {
+        saveStatus.textContent = 'Error saving draft';
+        saveStatus.className = 'save-status save-status--error';
+      }
     }
 
-    setTimeout(function() {
-      saveStatus.textContent = '';
-      saveStatus.className = 'save-status';
-    }, 3000);
+    if (!silent) {
+      setTimeout(function() {
+        saveStatus.textContent = '';
+        saveStatus.className = 'save-status';
+      }, 3000);
+    }
   }
 
   async function loadDraft() {
@@ -897,6 +1237,14 @@ const characterData = {
           state.activeConditions = draft.activeConditions;
           renderConditions();
         }
+        if (draft && draft.features) {
+          state.features = draft.features;
+          updateFeaturesDisplay();
+        }
+        if (draft && draft.deathSaves) {
+          state.deathSaves = draft.deathSaves;
+          updateDeathSavesDisplay();
+        }
 
         // Don't mark dirty since we just loaded
         state.isDirty = false;
@@ -907,7 +1255,9 @@ const characterData = {
     }
   }
 
-  document.getElementById('save-draft-btn').addEventListener('click', saveDraft);
+  document.getElementById('save-draft-btn').addEventListener('click', function() {
+    saveDraft(false);
+  });
 
   // Warn on page leave if dirty
   window.addEventListener('beforeunload', function(e) {
@@ -1117,13 +1467,32 @@ const characterData = {
   }
 
   .draft-badge {
-    background: var(--color-warning, #f59e0b);
-    color: var(--color-bg);
     padding: 4px 12px;
     border-radius: var(--radius-md);
     font-size: var(--text-xs);
     font-weight: 700;
     text-transform: uppercase;
+  }
+
+  .draft-badge--unsaved {
+    background: var(--color-warning, #f59e0b);
+    color: var(--color-bg);
+  }
+
+  .draft-badge--saving {
+    background: var(--color-info, #3b82f6);
+    color: white;
+    animation: pulse-saving 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse-saving {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  .draft-badge--saved {
+    background: var(--color-success, #10b981);
+    color: white;
   }
 
   /* Sections - Card styling with depth */
@@ -1872,6 +2241,270 @@ const characterData = {
   .logout-btn:hover {
     border-color: var(--color-error);
     color: var(--color-error);
+  }
+
+  /* Features Section */
+  .features-section {
+    background: linear-gradient(135deg, var(--color-bg-secondary) 0%, rgba(180, 140, 60, 0.05) 100%);
+  }
+
+  .features-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .feature-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--color-gold);
+    transition: all var(--transition-fast);
+  }
+
+  .feature-row:hover {
+    background: var(--color-bg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .feature-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .feature-name {
+    font-weight: 600;
+    color: var(--color-gold);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .feature-recharge {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .feature-recharge--short-rest {
+    color: var(--color-info, #3b82f6);
+  }
+
+  .feature-recharge--long-rest {
+    color: var(--color-accent);
+  }
+
+  .feature-pips {
+    display: flex;
+    gap: var(--space-sm);
+  }
+
+  .feature-pip {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--color-gold);
+    background: transparent;
+    cursor: pointer;
+    padding: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .feature-pip:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 12px rgba(180, 140, 60, 0.4);
+  }
+
+  .feature-pip .pip-fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--color-gold);
+    box-shadow:
+      0 0 8px rgba(180, 140, 60, 0.5),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    transition: all 0.2s ease;
+  }
+
+  .feature-pip--used .pip-fill {
+    background: var(--color-text-muted);
+    opacity: 0.3;
+    box-shadow: none;
+  }
+
+  .feature-count {
+    width: 45px;
+    text-align: right;
+    font-weight: 700;
+    color: var(--color-gold);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Death Saves Section */
+  .death-saves-section {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, var(--color-bg-secondary) 100%);
+    border: 2px solid var(--color-error);
+    animation: death-saves-appear 0.3s ease-out;
+  }
+
+  @keyframes death-saves-appear {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .section-title--danger {
+    color: var(--color-error);
+    border-bottom-color: var(--color-error);
+  }
+
+  .death-saves-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+  }
+
+  .death-saves-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-md);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+  }
+
+  .death-saves-label {
+    width: 100px;
+    font-weight: 600;
+    font-size: var(--text-sm);
+  }
+
+  .death-saves-label--success {
+    color: var(--color-success, #10b981);
+  }
+
+  .death-saves-label--failure {
+    color: var(--color-error);
+  }
+
+  .death-saves-pips {
+    display: flex;
+    gap: var(--space-md);
+    flex: 1;
+    justify-content: center;
+  }
+
+  .death-pip {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 3px solid var(--color-success, #10b981);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .death-pip--failure {
+    border-color: var(--color-error);
+  }
+
+  .death-pip:hover {
+    transform: scale(1.15);
+  }
+
+  .death-pip .pip-marker {
+    font-size: 24px;
+    color: transparent;
+    transition: color 0.2s ease;
+  }
+
+  .death-pip--filled .pip-marker {
+    color: var(--color-success, #10b981);
+    text-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+  }
+
+  .death-pip--failure.death-pip--filled .pip-marker {
+    color: var(--color-error);
+    text-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+  }
+
+  .death-saves-count {
+    width: 50px;
+    text-align: right;
+    font-weight: 700;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .death-saves-actions {
+    display: flex;
+    gap: var(--space-md);
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .death-action-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+  }
+
+  .death-action-btn--success {
+    background: var(--color-success, #10b981);
+    color: white;
+  }
+
+  .death-action-btn--success:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+
+  .death-action-btn--failure {
+    background: var(--color-error);
+    color: white;
+  }
+
+  .death-action-btn--failure:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  }
+
+  .death-action-btn--stabilize {
+    background: var(--color-gold);
+    color: var(--color-bg);
+  }
+
+  .death-action-btn--stabilize:hover {
+    background: #c9a227;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(180, 140, 60, 0.3);
   }
 
   @media (max-width: 640px) {

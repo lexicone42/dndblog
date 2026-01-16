@@ -654,25 +654,29 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'No content provided' }) };
     }
 
-    // Claude Messages API format
+    // Claude Messages API format with system prompt for caching
     const bedrockPayload = {
       anthropic_version: 'bedrock-2023-05-31',
-      max_tokens: 1024,
+      max_tokens: 512, // Reduced from 1024 - actual review output is ~150-300 tokens
       temperature: 0.3,
-      messages: [
+      // System prompt with cache_control for Bedrock prompt caching
+      system: [
         {
-          role: 'user',
-          content: \`You are a helpful editor reviewing D&D session notes. Review the following notes and provide:
+          type: 'text',
+          text: \`You are a helpful editor reviewing D&D session notes. When given notes to review, provide:
 1. A quality score from 0-100
 2. A list of suggestions for improvement (grammar, clarity, structure)
 3. Whether the notes are ready to publish
 
 Be concise. Format your response as JSON with fields: score (number), suggestions (array of strings), canPublish (boolean), summary (one sentence).
-
-Notes to review:
-\${content.substring(0, 8000)}
-
-Respond with valid JSON only:\`
+Respond with valid JSON only.\`,
+          cache_control: { type: 'ephemeral' }
+        }
+      ],
+      messages: [
+        {
+          role: 'user',
+          content: \`Notes to review:\\n\\n\${content.substring(0, 8000)}\`
         }
       ]
     };
@@ -1304,8 +1308,36 @@ function slugify(name) {
     .replace(/^-|-$/g, '');
 }
 
-// Entity generation prompt optimized for Claude Sonnet 4.5
-const SYSTEM_PROMPT = \`You are a D&D 5e campaign wiki generator. Convert natural language into structured entity data for an Astro content collection.
+// Entity schemas - separate for conditional loading
+const SCHEMAS = {
+  character: \`CHARACTER (subtype: pc | npc | deity | historical)
+- Required: name, type: "character", subtype
+- Include: description, race, class, level, alignment, abilities[], tags[], relationships[]
+- Optional: background, faction, location, ideals[], bonds[], flaws[]\`,
+
+  enemy: \`ENEMY (subtype: boss | lieutenant | minion | creature | swarm | trap)
+- Required: name, type: "enemy", subtype
+- Include: description, cr (challenge rating as string), creatureType, baseMonster (SRD name), abilities[], tags[]
+- Optional: faction, lair, territory[], customizations[], legendaryActions[]\`,
+
+  item: \`ITEM (subtype: weapon | armor | artifact | consumable | quest | treasure | tool | wondrous)
+- Required: name, type: "item", subtype
+- Include: description, rarity, properties[], tags[]
+- Optional: baseItem, attunement, currentOwner, location, charges, significance\`,
+
+  location: \`LOCATION (subtype: plane | continent | region | city | town | village | dungeon | wilderness | building | room | landmark)
+- Required: name, type: "location", subtype
+- Include: description, tags[]
+- Optional: parentLocation, climate, terrain, population, controlledBy, pointsOfInterest[], secrets[]\`,
+
+  faction: \`FACTION (subtype: cult | guild | government | military | religious | criminal | merchant | noble-house | adventuring-party | secret-society)
+- Required: name, type: "faction", subtype
+- Include: description, goals[], tags[]
+- Optional: leader, headquarters, territory[], allies[], enemies[], methods[], symbol, motto\`
+};
+
+// Base instructions (shared across all requests)
+const BASE_INSTRUCTIONS = \`You are a D&D 5e campaign wiki generator. Convert natural language into structured entity data for an Astro content collection.
 
 Respond with ONLY valid JSON (no code blocks, no explanation):
 
@@ -1316,36 +1348,10 @@ Respond with ONLY valid JSON (no code blocks, no explanation):
   "frontmatter": { <schema fields> },
   "markdown": "<wiki-style content>",
   "slug": "<kebab-case>"
-}
+}\`;
 
-SCHEMAS:
-
-CHARACTER (subtype: pc | npc | deity | historical)
-- Required: name, type: "character", subtype
-- Include: description, race, class, level, alignment, abilities[], tags[], relationships[]
-- Optional: background, faction, location, ideals[], bonds[], flaws[]
-
-ENEMY (subtype: boss | lieutenant | minion | creature | swarm | trap)
-- Required: name, type: "enemy", subtype
-- Include: description, cr (challenge rating as string), creatureType, baseMonster (SRD name), abilities[], tags[]
-- Optional: faction, lair, territory[], customizations[], legendaryActions[]
-
-ITEM (subtype: weapon | armor | artifact | consumable | quest | treasure | tool | wondrous)
-- Required: name, type: "item", subtype
-- Include: description, rarity, properties[], tags[]
-- Optional: baseItem, attunement, currentOwner, location, charges, significance
-
-LOCATION (subtype: plane | continent | region | city | town | village | dungeon | wilderness | building | room | landmark)
-- Required: name, type: "location", subtype
-- Include: description, tags[]
-- Optional: parentLocation, climate, terrain, population, controlledBy, pointsOfInterest[], secrets[]
-
-FACTION (subtype: cult | guild | government | military | religious | criminal | merchant | noble-house | adventuring-party | secret-society)
-- Required: name, type: "faction", subtype
-- Include: description, goals[], tags[]
-- Optional: leader, headquarters, territory[], allies[], enemies[], methods[], symbol, motto
-
-MARKDOWN STYLE (critical):
+// Markdown styling rules
+const MARKDOWN_RULES = \`MARKDOWN STYLE (critical):
 - Start with: # Entity Name
 - Then a narrative intro paragraph (no header)
 - Use ## for sections
@@ -1353,30 +1359,31 @@ MARKDOWN STYLE (critical):
 - NO excessive bold, NO ALL CAPS, NO lists of stats
 - Use bullet points sparingly for key details
 - Bold only for important proper nouns or key terms
-- Keep it readable and engaging, not a data dump
+- Keep it readable and engaging, not a data dump\`;
 
-EXAMPLE INPUT: "Grimjaw - orc warchief CR 5, leads the Bloodtusk clan, wields a greataxe called Bonecleaver"
+// Build system prompt based on hint (conditional schema loading)
+function buildSystemPrompt(hint) {
+  if (hint && SCHEMAS[hint]) {
+    // Only include the relevant schema when hint is provided (70-75% token savings)
+    return \`\${BASE_INSTRUCTIONS}
 
-EXAMPLE OUTPUT:
-{
-  "entityType": "enemy",
-  "subtype": "boss",
-  "confidence": 95,
-  "frontmatter": {
-    "name": "Grimjaw",
-    "type": "enemy",
-    "subtype": "boss",
-    "status": "active",
-    "description": "Orc warchief of the Bloodtusk clan",
-    "baseMonster": "orc-war-chief",
-    "cr": "5",
-    "creatureType": "humanoid",
-    "abilities": ["Greataxe mastery", "Battle cry", "Orcish fury"],
-    "tags": ["orc", "boss", "warchief", "bloodtusk"]
-  },
-  "markdown": "# Grimjaw\\n\\nThe fearsome warchief of the Bloodtusk clan, Grimjaw has united the scattered orc tribes through sheer brutality and cunning. His massive frame is covered in ritual scars, each marking a chieftain he defeated in single combat.\\n\\n## Bonecleaver\\n\\nGrimjaw's greataxe, Bonecleaver, is a brutal weapon forged from the bones of a slain giant. The orcs believe it carries the giant's strength.\\n\\n## Tactics\\n\\nGrimjaw leads from the front, using his Battle Cry to inspire his warriors before charging into melee. He targets the strongest-looking enemy first to demoralize opponents.\\n\\n## The Bloodtusk Clan\\n\\nUnder Grimjaw's leadership, the Bloodtusks have grown from a minor tribe to a serious threat, raiding caravans and frontier settlements.",
-  "slug": "grimjaw"
-}\`;
+SCHEMA:
+
+\${SCHEMAS[hint]}
+
+\${MARKDOWN_RULES}\`;
+  }
+
+  // Full prompt when no hint (or unknown hint)
+  const allSchemas = Object.values(SCHEMAS).join('\\n\\n');
+  return \`\${BASE_INSTRUCTIONS}
+
+SCHEMAS:
+
+\${allSchemas}
+
+\${MARKDOWN_RULES}\`;
+}
 
 exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
@@ -1414,16 +1421,27 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Input too long (max 2000 characters)' }) };
     }
 
+    // Build optimized system prompt (conditional schema loading saves ~70% tokens when hint provided)
+    const systemPrompt = buildSystemPrompt(hint);
+
     const userPrompt = hint
       ? \`[Entity type hint: \${hint}]\\n\\n\${input}\`
       : input;
 
-    // Claude Messages API format via Bedrock
+    // Claude Messages API format via Bedrock with prompt caching
     const bedrockPayload = {
       anthropic_version: 'bedrock-2023-05-31',
-      max_tokens: 4096,
+      max_tokens: 2048, // Reduced from 4096 - actual outputs rarely exceed 1500 tokens
       temperature: 0.3,
-      system: SYSTEM_PROMPT,
+      // System prompt with cache_control for Bedrock prompt caching
+      // Cache is eligible when system prompt > 1024 tokens
+      system: [
+        {
+          type: 'text',
+          text: systemPrompt,
+          cache_control: { type: 'ephemeral' }
+        }
+      ],
       messages: [
         {
           role: 'user',
