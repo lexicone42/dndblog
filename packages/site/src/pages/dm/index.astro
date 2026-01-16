@@ -276,20 +276,135 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
         card.appendChild(changes);
 
-        // Action buttons (placeholder for now - approve/reject coming later)
+        // Action buttons
         var actions = document.createElement('div');
         actions.className = 'draft-actions';
+
+        var approveBtn = document.createElement('button');
+        approveBtn.className = 'draft-btn draft-btn--approve';
+        approveBtn.textContent = 'Approve & Create PR';
+        approveBtn.onclick = function() { handleApprove(draft.characterSlug, card); };
+        actions.appendChild(approveBtn);
+
+        var rejectBtn = document.createElement('button');
+        rejectBtn.className = 'draft-btn draft-btn--reject';
+        rejectBtn.textContent = 'Reject';
+        rejectBtn.onclick = function() { handleReject(draft.characterSlug, card); };
+        actions.appendChild(rejectBtn);
 
         var viewLink = document.createElement('a');
         viewLink.href = '/player/session/' + draft.characterSlug;
         viewLink.className = 'draft-btn draft-btn--view';
-        viewLink.textContent = 'View Session Tracker';
+        viewLink.textContent = 'View Details';
         viewLink.target = '_blank';
         actions.appendChild(viewLink);
 
         card.appendChild(actions);
         draftsList.appendChild(card);
       });
+    }
+
+    async function handleApprove(slug, card) {
+      var token = localStorage.getItem(TOKEN_KEY);
+      if (!token || !API_URL) return;
+
+      // Disable buttons while processing
+      var buttons = card.querySelectorAll('.draft-btn');
+      buttons.forEach(function(btn) { btn.disabled = true; });
+
+      var approveBtn = card.querySelector('.draft-btn--approve');
+      approveBtn.textContent = 'Creating PR...';
+
+      try {
+        var response = await fetch(API_URL + '/player/drafts/' + encodeURIComponent(slug) + '/approve', {
+          method: 'POST',
+          headers: {
+            'X-DM-Token': token,
+          },
+        });
+
+        var data = await response.json();
+
+        if (response.ok && data.success) {
+          // Show success and PR link using safe DOM methods
+          while (card.firstChild) { card.removeChild(card.firstChild); }
+
+          var successDiv = document.createElement('div');
+          successDiv.className = 'draft-success';
+
+          var checkmark = document.createElement('strong');
+          checkmark.textContent = '✓ PR Created';
+          successDiv.appendChild(checkmark);
+
+          successDiv.appendChild(document.createElement('br'));
+
+          var prLink = document.createElement('a');
+          prLink.href = data.prUrl;
+          prLink.target = '_blank';
+          prLink.className = 'pr-link';
+          prLink.textContent = 'View Pull Request →';
+          successDiv.appendChild(prLink);
+
+          card.appendChild(successDiv);
+        } else {
+          alert('Error: ' + (data.error || 'Failed to approve draft'));
+          buttons.forEach(function(btn) { btn.disabled = false; });
+          approveBtn.textContent = 'Approve & Create PR';
+        }
+      } catch (error) {
+        console.error('Approve error:', error);
+        alert('Error approving draft: ' + error.message);
+        buttons.forEach(function(btn) { btn.disabled = false; });
+        approveBtn.textContent = 'Approve & Create PR';
+      }
+    }
+
+    async function handleReject(slug, card) {
+      if (!confirm('Reject this draft? The player will need to resubmit their changes.')) {
+        return;
+      }
+
+      var token = localStorage.getItem(TOKEN_KEY);
+      if (!token || !API_URL) return;
+
+      var buttons = card.querySelectorAll('.draft-btn');
+      buttons.forEach(function(btn) { btn.disabled = true; });
+
+      var rejectBtn = card.querySelector('.draft-btn--reject');
+      rejectBtn.textContent = 'Rejecting...';
+
+      try {
+        var response = await fetch(API_URL + '/player/drafts/' + encodeURIComponent(slug) + '/reject', {
+          method: 'POST',
+          headers: {
+            'X-DM-Token': token,
+          },
+        });
+
+        var data = await response.json();
+
+        if (response.ok && data.success) {
+          // Remove the card with fade out
+          card.style.opacity = '0';
+          card.style.transition = 'opacity 0.3s';
+          setTimeout(function() {
+            card.remove();
+            // Check if no more drafts
+            if (draftsList.children.length === 0) {
+              renderNoDrafts();
+            }
+          }, 300);
+        } else {
+          alert('Error: ' + (data.error || 'Failed to reject draft'));
+          buttons.forEach(function(btn) { btn.disabled = false; });
+          rejectBtn.textContent = 'Reject';
+        }
+      } catch (error) {
+        console.error('Reject error:', error);
+        alert('Error rejecting draft: ' + error.message);
+        buttons.forEach(function(btn) { btn.disabled = false; });
+        rejectBtn.textContent = 'Reject';
+      }
     }
 
     authForm.addEventListener('submit', function(e) {
@@ -667,6 +782,33 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
   .draft-btn--reject:hover {
     background: var(--color-error);
     color: white;
+  }
+
+  .draft-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .draft-success {
+    text-align: center;
+    padding: var(--space-lg);
+    color: var(--color-success);
+  }
+
+  .draft-success strong {
+    font-size: var(--text-lg);
+  }
+
+  .pr-link {
+    display: inline-block;
+    margin-top: var(--space-sm);
+    color: var(--color-link);
+    text-decoration: underline;
+    font-weight: 600;
+  }
+
+  .pr-link:hover {
+    color: var(--color-link-hover);
   }
 
   @media (max-width: 640px) {
