@@ -311,6 +311,8 @@ See [DM-NOTES-API.md](./DM-NOTES-API.md#session-tracker-api-per-character) for A
 - [ ] PDF export functionality
 - [x] ~~Interactive HP tracker~~ → Implemented via Session Tracker
 - [x] ~~Spell slot toggle~~ → Implemented via Session Tracker
+- [x] ~~Condition tracking~~ → Implemented via Session Tracker
+- [x] ~~Rest buttons~~ → Implemented via Session Tracker
 
 ### Considered
 - [ ] Character comparison view

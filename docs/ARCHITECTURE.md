@@ -115,14 +115,21 @@ dndblog/
 ### Build Pipeline
 
 ```
-Source Content     Content Pipeline     Astro Build        S3 Sync
+Source Content     Entity Validation    Astro Build        S3 Sync
     │                    │                   │                │
     ▼                    ▼                   ▼                ▼
 ┌────────┐         ┌──────────┐         ┌────────┐      ┌────────┐
 │  .md   │────────▶│ Validate │────────▶│  SSG   │─────▶│ Deploy │
-│ files  │         │ Process  │         │  HTML  │      │        │
+│ files  │         │ Entities │         │  HTML  │      │        │
 └────────┘         └──────────┘         └────────┘      └────────┘
 ```
+
+**Entity Validation** (`packages/site/scripts/validate-entities.ts`):
+- Validates required frontmatter fields per entity type
+- Checks cross-references between entities (e.g., relationship targets exist)
+- Verifies symmetric relationships (if A→B, then B→A)
+- Detects orphaned entities with no references
+- Runs automatically before `astro check` in the build pipeline
 
 ### Content Model
 
@@ -210,6 +217,21 @@ See [PHASE2-DESIGN.md](PHASE2-DESIGN.md) for the planned evolution including:
 - **HTTP/2 and HTTP/3** - Modern protocols
 - **Brotli compression** - Smaller payloads
 - **IPv6 enabled** - Future-proof connectivity
+
+### PWA and Offline Support
+
+The site includes Progressive Web App capabilities:
+- **Service Worker** - Caches static assets and content pages
+- **Offline Page** - Themed fallback UI with cached page links
+- **Manifest** - Installable on mobile devices
+- **Cache Strategy** - Stale-while-revalidate for content, cache-first for assets
+
+### Accessibility Features
+
+- **prefers-reduced-motion** - Respects user motion preferences
+- **ARIA live regions** - Screen reader announcements for dynamic content
+- **WCAG AA color contrast** - All text and UI elements meet 4.5:1 ratio
+- **Keyboard navigation** - Full keyboard accessibility throughout
 
 ## Monitoring and Observability
 

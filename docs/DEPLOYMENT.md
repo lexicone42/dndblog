@@ -107,7 +107,7 @@ aws cloudfront create-invalidation \
 
 ### DM Notes API Setup
 
-After deploying `DmNotesStack`, configure the authentication token:
+After deploying `DmNotesStack`, configure the authentication tokens:
 
 ```bash
 # Set the DM notes token (replace with your secret)
@@ -124,6 +124,41 @@ aws ssm put-parameter \
   --type String \
   --overwrite
 ```
+
+### Player Token Setup (Per-Character)
+
+Each player gets a unique token tied to their character:
+
+```bash
+# Set per-character token (one per player)
+aws ssm put-parameter \
+  --name "/dndblog/player-token/rudiger" \
+  --value "rudigers-secret-token" \
+  --type SecureString \
+  --overwrite
+
+aws ssm put-parameter \
+  --name "/dndblog/player-token/accoa" \
+  --value "accoas-secret-token" \
+  --type SecureString \
+  --overwrite
+```
+
+### GitHub PAT Setup (Draft Approval Flow)
+
+To enable the DM to approve player drafts and create GitHub PRs:
+
+```bash
+# Create a GitHub Personal Access Token with 'repo' scope
+# Then store it in SSM:
+aws ssm put-parameter \
+  --name "/dndblog/github-pat" \
+  --value "ghp_your_token_here" \
+  --type SecureString \
+  --overwrite
+```
+
+Without this token, the approve endpoint will error (reject still works).
 
 Set the API URL as an environment variable for site builds:
 ```bash
