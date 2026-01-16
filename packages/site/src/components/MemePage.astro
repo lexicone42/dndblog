@@ -1,0 +1,128 @@
+---
+/**
+ * MemePage Component
+ *
+ * Shared layout for meme/easter-egg pages like /tongue and /toad.
+ * Provides consistent structure with customizable content and styling.
+ */
+
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+interface Props {
+  /** Page title for browser tab */
+  title: string;
+  /** Meta description for SEO */
+  description: string;
+  /** Displayed title on the page (usually italic/muted) */
+  pageTitle: string;
+  /** The ASCII art to display */
+  asciiArt: string;
+  /** Main caption text */
+  caption: string;
+  /** Optional whisper text that fades in */
+  whisperText?: string;
+  /** Light mode color for ASCII art */
+  artColor?: string;
+  /** Dark mode color for ASCII art */
+  artColorDark?: string;
+  /** CSS class for art animation */
+  artAnimation?: string;
+  /** CSS class for caption animation */
+  captionAnimation?: string;
+  /** Additional CSS for the art element */
+  artStyle?: string;
+  /** Optional background gradient for page */
+  backgroundGradient?: string;
+}
+
+const {
+  title,
+  description,
+  pageTitle,
+  asciiArt,
+  caption,
+  whisperText,
+  artColor = 'var(--color-accent)',
+  artColorDark = 'var(--color-accent)',
+  artAnimation = '',
+  captionAnimation = '',
+  artStyle = '',
+  backgroundGradient = '',
+} = Astro.props;
+
+const bgStyle = backgroundGradient ? `background: ${backgroundGradient};` : '';
+---
+
+<BaseLayout title={title} description={description}>
+  <main class="meme-page" style={bgStyle}>
+    <p class="meme-title">{pageTitle}</p>
+    <pre
+      class:list={['meme-art', artAnimation]}
+      style={`--art-color: ${artColor}; --art-color-dark: ${artColorDark}; ${artStyle}`}
+    >{asciiArt}</pre>
+    <slot name="caption">
+      <p class:list={['meme-caption', captionAnimation]}>{caption}</p>
+    </slot>
+    {whisperText && <p class="meme-whisper">{whisperText}</p>}
+    <slot />
+  </main>
+</BaseLayout>
+
+<style>
+  .meme-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    padding: var(--space-xl);
+  }
+
+  .meme-title {
+    font-style: italic;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-md);
+    font-size: var(--text-sm);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .meme-art {
+    color: var(--art-color);
+    font-size: clamp(0.2rem, 0.6vw, 0.4rem);
+    line-height: 1.1;
+    letter-spacing: 0.05em;
+    font-family: monospace;
+    text-align: center;
+    margin: 0;
+  }
+
+  :global([data-theme='dark']) .meme-art,
+  :global(.dark) .meme-art {
+    color: var(--art-color-dark);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .meme-art {
+      color: var(--art-color-dark);
+    }
+  }
+
+  .meme-caption {
+    font-size: var(--text-2xl);
+    margin-top: var(--space-xl);
+    font-weight: 700;
+  }
+
+  .meme-whisper {
+    margin-top: var(--space-2xl);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    font-style: italic;
+    text-align: center;
+    max-width: 300px;
+    opacity: 0;
+    animation: whisper 8s ease-in-out infinite;
+    animation-delay: 2s;
+  }
+</style>

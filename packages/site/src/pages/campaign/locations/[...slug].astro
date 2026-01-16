@@ -210,18 +210,12 @@ const statusColors: Record<string, string> = {
     margin: 0;
   }
 
+  /* Status badge base styles in global.css; size override for detail pages */
   .entity-status {
     font-size: var(--text-sm);
     padding: 4px 12px;
     border-radius: var(--radius-md);
-    text-transform: uppercase;
-    font-weight: 600;
   }
-
-  .status--active { background: var(--color-success); color: white; }
-  .status--inactive { background: var(--color-text-muted); color: white; }
-  .status--dead { background: var(--color-error); color: white; }
-  .status--unknown { background: var(--color-warning); color: var(--color-bg); }
 
   .entity-description {
     font-size: var(--text-lg);

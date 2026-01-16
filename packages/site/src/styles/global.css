@@ -8,6 +8,9 @@
  * - Modern CSS (custom properties, container queries)
  */
 
+/* Import shared animations */
+@import './animations.css';
+
 /* CSS Custom Properties */
 :root {
   /* Typography - serif for headings, readable sans for body */
@@ -352,6 +355,23 @@ hr {
   white-space: nowrap;
   border: 0;
 }
+
+/* Status Badges - shared across browse/detail pages */
+[class*="status--"] {
+  font-size: var(--text-xs);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.status--active { background: var(--color-success); color: white; }
+.status--inactive { background: var(--color-text-muted); color: white; }
+.status--dead, .status--destroyed { background: var(--color-error); color: white; }
+.status--unknown { background: var(--color-warning); color: var(--color-bg); }
+.status--transformed { background: var(--color-accent); color: white; }
+.status--reference { background: var(--color-accent); color: white; }
+.status--dormant { background: #4b5563; color: white; }
 
 /* Print styles for archival and accessibility */
 @media print {

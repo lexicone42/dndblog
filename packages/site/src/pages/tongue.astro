@@ -1,12 +1,14 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
----
+/**
+ * Tongue Memorial Page
+ *
+ * Easter egg page commemorating Dain's lost tongue.
+ * Linked from Rudiger's character page.
+ */
 
-<BaseLayout title="Tongue" description="In memory of Dain's tongue">
-  <main class="tongue-page">
-    <p class="tongue-title">In memory of Dain's tongue</p>
-    <pre class="tongue-art">
-{`
+import MemePage from '@components/MemePage.astro';
+
+const tongueArt = `
                                     │
                                     │
                                    ╱│╲
@@ -68,56 +70,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                          ██████████████
                         ████████████████
                        ══════════════════
-`}
-    </pre>
-    <p class="tongue-caption">👅 YOINK!</p>
-  </main>
-</BaseLayout>
+`;
+---
 
-<style>
-  .tongue-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 70vh;
-    padding: var(--space-xl);
-  }
+<MemePage
+  title="Tongue"
+  description="In memory of Dain's tongue"
+  pageTitle="In memory of Dain's tongue"
+  asciiArt={tongueArt}
+  caption="👅 YOINK!"
+  artAnimation="tongue-float"
+  captionAnimation="animate-wiggle"
+/>
 
-  .tongue-title {
-    font-style: italic;
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-md);
-  }
-
-  .tongue-art {
-    color: var(--color-accent);
-    font-size: clamp(0.2rem, 0.6vw, 0.4rem);
-    line-height: 1.05;
-    letter-spacing: -0.02em;
-    font-family: monospace;
-    text-align: center;
-    margin: 0;
+<style is:global>
+  /* Tongue-specific animation: float with rotation */
+  .tongue-float {
     transform: rotate(-90deg);
-    animation: float 3s ease-in-out infinite;
-  }
-
-  .tongue-caption {
-    font-size: var(--text-4xl);
-    font-weight: 900;
-    margin-top: var(--space-lg);
-    color: var(--color-accent);
-    text-shadow: 2px 2px 0 var(--color-text-secondary);
-    animation: wiggle 0.3s ease infinite;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: rotate(-90deg) translateY(0); }
-    50% { transform: rotate(-90deg) translateY(-15px); }
-  }
-
-  @keyframes wiggle {
-    0%, 100% { transform: rotate(-2deg) scale(1); }
-    50% { transform: rotate(2deg) scale(1.05); }
+    animation: float-rotated 3s ease-in-out infinite;
   }
 </style>

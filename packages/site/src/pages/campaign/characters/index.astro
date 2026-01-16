@@ -167,70 +167,14 @@ const npcs = sortedCharacters.filter((c: CharacterEntry) => c.data.subtype !== '
 </BaseLayout>
 
 <script>
-  // Client-side filtering
-  const filters: Record<string, string> = {
-    subtype: 'all',
-    status: 'all',
-  };
-  let searchTerm = '';
+  import { initBrowseFilters } from '@scripts/browse-filter';
 
-  const cards = document.querySelectorAll('.character-card') as NodeListOf<HTMLElement>;
-  const sections = document.querySelectorAll('.character-section') as NodeListOf<HTMLElement>;
-  const visibleCount = document.getElementById('visible-count');
-
-  function updateFilters() {
-    let count = 0;
-
-    cards.forEach(card => {
-      const subtype = card.dataset.subtype || '';
-      const status = card.dataset.status || '';
-      const name = card.dataset.name || '';
-
-      const matchesSubtype = filters.subtype === 'all' || subtype === filters.subtype;
-      const matchesStatus = filters.status === 'all' || status === filters.status;
-      const matchesSearch = !searchTerm || name.includes(searchTerm.toLowerCase());
-
-      if (matchesSubtype && matchesStatus && matchesSearch) {
-        card.style.display = '';
-        count++;
-      } else {
-        card.style.display = 'none';
-      }
-    });
-
-    // Hide sections with no visible cards
-    sections.forEach(section => {
-      const visibleCards = section.querySelectorAll('.character-card:not([style*="display: none"])');
-      section.style.display = visibleCards.length > 0 ? '' : 'none';
-    });
-
-    if (visibleCount) {
-      visibleCount.textContent = String(count);
-    }
-  }
-
-  // Filter button handlers
-  document.querySelectorAll('.filter-options').forEach(group => {
-    const filterType = (group as HTMLElement).dataset.filter;
-
-    group.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        group.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        if (filterType) {
-          filters[filterType] = (btn as HTMLElement).dataset.value || 'all';
-        }
-        updateFilters();
-      });
-    });
-  });
-
-  // Search handler
-  const searchInput = document.getElementById('character-search') as HTMLInputElement;
-  searchInput?.addEventListener('input', (e) => {
-    searchTerm = (e.target as HTMLInputElement).value;
-    updateFilters();
+  initBrowseFilters({
+    cardSelector: '.character-card',
+    countSelector: 'visible-count',
+    searchInputId: 'character-search',
+    sectionSelector: '.character-section',
+    filters: ['subtype', 'status'],
   });
 </script>
 
@@ -398,18 +342,7 @@ const npcs = sortedCharacters.filter((c: CharacterEntry) => c.data.subtype !== '
     color: var(--color-gold);
   }
 
-  .character-status {
-    font-size: var(--text-xs);
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    text-transform: uppercase;
-    font-weight: 600;
-  }
-
-  .status--active { background: var(--color-success); color: white; }
-  .status--inactive { background: var(--color-text-muted); color: white; }
-  .status--dead { background: var(--color-error); color: white; }
-  .status--unknown { background: var(--color-warning); color: var(--color-bg); }
+  /* Status badge base styles now in global.css */
 
   .character-card__meta {
     display: flex;

@@ -267,70 +267,14 @@ const subtypeInfo: Record<string, { name: string; description: string; color: st
 </BaseLayout>
 
 <script>
-  // Client-side filtering
-  const filters: Record<string, string> = {
-    subtype: 'all',
-    status: 'all',
-  };
-  let searchTerm = '';
+  import { initBrowseFilters } from '@scripts/browse-filter';
 
-  const cards = document.querySelectorAll('.enemy-card') as NodeListOf<HTMLElement>;
-  const sections = document.querySelectorAll('.enemy-section') as NodeListOf<HTMLElement>;
-  const visibleCount = document.getElementById('visible-count');
-
-  function updateFilters() {
-    let count = 0;
-
-    cards.forEach(card => {
-      const subtype = card.dataset.subtype || '';
-      const status = card.dataset.status || '';
-      const name = card.dataset.name || '';
-
-      const matchesSubtype = filters.subtype === 'all' || subtype === filters.subtype;
-      const matchesStatus = filters.status === 'all' || status === filters.status;
-      const matchesSearch = !searchTerm || name.includes(searchTerm.toLowerCase());
-
-      if (matchesSubtype && matchesStatus && matchesSearch) {
-        card.style.display = '';
-        count++;
-      } else {
-        card.style.display = 'none';
-      }
-    });
-
-    // Hide sections with no visible cards
-    sections.forEach(section => {
-      const visibleCards = section.querySelectorAll('.enemy-card:not([style*="display: none"])');
-      section.style.display = visibleCards.length > 0 ? '' : 'none';
-    });
-
-    if (visibleCount) {
-      visibleCount.textContent = String(count);
-    }
-  }
-
-  // Filter button handlers
-  document.querySelectorAll('.filter-options').forEach(group => {
-    const filterType = (group as HTMLElement).dataset.filter;
-
-    group.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        group.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        if (filterType) {
-          filters[filterType] = (btn as HTMLElement).dataset.value || 'all';
-        }
-        updateFilters();
-      });
-    });
-  });
-
-  // Search handler
-  const searchInput = document.getElementById('enemy-search') as HTMLInputElement;
-  searchInput?.addEventListener('input', (e) => {
-    searchTerm = (e.target as HTMLInputElement).value;
-    updateFilters();
+  initBrowseFilters({
+    cardSelector: '.enemy-card',
+    countSelector: 'visible-count',
+    searchInputId: 'enemy-search',
+    sectionSelector: '.enemy-section',
+    filters: ['subtype', 'status'],
   });
 </script>
 
@@ -526,21 +470,13 @@ const subtypeInfo: Record<string, { name: string; description: string; color: st
     color: var(--color-warning);
   }
 
-  .enemy-status {
-    font-size: var(--text-xs);
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    text-transform: uppercase;
-    font-weight: 600;
-    white-space: nowrap;
-  }
+  /* Base status styles in global.css; enemy-specific overrides below */
+  .enemy-status { white-space: nowrap; }
 
-  .status--active { background: var(--color-error); color: white; }
-  .status--inactive { background: var(--color-text-muted); color: white; }
-  .status--dead { background: #666; color: white; text-decoration: line-through; }
-  .status--destroyed { background: #333; color: white; }
-  .status--unknown { background: var(--color-warning); color: var(--color-bg); }
-  .status--dormant { background: #4b5563; color: white; }
+  /* Enemies use red for "active" (threats) instead of green */
+  .enemy-status.status--active { background: var(--color-error); }
+  .enemy-status.status--dead { background: #666; text-decoration: line-through; }
+  .enemy-status.status--destroyed { background: #333; }
 
   .enemy-card__meta {
     display: flex;

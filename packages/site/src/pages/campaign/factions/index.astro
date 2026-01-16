@@ -198,70 +198,14 @@ function formatSubtype(subtype: string): string {
 </BaseLayout>
 
 <script>
-  // Client-side filtering
-  const filters: Record<string, string> = {
-    subtype: 'all',
-    status: 'all',
-  };
-  let searchTerm = '';
+  import { initBrowseFilters } from '@scripts/browse-filter';
 
-  const cards = document.querySelectorAll('.faction-card') as NodeListOf<HTMLElement>;
-  const sections = document.querySelectorAll('.faction-section') as NodeListOf<HTMLElement>;
-  const visibleCount = document.getElementById('visible-count');
-
-  function updateFilters() {
-    let count = 0;
-
-    cards.forEach(card => {
-      const subtype = card.dataset.subtype || '';
-      const status = card.dataset.status || '';
-      const name = card.dataset.name || '';
-
-      const matchesSubtype = filters.subtype === 'all' || subtype === filters.subtype;
-      const matchesStatus = filters.status === 'all' || status === filters.status;
-      const matchesSearch = !searchTerm || name.includes(searchTerm.toLowerCase());
-
-      if (matchesSubtype && matchesStatus && matchesSearch) {
-        card.style.display = '';
-        count++;
-      } else {
-        card.style.display = 'none';
-      }
-    });
-
-    // Hide sections with no visible cards
-    sections.forEach(section => {
-      const visibleCards = section.querySelectorAll('.faction-card:not([style*="display: none"])');
-      section.style.display = visibleCards.length > 0 ? '' : 'none';
-    });
-
-    if (visibleCount) {
-      visibleCount.textContent = String(count);
-    }
-  }
-
-  // Filter button handlers
-  document.querySelectorAll('.filter-options').forEach(group => {
-    const filterType = (group as HTMLElement).dataset.filter;
-
-    group.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        group.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        if (filterType) {
-          filters[filterType] = (btn as HTMLElement).dataset.value || 'all';
-        }
-        updateFilters();
-      });
-    });
-  });
-
-  // Search handler
-  const searchInput = document.getElementById('faction-search') as HTMLInputElement;
-  searchInput?.addEventListener('input', (e) => {
-    searchTerm = (e.target as HTMLInputElement).value;
-    updateFilters();
+  initBrowseFilters({
+    cardSelector: '.faction-card',
+    countSelector: 'visible-count',
+    searchInputId: 'faction-search',
+    sectionSelector: '.faction-section',
+    filters: ['subtype', 'status'],
   });
 </script>
 
@@ -465,19 +409,8 @@ function formatSubtype(subtype: string): string {
     text-transform: capitalize;
   }
 
-  .faction-status {
-    font-size: var(--text-xs);
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    text-transform: uppercase;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  .status--active { background: var(--color-success); color: white; }
-  .status--inactive { background: var(--color-text-muted); color: white; }
-  .status--unknown { background: var(--color-warning); color: var(--color-bg); }
-  .status--destroyed { background: #333; color: white; }
+  /* Status badge styles now in global.css */
+  .faction-status { white-space: nowrap; }
 
   .faction-card__meta {
     display: flex;

@@ -1,0 +1,230 @@
+/**
+ * Shared Keyframe Animations
+ *
+ * Reusable animations for the D&D campaign site.
+ * Import in global.css or use directly in components.
+ */
+
+/* ========================================
+   Movement Animations
+   ======================================== */
+
+/* Gentle floating movement - good for ethereal/magical elements */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+/* Float with rotation - for tongue page ASCII art */
+@keyframes float-rotated {
+  0%,
+  100% {
+    transform: rotate(-90deg) translateY(0);
+  }
+  50% {
+    transform: rotate(-90deg) translateY(-15px);
+  }
+}
+
+/* Subtle emergence - for toad page, slightly grows and lifts */
+@keyframes emerge {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(-8px) scale(1.02);
+    opacity: 1;
+  }
+}
+
+/* Hopping motion - for frog emoji */
+@keyframes hop {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  15% {
+    transform: translateY(-20px) rotate(-5deg);
+  }
+  30% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+/* Faster hopping for hover states */
+@keyframes hop-faster {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-15px) rotate(-8deg);
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+}
+
+/* Playful wiggle - for tongue caption */
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(-2deg) scale(1);
+  }
+  50% {
+    transform: rotate(2deg) scale(1.05);
+  }
+}
+
+/* ========================================
+   Opacity/Fade Animations
+   ======================================== */
+
+/* Subtle fade in/out - for captions */
+@keyframes fadeInOut {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* Spooky whisper effect - delayed fade for mystery text */
+@keyframes whisper {
+  0%,
+  20%,
+  100% {
+    opacity: 0;
+  }
+  30%,
+  70% {
+    opacity: 0.6;
+  }
+}
+
+/* Candle-like flicker */
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  52% {
+    opacity: 0.4;
+  }
+  54% {
+    opacity: 0.7;
+  }
+}
+
+/* ========================================
+   Glow/Pulse Animations
+   ======================================== */
+
+/* Simple opacity pulse */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Box-shadow glow - uses currentColor for flexibility */
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 5px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 15px currentColor, 0 0 25px currentColor;
+  }
+}
+
+/* Slot glow for session tracker */
+@keyframes slot-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 4px var(--slot-color, currentColor);
+  }
+  50% {
+    box-shadow: 0 0 8px var(--slot-color, currentColor),
+      0 0 12px var(--slot-color, currentColor);
+  }
+}
+
+/* Critical HP pulse for session tracker */
+@keyframes hp-critical-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+  }
+}
+
+/* Scale-in for condition badges */
+@keyframes condition-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-emerge {
+  animation: emerge 4s ease-in-out infinite;
+}
+
+.animate-hop {
+  animation: hop 1.5s ease-in-out infinite;
+}
+
+.animate-wiggle {
+  animation: wiggle 0.3s ease infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-fadeInOut {
+  animation: fadeInOut 3s ease-in-out infinite;
+}
+
+.animate-whisper {
+  animation: whisper 8s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.animate-flicker {
+  animation: flicker 4s ease-in-out infinite;
+}
