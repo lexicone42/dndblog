@@ -57,6 +57,74 @@ Or via URL parameter on the frontend:
 https://chronicles.mawframe.ninja/dm-notes?token=your-token
 ```
 
+### Client-Side Auth Module
+
+The frontend uses `@lib/auth.ts` for authentication state management. It supports both legacy token auth and Cognito SSO.
+
+**Available Functions:**
+
+| Function | Description |
+|----------|-------------|
+| `getAuthState()` | Get current auth state (token or Cognito) |
+| `setAuthState(auth)` | Save Cognito auth to localStorage |
+| `clearAuth()` | Clear all auth state (logout) |
+| `getAuthHeaders()` | Get headers for API calls (`X-DM-Token` or `Authorization: Bearer`) |
+| `getLoginUrl(returnUrl?)` | Get Cognito hosted UI login URL |
+| `getLogoutUrl(returnPath?)` | Get Cognito logout URL |
+| `getPasskeyRegistrationUrl()` | Get URL to register a passkey |
+| `isSsoAvailable()` | Check if Cognito SSO is configured |
+| `exchangeCodeForTokens(code)` | Exchange OAuth code for tokens (callback page) |
+
+**Auth State Structure:**
+
+```typescript
+interface AuthState {
+  method: 'token' | 'cognito';
+  roles: {
+    isDm: boolean;
+    isPlayer: boolean;
+  };
+  accessToken: string;
+  idToken?: string;           // Cognito only
+  refreshToken?: string;      // Cognito only
+  expiresAt?: number;         // Cognito only
+  userId?: string;            // Cognito only
+  email?: string;             // Cognito only
+  characterSlug?: string;     // Player's assigned character
+}
+```
+
+**Usage Example:**
+
+```typescript
+import { getAuthState, getAuthHeaders, getLoginUrl } from '@lib/auth';
+
+// Check if user is logged in
+const auth = getAuthState();
+if (!auth) {
+  window.location.href = getLoginUrl('/campaign');
+  return;
+}
+
+// Check roles
+if (auth.roles.isDm) {
+  // Show DM features
+}
+
+// Make authenticated API call
+const response = await fetch(`${API_URL}/player/drafts`, {
+  headers: getAuthHeaders(),
+});
+```
+
+**Dual-Mode Authentication:**
+
+The system supports both token and Cognito auth simultaneously:
+- **Token auth**: DM token stored in `localStorage['dm-token']`, player token in `localStorage['player-token']`
+- **Cognito auth**: JWT stored in `localStorage['dndblog-cognito-auth']`
+
+When both are present, token auth takes precedence in `getAuthState()`.
+
 ## API Endpoints
 
 ### POST /upload-url

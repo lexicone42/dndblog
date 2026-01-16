@@ -162,39 +162,6 @@ export function clearAuth(): void {
   window.dispatchEvent(new Event('auth-change'));
 }
 
-/**
- * Set legacy token auth (for simple token login)
- */
-export function setTokenAuth(token: string, role: 'dm' | 'player'): void {
-  if (typeof window === 'undefined') return;
-  const key = role === 'dm' ? LEGACY_DM_TOKEN_KEY : LEGACY_PLAYER_TOKEN_KEY;
-  localStorage.setItem(key, token);
-  window.dispatchEvent(new Event('auth-change'));
-}
-
-// ==========================================================================
-// Role Checking
-// ==========================================================================
-
-/**
- * Check if user has a specific role
- */
-export function hasRole(role: 'dm' | 'player'): boolean {
-  const auth = getAuthState();
-  if (!auth) return false;
-
-  if (role === 'dm') return auth.roles.isDm;
-  if (role === 'player') return auth.roles.isPlayer;
-  return false;
-}
-
-/**
- * Check if user is authenticated at all
- */
-export function isAuthenticated(): boolean {
-  return getAuthState() !== null;
-}
-
 // ==========================================================================
 // API Headers
 // ==========================================================================
@@ -298,57 +265,6 @@ export function getPasskeyRegistrationUrl(): string {
 // ==========================================================================
 // Token Exchange (for OAuth callback)
 // ==========================================================================
-
-/**
- * Result of character token validation
- */
-export interface CharacterTokenResult {
-  valid: boolean;
-  characterSlug: string | null;
-}
-
-/**
- * Validate character token against server
- * Returns validation result with character slug if valid
- */
-export async function validateCharacterToken(token: string): Promise<CharacterTokenResult> {
-  const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL;
-  if (!apiUrl) {
-    console.warn('API URL not configured, skipping server validation');
-    return { valid: true, characterSlug: null }; // Graceful degradation for local dev without API
-  }
-
-  try {
-    const response = await fetch(`${apiUrl}/validate-character-token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Player-Token': token,
-      },
-    });
-
-    if (!response.ok) {
-      return { valid: false, characterSlug: null };
-    }
-
-    const data = await response.json();
-    return {
-      valid: data.valid === true,
-      characterSlug: data.characterSlug || null,
-    };
-  } catch (error) {
-    console.error('Token validation error:', error);
-    return { valid: false, characterSlug: null };
-  }
-}
-
-/**
- * @deprecated Use validateCharacterToken instead
- */
-export async function validatePlayerToken(token: string): Promise<boolean> {
-  const result = await validateCharacterToken(token);
-  return result.valid;
-}
 
 /**
  * Exchange authorization code for tokens (used by callback page)
