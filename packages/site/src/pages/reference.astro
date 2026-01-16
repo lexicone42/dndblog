@@ -56,6 +56,29 @@ function getStatusClass(status: string): string {
       </p>
     </header>
 
+    <!-- Quick Links Cards -->
+    <section class="quick-links">
+      <a href="/campaign/spells" class="quick-link-card quick-link-card--spells">
+        <svg class="quick-link-card__icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+        <div class="quick-link-card__content">
+          <h3 class="quick-link-card__title">Spells</h3>
+          <p class="quick-link-card__desc">Browse the spellbook with all available spells</p>
+        </div>
+      </a>
+      <a href="/glossary" class="quick-link-card quick-link-card--rules">
+        <svg class="quick-link-card__icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+        <div class="quick-link-card__content">
+          <h3 class="quick-link-card__title">Rules</h3>
+          <p class="quick-link-card__desc">House rules, conditions, and game mechanics</p>
+        </div>
+      </a>
+    </section>
+
     <nav class="reference-nav">
       <ul class="reference-nav__list">
         <li><a href="#party" class="reference-nav__link">The Party</a></li>
@@ -275,6 +298,78 @@ function getStatusClass(status: string): string {
     font-size: var(--text-sm);
   }
 
+  /* Quick Links Cards */
+  .quick-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+  }
+
+  .quick-link-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+  }
+
+  .quick-link-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .quick-link-card--spells {
+    border-left: 4px solid var(--color-accent);
+  }
+
+  .quick-link-card--spells:hover {
+    border-color: var(--color-accent);
+  }
+
+  .quick-link-card--spells .quick-link-card__icon {
+    color: var(--color-accent);
+  }
+
+  .quick-link-card--rules {
+    border-left: 4px solid var(--color-gold);
+  }
+
+  .quick-link-card--rules:hover {
+    border-color: var(--color-gold);
+  }
+
+  .quick-link-card--rules .quick-link-card__icon {
+    color: var(--color-gold);
+  }
+
+  .quick-link-card__icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+  }
+
+  .quick-link-card__content {
+    flex: 1;
+  }
+
+  .quick-link-card__title {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-text);
+    margin: 0 0 var(--space-xs);
+  }
+
+  .quick-link-card__desc {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+
   .reference-nav {
     position: sticky;
     top: 80px;
@@ -482,6 +577,19 @@ function getStatusClass(status: string): string {
   }
 
   @media (max-width: 768px) {
+    .quick-links {
+      grid-template-columns: 1fr;
+    }
+
+    .quick-link-card {
+      padding: var(--space-md);
+    }
+
+    .quick-link-card__icon {
+      width: 36px;
+      height: 36px;
+    }
+
     .reference-nav {
       position: relative;
       top: 0;
