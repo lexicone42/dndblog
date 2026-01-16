@@ -113,12 +113,15 @@ export class AuthStack extends cdk.Stack {
     });
 
     // =========================================================================
-    // User Pool Domain (Hosted UI)
+    // User Pool Domain (Managed Login)
     // =========================================================================
+    // ManagedLoginVersion.NEWER_MANAGED_LOGIN enables the new UI with passkey support
+    // The classic hosted UI (version 1) doesn't support passkeys properly
     const domain = this.userPool.addDomain('CognitoDomain', {
       cognitoDomain: {
         domainPrefix: domainPrefix,
       },
+      managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
     });
 
     this.cognitoDomain = `${domainPrefix}.auth.${this.region}.amazoncognito.com`;
