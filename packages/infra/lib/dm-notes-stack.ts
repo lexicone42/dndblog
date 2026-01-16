@@ -3,6 +3,22 @@ import { Construct } from 'constructs';
 import { DmNotesApi } from './constructs/dm-notes-api.js';
 import { WebSocketApiConstruct } from './constructs/websocket-api.js';
 
+/**
+ * Configuration for Cognito-based authentication
+ */
+export interface CognitoAuthConfig {
+  /**
+   * Cognito User Pool ID
+   * @example 'us-west-2_abc123'
+   */
+  userPoolId: string;
+
+  /**
+   * Cognito User Pool Client ID
+   */
+  userPoolClientId: string;
+}
+
 export interface DmNotesStackProps extends cdk.StackProps {
   /**
    * The domain name for CORS (e.g., https://chronicles.mawframe.ninja)
@@ -10,10 +26,10 @@ export interface DmNotesStackProps extends cdk.StackProps {
   allowedOrigin: string;
 
   /**
-   * SSM parameter name for the auth token
-   * @default '/dndblog/dm-notes-token'
+   * Cognito authentication configuration
+   * All endpoints require valid JWT tokens from this User Pool.
    */
-  tokenParameterName?: string;
+  cognitoAuth: CognitoAuthConfig;
 }
 
 export class DmNotesStack extends cdk.Stack {
@@ -26,13 +42,13 @@ export class DmNotesStack extends cdk.Stack {
 
     // WebSocket API for real-time session updates
     const webSocketApi = new WebSocketApiConstruct(this, 'WebSocketApi', {
-      dmTokenParameterName: props.tokenParameterName ?? '/dndblog/dm-notes-token',
+      cognitoAuth: props.cognitoAuth,
       allowedOrigin: props.allowedOrigin,
     });
 
     const dmNotesApi = new DmNotesApi(this, 'DmNotesApi', {
       allowedOrigin: props.allowedOrigin,
-      tokenParameterName: props.tokenParameterName,
+      cognitoAuth: props.cognitoAuth,
       // WebSocket configuration for real-time updates
       webSocket: {
         connectionsTable: webSocketApi.connectionsTable,

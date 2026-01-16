@@ -62,15 +62,9 @@ if (domainName && hostedZoneDomain) {
     description: 'Static blog infrastructure: S3 + CloudFront + Route53 + ACM',
   });
 
-  // DM Notes API Stack - for secure markdown note submission
-  new DmNotesStack(app, 'DmNotesStack', {
-    env,
-    allowedOrigin: `https://${domainName}`,
-    description: 'DM Notes API: Lambda + API Gateway + S3 for session note uploads',
-  });
-
   // Auth Stack - Cognito User Pool for player authentication
-  new AuthStack(app, 'AuthStack', {
+  // Must be created before DmNotesStack to provide auth config
+  const authStack = new AuthStack(app, 'AuthStack', {
     env,
     siteDomain: domainName,
     cognitoDomainPrefix: 'chronicles-mawframe',
@@ -84,6 +78,21 @@ if (domainName && hostedZoneDomain) {
       },
     ],
   });
+
+  // DM Notes API Stack - for secure markdown note submission
+  // Uses Cognito JWT authentication from AuthStack
+  const dmNotesStack = new DmNotesStack(app, 'DmNotesStack', {
+    env,
+    allowedOrigin: `https://${domainName}`,
+    cognitoAuth: {
+      userPoolId: authStack.userPool.userPoolId,
+      userPoolClientId: authStack.userPoolClient.userPoolClientId,
+    },
+    description: 'DM Notes API: Lambda + API Gateway + S3 for session note uploads',
+  });
+
+  // Ensure DmNotesStack deploys after AuthStack
+  dmNotesStack.addDependency(authStack);
 } else if (!githubRepo) {
   // Provide helpful error message if no context is provided
   console.log(`

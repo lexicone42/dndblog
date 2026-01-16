@@ -19,17 +19,32 @@ import { Construct } from 'constructs';
 // 3. DM receives WebSocket message → UI updates immediately (<100ms)
 //
 // Security:
-// - Only DMs can connect (validated via X-DM-Token in query string)
+// - Only DMs can connect (validated via Cognito JWT in query string)
 // - Connections stored in DynamoDB with TTL for auto-cleanup
 // - API Gateway Management API used for server-to-client push
 //
 // ==========================================================================
 
+/**
+ * Configuration for Cognito-based authentication
+ */
+export interface CognitoAuthConfig {
+  /**
+   * Cognito User Pool ID
+   */
+  userPoolId: string;
+
+  /**
+   * Cognito User Pool Client ID
+   */
+  userPoolClientId: string;
+}
+
 export interface WebSocketApiProps {
   /**
-   * SSM parameter name for the DM auth token
+   * Cognito authentication configuration
    */
-  dmTokenParameterName: string;
+  cognitoAuth: CognitoAuthConfig;
 
   /**
    * Allowed origin for CORS (not directly used by WebSocket but logged)
@@ -106,60 +121,87 @@ export class WebSocketApiConstruct extends Construct {
       memorySize: 256,
       environment: {
         CONNECTIONS_TABLE: this.connectionsTable.tableName,
-        DM_TOKEN_PARAMETER_NAME: props.dmTokenParameterName,
+        COGNITO_USER_POOL_ID: props.cognitoAuth.userPoolId,
+        COGNITO_CLIENT_ID: props.cognitoAuth.userPoolClientId,
       },
       code: lambda.Code.fromInline(`
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
 const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
 
-const ssmClient = new SSMClient({});
 const ddbClient = new DynamoDBClient({});
 
-let cachedToken = null;
-let tokenExpiry = 0;
-
-async function getDmToken() {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiry) {
-    return cachedToken;
+// Decode and validate JWT
+function decodeJwt(token) {
+  try {
+    const [headerB64, payloadB64] = token.split('.');
+    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString());
+    return payload;
+  } catch (e) {
+    return null;
   }
-  const result = await ssmClient.send(new GetParameterCommand({
-    Name: process.env.DM_TOKEN_PARAMETER_NAME,
-    WithDecryption: true,
-  }));
-  cachedToken = result.Parameter.Value;
-  tokenExpiry = now + 5 * 60 * 1000;
-  return cachedToken;
+}
+
+// Validate Cognito JWT and check DM role
+function validateCognitoToken(token) {
+  const payload = decodeJwt(token);
+  if (!payload) return { valid: false, error: 'Invalid token format' };
+
+  // Check expiration
+  if (payload.exp && payload.exp * 1000 < Date.now()) {
+    return { valid: false, error: 'Token expired' };
+  }
+
+  // Check issuer matches our User Pool
+  const expectedIssuer = 'https://cognito-idp.' + process.env.AWS_REGION + '.amazonaws.com/' + process.env.COGNITO_USER_POOL_ID;
+  if (payload.iss !== expectedIssuer) {
+    return { valid: false, error: 'Invalid issuer' };
+  }
+
+  // Check audience (client ID) - only for id_token, access_token uses client_id claim
+  if (payload.aud && payload.aud !== process.env.COGNITO_CLIENT_ID) {
+    return { valid: false, error: 'Invalid audience' };
+  }
+
+  // Check for DM role in groups
+  const groups = payload['cognito:groups'] || [];
+  const isDm = groups.includes('dm');
+
+  return { valid: true, payload, isDm };
 }
 
 exports.handler = async (event) => {
   console.log('WebSocket $connect:', JSON.stringify(event));
-  
+
   const connectionId = event.requestContext.connectionId;
   const queryParams = event.queryStringParameters || {};
-  const providedToken = queryParams.token;
+  const token = queryParams.token;
 
-  // Validate DM token
-  if (!providedToken) {
+  // Validate Cognito JWT
+  if (!token) {
     console.log('No token provided');
     return { statusCode: 401, body: 'Missing authentication token' };
   }
 
-  const validToken = await getDmToken();
-  if (providedToken !== validToken) {
-    console.log('Invalid token');
-    return { statusCode: 403, body: 'Invalid token' };
+  const result = validateCognitoToken(token);
+  if (!result.valid) {
+    console.log('Invalid token:', result.error);
+    return { statusCode: 403, body: result.error };
+  }
+
+  if (!result.isDm) {
+    console.log('Not a DM');
+    return { statusCode: 403, body: 'DM access required' };
   }
 
   // Store connection in DynamoDB with 24-hour TTL
   const ttl = Math.floor(Date.now() / 1000) + 86400;
-  
+
   await ddbClient.send(new PutItemCommand({
     TableName: process.env.CONNECTIONS_TABLE,
     Item: {
       connectionId: { S: connectionId },
       connectedAt: { S: new Date().toISOString() },
       role: { S: 'dm' },
+      userId: { S: result.payload.sub || 'unknown' },
       ttl: { N: ttl.toString() },
     },
   }));
@@ -271,12 +313,6 @@ exports.handler = async (event) => {
     this.connectionsTable.grantReadWriteData(connectHandler);
     this.connectionsTable.grantReadWriteData(disconnectHandler);
     this.connectionsTable.grantReadData(defaultHandler);
-
-    // Grant SSM read permission to connect handler
-    connectHandler.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['ssm:GetParameter'],
-      resources: [`arn:aws:ssm:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:parameter${props.dmTokenParameterName}`],
-    }));
 
     // ========================================================================
     // WebSocket API

@@ -26,27 +26,20 @@ const __dirname = path.dirname(__filename);
 // ==========================================================================
 
 /**
- * Configuration for Cognito-based authentication (future migration path)
- * When enabled, the API will validate JWT tokens from Cognito User Pool
- * instead of simple SSM-stored tokens.
+ * Configuration for Cognito-based authentication
+ * The API validates JWT tokens from Cognito User Pool.
  */
 export interface CognitoAuthConfig {
   /**
-   * Whether to enable Cognito authentication
-   * When false, uses simple token-based auth from SSM
-   */
-  enabled: boolean;
-
-  /**
-   * Cognito User Pool ID (required if enabled)
+   * Cognito User Pool ID
    * @example 'us-west-2_abc123'
    */
-  userPoolId?: string;
+  userPoolId: string;
 
   /**
-   * Cognito User Pool Client ID (required if enabled)
+   * Cognito User Pool Client ID
    */
-  userPoolClientId?: string;
+  userPoolClientId: string;
 
   /**
    * Optional: Custom domain for the Cognito hosted UI
@@ -62,26 +55,10 @@ export interface DmNotesApiProps {
   allowedOrigin: string;
 
   /**
-   * SSM parameter name storing the DM auth token
-   * Used when Cognito auth is disabled (default behavior)
-   * @default '/dndblog/dm-notes-token'
+   * Cognito authentication configuration
+   * The API validates JWT tokens from Cognito User Pool.
    */
-  tokenParameterName?: string;
-
-  /**
-   * Optional Cognito authentication configuration
-   * When provided and enabled, the API will use JWT validation instead of
-   * simple token-based auth. This is the recommended production configuration.
-   *
-   * Migration path:
-   * 1. Deploy with cognitoAuth: { enabled: false } (current behavior)
-   * 2. Set up Cognito User Pool and obtain userPoolId/userPoolClientId
-   * 3. Deploy with cognitoAuth: { enabled: true, userPoolId, userPoolClientId }
-   * 4. Update frontend to use Cognito login flow
-   *
-   * @default undefined (uses simple token auth)
-   */
-  cognitoAuth?: CognitoAuthConfig;
+  cognitoAuth: CognitoAuthConfig;
 
   /**
    * Optional WebSocket configuration for real-time session updates.
@@ -106,20 +83,17 @@ export class DmNotesApi extends Construct {
   public readonly apiUrl: string;
 
   /**
-   * Optional Cognito User Pool (only created if cognitoAuth.enabled is true)
-   * Use this to integrate with other services or configure additional settings
+   * Cognito User Pool reference for JWT validation
    */
-  public readonly userPool?: cognito.IUserPool;
+  public readonly userPool: cognito.IUserPool;
 
   /**
-   * Optional Cognito User Pool Client (only created if cognitoAuth.enabled is true)
+   * Cognito User Pool Client for token issuance
    */
-  public readonly userPoolClient?: cognito.IUserPoolClient;
+  public readonly userPoolClient: cognito.IUserPoolClient;
 
   constructor(scope: Construct, id: string, props: DmNotesApiProps) {
     super(scope, id);
-
-    const tokenParameterName = props.tokenParameterName ?? '/dndblog/dm-notes-token';
 
     // S3 bucket for DM notes (private, encrypted)
     // CORS allows direct browser uploads via presigned URLs
@@ -170,154 +144,31 @@ export class DmNotesApi extends Construct {
     );
 
     // ==========================================================================
-    // Cognito User Pool (Optional - scaffold for future migration)
-    // ==========================================================================
-    //
-    // Migration from token-based auth to Cognito:
-    // 1. Set cognitoAuth.enabled = true in props
-    // 2. The User Pool will be created automatically
-    // 3. Add users via AWS Console or Cognito APIs
-    // 4. Update frontend to use Amplify Auth or aws-amplify
-    // 5. JWT tokens will be validated instead of SSM tokens
-    //
-    // Benefits of Cognito:
-    // - User management (sign-up, password reset, MFA)
-    // - OAuth2/OIDC compliance
-    // - Integration with social providers
-    // - Fine-grained access control with groups/roles
-    //
+    // Cognito User Pool (Reference existing pool for JWT validation)
     // ==========================================================================
 
-    const cognitoEnabled = props.cognitoAuth?.enabled === true;
-
-    if (cognitoEnabled) {
-      // Create or reference existing User Pool
-      if (props.cognitoAuth?.userPoolId) {
-        // Use existing User Pool (e.g., shared across environments)
-        this.userPool = cognito.UserPool.fromUserPoolId(
-          this, 'UserPool', props.cognitoAuth.userPoolId
-        );
-      } else {
-        // Create new User Pool for DM Notes
-        const newUserPool = new cognito.UserPool(this, 'UserPool', {
-          userPoolName: 'DmNotesUserPool',
-          selfSignUpEnabled: false, // Admin-only for DM access
-          signInAliases: { email: true },
-          autoVerify: { email: true },
-          passwordPolicy: {
-            minLength: 12,
-            requireLowercase: true,
-            requireUppercase: true,
-            requireDigits: true,
-            requireSymbols: false,
-          },
-          accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-          removalPolicy: cdk.RemovalPolicy.RETAIN,
-          // MFA configuration (recommended for production)
-          mfa: cognito.Mfa.OPTIONAL,
-          mfaSecondFactor: {
-            sms: false,
-            otp: true, // TOTP apps like Google Authenticator
-          },
-        });
-        this.userPool = newUserPool;
-
-        // Create User Pool Groups for role-based access
-        new cognito.CfnUserPoolGroup(this, 'DmGroup', {
-          userPoolId: newUserPool.userPoolId,
-          groupName: 'dm',
-          description: 'Dungeon Masters with full access to DM tools',
-          precedence: 0, // Lower = higher priority
-        });
-
-        new cognito.CfnUserPoolGroup(this, 'PlayerGroup', {
-          userPoolId: newUserPool.userPoolId,
-          groupName: 'player',
-          description: 'Players with access to player tools',
-          precedence: 1,
-        });
-      }
-
-      // Create or reference existing User Pool Client
-      if (props.cognitoAuth?.userPoolClientId && this.userPool instanceof cognito.UserPool) {
-        this.userPoolClient = cognito.UserPoolClient.fromUserPoolClientId(
-          this, 'UserPoolClient', props.cognitoAuth.userPoolClientId
-        );
-      } else if (this.userPool instanceof cognito.UserPool) {
-        this.userPoolClient = this.userPool.addClient('WebClient', {
-          userPoolClientName: 'DmNotesWebClient',
-          authFlows: {
-            userPassword: true,
-            userSrp: true,
-          },
-          oAuth: {
-            flows: { authorizationCodeGrant: true },
-            scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL],
-            callbackUrls: [props.allowedOrigin + '/auth/callback', 'http://localhost:4321/auth/callback'],
-            logoutUrls: [props.allowedOrigin, 'http://localhost:4321'],
-          },
-          accessTokenValidity: cdk.Duration.hours(1),
-          idTokenValidity: cdk.Duration.hours(1),
-          refreshTokenValidity: cdk.Duration.days(30),
-        });
-      }
-
-      // Output User Pool details for frontend configuration
-      new cdk.CfnOutput(this, 'UserPoolId', {
-        value: this.userPool.userPoolId,
-        description: 'Cognito User Pool ID for frontend configuration',
-      });
-      if (this.userPoolClient) {
-        new cdk.CfnOutput(this, 'UserPoolClientId', {
-          value: this.userPoolClient.userPoolClientId,
-          description: 'Cognito User Pool Client ID for frontend configuration',
-        });
-      }
-    }
+    this.userPool = cognito.UserPool.fromUserPoolId(
+      this, 'UserPool', props.cognitoAuth.userPoolId
+    );
+    this.userPoolClient = cognito.UserPoolClient.fromUserPoolClientId(
+      this, 'UserPoolClient', props.cognitoAuth.userPoolClientId
+    );
 
     // ==========================================================================
     // Shared Auth Helper Code (inlined into each Lambda)
     // ==========================================================================
     //
-    // This auth helper supports both token-based and JWT-based authentication.
-    // The AUTH_MODE environment variable controls which mode is used:
-    // - 'token': Validates against SSM-stored token (default, current behavior)
-    // - 'cognito': Validates JWT tokens from Cognito User Pool
-    //
-    // The helper is designed to be drop-in replaceable, so migrating to Cognito
-    // requires only changing the AUTH_MODE environment variable.
+    // This auth helper validates Cognito JWT tokens.
+    // All endpoints require a valid JWT with appropriate group membership.
     //
     // ==========================================================================
 
     const authHelperCode = `
 // ==========================================================================
-// Auth Helper - Supports both token and Cognito JWT authentication
+// Auth Helper - Cognito JWT authentication
 // ==========================================================================
 
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
-const ssmClient = new SSMClient({});
-
-let cachedToken = null;
-let tokenExpiry = 0;
-
-// Get SSM token (for token-based auth)
-async function getToken() {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiry) {
-    return cachedToken;
-  }
-  const result = await ssmClient.send(new GetParameterCommand({
-    Name: process.env.TOKEN_PARAMETER_NAME,
-    WithDecryption: true,
-  }));
-  cachedToken = result.Parameter.Value;
-  tokenExpiry = now + 5 * 60 * 1000;
-  return cachedToken;
-}
-
-// Decode and validate JWT (for Cognito auth)
-// Note: In production, you should verify the signature using the JWKS endpoint
-// This is a simplified version for scaffolding purposes
+// Decode and validate JWT
 function decodeJwt(token) {
   try {
     const [headerB64, payloadB64] = token.split('.');
@@ -344,7 +195,7 @@ async function validateCognitoToken(token) {
     return { valid: false, error: 'Invalid issuer' };
   }
 
-  // Check audience (client ID)
+  // Check audience (client ID) - only for id_token, access_token uses client_id claim
   if (payload.aud && payload.aud !== process.env.COGNITO_CLIENT_ID) {
     return { valid: false, error: 'Invalid audience' };
   }
@@ -352,50 +203,31 @@ async function validateCognitoToken(token) {
   return { valid: true, payload };
 }
 
-// Main auth validation function - supports dual-mode auth (token AND Cognito)
-// AUTH_MODE can be: 'token' (only token), 'cognito' (only JWT), 'dual' (both)
+// Main auth validation function - Cognito JWT only
 async function validateAuth(event) {
-  const authMode = process.env.AUTH_MODE || 'token';
-
-  // Try token auth first (always available in 'token' or 'dual' mode)
-  if (authMode === 'token' || authMode === 'dual') {
-    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (providedToken) {
-      const validToken = await getToken();
-      if (providedToken === validToken) {
-        return {
-          valid: true,
-          authMethod: 'token',
-          roles: { isDm: true, isPlayer: true } // Token auth grants full access
-        };
-      }
-    }
+  const authHeader = event.headers?.authorization || event.headers?.Authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { valid: false, error: 'No valid authentication provided' };
   }
 
-  // Try Cognito JWT (available in 'cognito' or 'dual' mode)
-  if (authMode === 'cognito' || authMode === 'dual') {
-    const authHeader = event.headers?.authorization || event.headers?.Authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const jwt = authHeader.substring(7);
-      const result = await validateCognitoToken(jwt);
-      if (result.valid) {
-        // Extract roles from Cognito groups
-        const groups = result.payload['cognito:groups'] || [];
-        const isDm = groups.includes('dm');
-        const isPlayer = groups.includes('player') || isDm; // DMs are also players
-        return {
-          ...result,
-          authMethod: 'cognito',
-          roles: { isDm, isPlayer },
-          userId: result.payload.sub,
-          email: result.payload.email
-        };
-      }
-    }
+  const jwt = authHeader.substring(7);
+  const result = await validateCognitoToken(jwt);
+  if (!result.valid) {
+    return result;
   }
 
-  // No valid auth found
-  return { valid: false, error: 'No valid authentication provided' };
+  // Extract roles from Cognito groups
+  const groups = result.payload['cognito:groups'] || [];
+  const isDm = groups.includes('dm');
+  const isPlayer = groups.includes('player') || isDm; // DMs are also players
+
+  return {
+    ...result,
+    authMethod: 'cognito',
+    roles: { isDm, isPlayer },
+    userId: result.payload.sub,
+    email: result.payload.email
+  };
 }
 
 // Helper to get CORS origin (allows localhost for dev)
@@ -409,19 +241,11 @@ function getCorsOrigin(event) {
 }
 `;
 
-    // Environment variables for auth (varies based on mode)
-    // When Cognito is enabled, use 'dual' mode so both token AND JWT auth work
+    // Environment variables for Cognito auth (used by all Lambda functions)
     const authEnvironment: Record<string, string> = {
-      AUTH_MODE: cognitoEnabled ? 'dual' : 'token',
-      TOKEN_PARAMETER_NAME: tokenParameterName,
+      COGNITO_USER_POOL_ID: this.userPool.userPoolId,
+      COGNITO_CLIENT_ID: this.userPoolClient.userPoolClientId,
     };
-
-    if (cognitoEnabled && this.userPool) {
-      authEnvironment.COGNITO_USER_POOL_ID = this.userPool.userPoolId;
-      if (this.userPoolClient) {
-        authEnvironment.COGNITO_CLIENT_ID = this.userPoolClient.userPoolClientId;
-      }
-    }
 
     // Lambda function for generating pre-signed URLs
     const uploadUrlFunction = new lambda.Function(this, 'UploadUrlFunction', {
@@ -431,52 +255,22 @@ function getCorsOrigin(event) {
       memorySize: 256,
       environment: {
         BUCKET_NAME: this.bucket.bucketName,
-        TOKEN_PARAMETER_NAME: tokenParameterName,
         ALLOWED_ORIGIN: props.allowedOrigin,
+        ...authEnvironment,
       },
       code: lambda.Code.fromInline(`
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
 
 const s3Client = new S3Client({});
-const ssmClient = new SSMClient({});
 
-let cachedToken = null;
-let tokenExpiry = 0;
-
-async function getToken() {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiry) {
-    return cachedToken;
-  }
-
-  const result = await ssmClient.send(new GetParameterCommand({
-    Name: process.env.TOKEN_PARAMETER_NAME,
-    WithDecryption: true,
-  }));
-
-  cachedToken = result.Parameter.Value;
-  tokenExpiry = now + 5 * 60 * 1000; // Cache for 5 minutes
-  return cachedToken;
-}
-
-// Helper to get CORS origin (allows localhost for dev)
-function getCorsOrigin(event) {
-  const origin = event.headers?.origin || event.headers?.Origin || '';
-  const allowed = process.env.ALLOWED_ORIGIN;
-  // Allow localhost for development
-  if (origin.startsWith('http://localhost:')) {
-    return origin;
-  }
-  return allowed;
-}
+${authHelperCode}
 
 exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -487,34 +281,9 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Validate DM auth - support both token and Cognito JWT
-    let isDmAuthorized = false;
-
-    // Try DM token auth first
-    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (providedToken) {
-      const validToken = await getToken();
-      if (providedToken === validToken) {
-        isDmAuthorized = true;
-      }
-    }
-
-    // Try Cognito JWT if token auth didn't work
-    if (!isDmAuthorized) {
-      const authHeader = event.headers?.authorization || event.headers?.Authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const jwt = authHeader.substring(7);
-        const result = await validateCognitoToken(jwt);
-        if (result.valid && result.payload) {
-          const groups = result.payload['cognito:groups'] || [];
-          if (groups.includes('dm')) {
-            isDmAuthorized = true;
-          }
-        }
-      }
-    }
-
-    if (!isDmAuthorized) {
+    // Validate DM auth via Cognito JWT
+    const auth = await validateAuth(event);
+    if (!auth.valid || !auth.roles?.isDm) {
       return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required' }) };
     }
 
@@ -556,18 +325,6 @@ exports.handler = async (event) => {
     // Grant Lambda permissions
     this.bucket.grantPut(uploadUrlFunction);
 
-    // Grant SSM parameter read access
-    uploadUrlFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['ssm:GetParameter'],
-      resources: [
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: tokenParameterName.replace(/^\//, ''),
-        }),
-      ],
-    }));
-
     // SSM parameter for feature flag
     const featureFlagParameterName = '/dndblog/ai-review-enabled';
 
@@ -580,10 +337,10 @@ exports.handler = async (event) => {
       memorySize: 512,
       reservedConcurrentExecutions: 2, // Limit parallel invocations to control costs
       environment: {
-        TOKEN_PARAMETER_NAME: tokenParameterName,
         FEATURE_FLAG_PARAMETER: featureFlagParameterName,
         ALLOWED_ORIGIN: props.allowedOrigin,
         BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
+        ...authEnvironment,
       },
       code: lambda.Code.fromInline(`
 const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
@@ -592,24 +349,8 @@ const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
 const bedrockClient = new BedrockRuntimeClient({});
 const ssmClient = new SSMClient({});
 
-let cachedToken = null;
-let tokenExpiry = 0;
 let cachedFeatureFlag = null;
 let featureFlagExpiry = 0;
-
-async function getToken() {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiry) {
-    return cachedToken;
-  }
-  const result = await ssmClient.send(new GetParameterCommand({
-    Name: process.env.TOKEN_PARAMETER_NAME,
-    WithDecryption: true,
-  }));
-  cachedToken = result.Parameter.Value;
-  tokenExpiry = now + 5 * 60 * 1000;
-  return cachedToken;
-}
 
 async function isFeatureEnabled() {
   const now = Date.now();
@@ -629,21 +370,13 @@ async function isFeatureEnabled() {
   return cachedFeatureFlag;
 }
 
-// Helper to get CORS origin (allows localhost for dev)
-function getCorsOrigin(event) {
-  const origin = event.headers?.origin || event.headers?.Origin || '';
-  const allowed = process.env.ALLOWED_ORIGIN;
-  if (origin.startsWith('http://localhost:')) {
-    return origin;
-  }
-  return allowed;
-}
+${authHelperCode}
 
 exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -653,29 +386,9 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Validate DM auth - support both token and Cognito JWT
-    let isDmAuthorized = false;
-    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (providedToken) {
-      const validToken = await getToken();
-      if (providedToken === validToken) {
-        isDmAuthorized = true;
-      }
-    }
-    if (!isDmAuthorized) {
-      const authHeader = event.headers?.authorization || event.headers?.Authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const jwt = authHeader.substring(7);
-        const result = await validateCognitoToken(jwt);
-        if (result.valid && result.payload) {
-          const groups = result.payload['cognito:groups'] || [];
-          if (groups.includes('dm')) {
-            isDmAuthorized = true;
-          }
-        }
-      }
-    }
-    if (!isDmAuthorized) {
+    // Validate DM auth via Cognito JWT
+    const auth = await validateAuth(event);
+    if (!auth.valid || !auth.roles?.isDm) {
       return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required' }) };
     }
 
@@ -776,15 +489,10 @@ Respond with valid JSON only.\`,
       ],
     }));
 
-    // Grant SSM parameter read access to review function
+    // Grant SSM parameter read access to review function (feature flag only)
     reviewFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: ['ssm:GetParameter'],
       resources: [
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: tokenParameterName.replace(/^\//, ''),
-        }),
         cdk.Stack.of(this).formatArn({
           service: 'ssm',
           resource: 'parameter',
@@ -1037,33 +745,14 @@ exports.handler = async (event) => {
       memorySize: 512,
       environment: {
         BUCKET_NAME: this.bucket.bucketName,
-        TOKEN_PARAMETER_NAME: tokenParameterName,
         ALLOWED_ORIGIN: props.allowedOrigin,
         NOTES_PREFIX: 'dm-notes/',
+        ...authEnvironment,
       },
       code: lambda.Code.fromInline(`
 const { S3Client, ListObjectsV2Command, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
 
 const s3Client = new S3Client({});
-const ssmClient = new SSMClient({});
-
-let cachedToken = null;
-let tokenExpiry = 0;
-
-async function getToken() {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiry) {
-    return cachedToken;
-  }
-  const result = await ssmClient.send(new GetParameterCommand({
-    Name: process.env.TOKEN_PARAMETER_NAME,
-    WithDecryption: true,
-  }));
-  cachedToken = result.Parameter.Value;
-  tokenExpiry = now + 5 * 60 * 1000;
-  return cachedToken;
-}
 
 function parseYamlFrontmatter(content) {
   const match = content.match(/^---\\n([\\s\\S]*?)\\n---/);
@@ -1088,21 +777,13 @@ function parseYamlFrontmatter(content) {
   return result;
 }
 
-// Helper to get CORS origin (allows localhost for dev)
-function getCorsOrigin(event) {
-  const origin = event.headers?.origin || event.headers?.Origin || '';
-  const allowed = process.env.ALLOWED_ORIGIN;
-  if (origin.startsWith('http://localhost:')) {
-    return origin;
-  }
-  return allowed;
-}
+${authHelperCode}
 
 exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -1112,29 +793,9 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Validate DM auth - support both token and Cognito JWT
-    let isDmAuthorized = false;
-    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (providedToken) {
-      const validToken = await getToken();
-      if (providedToken === validToken) {
-        isDmAuthorized = true;
-      }
-    }
-    if (!isDmAuthorized) {
-      const authHeader = event.headers?.authorization || event.headers?.Authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const jwt = authHeader.substring(7);
-        const result = await validateCognitoToken(jwt);
-        if (result.valid && result.payload) {
-          const groups = result.payload['cognito:groups'] || [];
-          if (groups.includes('dm')) {
-            isDmAuthorized = true;
-          }
-        }
-      }
-    }
-    if (!isDmAuthorized) {
+    // Validate DM auth via Cognito JWT
+    const auth = await validateAuth(event);
+    if (!auth.valid || !auth.roles?.isDm) {
       return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required' }) };
     }
 
@@ -1265,18 +926,6 @@ exports.handler = async (event) => {
     this.bucket.grantRead(notesBrowserFunction);
     this.bucket.grantDelete(notesBrowserFunction);
 
-    // Grant SSM parameter read access
-    notesBrowserFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['ssm:GetParameter'],
-      resources: [
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: tokenParameterName.replace(/^\//, ''),
-        }),
-      ],
-    }));
-
     // Add notes browser routes (OPTIONS for CORS preflight)
     this.api.addRoutes({
       path: '/notes',
@@ -1321,43 +970,17 @@ exports.handler = async (event) => {
       memorySize: 1024, // More memory = more CPU = faster SDK operations
       reservedConcurrentExecutions: 2, // Limit parallel invocations to control costs
       environment: {
-        TOKEN_PARAMETER_NAME: tokenParameterName,
         ALLOWED_ORIGIN: props.allowedOrigin,
         // Using Claude Sonnet 4.5 via cross-region inference profile
         BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
+        ...authEnvironment,
       },
       code: lambda.Code.fromInline(`
 const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
 
 const bedrockClient = new BedrockRuntimeClient({});
-const ssmClient = new SSMClient({});
 
-let cachedToken = null;
-let tokenExpiry = 0;
-
-async function getToken() {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiry) {
-    return cachedToken;
-  }
-  const result = await ssmClient.send(new GetParameterCommand({
-    Name: process.env.TOKEN_PARAMETER_NAME,
-    WithDecryption: true,
-  }));
-  cachedToken = result.Parameter.Value;
-  tokenExpiry = now + 5 * 60 * 1000;
-  return cachedToken;
-}
-
-function getCorsOrigin(event) {
-  const origin = event.headers?.origin || event.headers?.Origin || '';
-  const allowed = process.env.ALLOWED_ORIGIN;
-  if (origin.startsWith('http://localhost:')) {
-    return origin;
-  }
-  return allowed;
-}
+${authHelperCode}
 
 // Slugify a name for file naming
 function slugify(name) {
@@ -1447,7 +1070,7 @@ exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -1457,29 +1080,9 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Validate DM auth - support both token and Cognito JWT
-    let isDmAuthorized = false;
-    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (providedToken) {
-      const validToken = await getToken();
-      if (providedToken === validToken) {
-        isDmAuthorized = true;
-      }
-    }
-    if (!isDmAuthorized) {
-      const authHeader = event.headers?.authorization || event.headers?.Authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const jwt = authHeader.substring(7);
-        const result = await validateCognitoToken(jwt);
-        if (result.valid && result.payload) {
-          const groups = result.payload['cognito:groups'] || [];
-          if (groups.includes('dm')) {
-            isDmAuthorized = true;
-          }
-        }
-      }
-    }
-    if (!isDmAuthorized) {
+    // Validate DM auth via Cognito JWT
+    const auth = await validateAuth(event);
+    if (!auth.valid || !auth.roles?.isDm) {
       return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required' }) };
     }
 
@@ -1664,18 +1267,6 @@ exports.handler = async (event) => {
       ],
     }));
 
-    // Grant SSM parameter read access to generate entity function
-    generateEntityFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['ssm:GetParameter'],
-      resources: [
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: tokenParameterName.replace(/^\//, ''),
-        }),
-      ],
-    }));
-
     // Add generate-entity route
     this.api.addRoutes({
       path: '/generate-entity',
@@ -1724,42 +1315,16 @@ exports.handler = async (event) => {
       memorySize: 512,
       environment: {
         BUCKET_NAME: this.bucket.bucketName,
-        TOKEN_PARAMETER_NAME: tokenParameterName,
         ALLOWED_ORIGIN: props.allowedOrigin,
         STAGING_PREFIX: 'staging/branches/',
+        ...authEnvironment,
       },
       code: lambda.Code.fromInline(`
 const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
 
 const s3Client = new S3Client({});
-const ssmClient = new SSMClient({});
 
-let cachedToken = null;
-let tokenExpiry = 0;
-
-async function getToken() {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiry) {
-    return cachedToken;
-  }
-  const result = await ssmClient.send(new GetParameterCommand({
-    Name: process.env.TOKEN_PARAMETER_NAME,
-    WithDecryption: true,
-  }));
-  cachedToken = result.Parameter.Value;
-  tokenExpiry = now + 5 * 60 * 1000;
-  return cachedToken;
-}
-
-function getCorsOrigin(event) {
-  const origin = event.headers?.origin || event.headers?.Origin || '';
-  const allowed = process.env.ALLOWED_ORIGIN;
-  if (origin.startsWith('http://localhost:')) {
-    return origin;
-  }
-  return allowed;
-}
+${authHelperCode}
 
 // Sanitize branch name to prevent path traversal
 function sanitizeBranchName(name) {
@@ -1909,7 +1474,7 @@ exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -1919,29 +1484,9 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Validate DM auth - support both token and Cognito JWT
-    let isDmAuthorized = false;
-    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (providedToken) {
-      const validToken = await getToken();
-      if (providedToken === validToken) {
-        isDmAuthorized = true;
-      }
-    }
-    if (!isDmAuthorized) {
-      const authHeader = event.headers?.authorization || event.headers?.Authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const jwt = authHeader.substring(7);
-        const result = await validateCognitoToken(jwt);
-        if (result.valid && result.payload) {
-          const groups = result.payload['cognito:groups'] || [];
-          if (groups.includes('dm')) {
-            isDmAuthorized = true;
-          }
-        }
-      }
-    }
-    if (!isDmAuthorized) {
+    // Validate DM auth via Cognito JWT
+    const auth = await validateAuth(event);
+    if (!auth.valid || !auth.roles?.isDm) {
       return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required' }) };
     }
 
@@ -2067,18 +1612,6 @@ exports.handler = async (event) => {
     this.bucket.grantReadWrite(stagingFunction);
     this.bucket.grantDelete(stagingFunction);
 
-    // Grant SSM parameter read access
-    stagingFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['ssm:GetParameter'],
-      resources: [
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: tokenParameterName.replace(/^\//, ''),
-        }),
-      ],
-    }));
-
     // Add staging routes
     this.api.addRoutes({
       path: '/staging/branches',
@@ -2141,13 +1674,13 @@ exports.handler = async (event) => {
       memorySize: 512,
       environment: {
         BUCKET_NAME: this.bucket.bucketName,
-        TOKEN_PARAMETER_NAME: tokenParameterName,
         GITHUB_PAT_PARAMETER_NAME: '/dndblog/github-pat',
         ALLOWED_ORIGIN: props.allowedOrigin,
         STAGING_PREFIX: 'staging/branches/',
         GITHUB_OWNER: 'lexicone42',
         GITHUB_REPO: 'dndblog',
         GITHUB_DEFAULT_BRANCH: 'main',
+        ...authEnvironment,
       },
       code: lambda.Code.fromInline(`
 const { S3Client, GetObjectCommand, ListObjectsV2Command, PutObjectCommand } = require('@aws-sdk/client-s3');
@@ -2157,22 +1690,8 @@ const https = require('https');
 const s3Client = new S3Client({});
 const ssmClient = new SSMClient({});
 
-let cachedToken = null;
-let tokenExpiry = 0;
 let cachedGitHubPat = null;
 let gitHubPatExpiry = 0;
-
-async function getToken() {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiry) return cachedToken;
-  const result = await ssmClient.send(new GetParameterCommand({
-    Name: process.env.TOKEN_PARAMETER_NAME,
-    WithDecryption: true,
-  }));
-  cachedToken = result.Parameter.Value;
-  tokenExpiry = now + 5 * 60 * 1000;
-  return cachedToken;
-}
 
 async function getGitHubPat() {
   const now = Date.now();
@@ -2186,11 +1705,7 @@ async function getGitHubPat() {
   return cachedGitHubPat;
 }
 
-function getCorsOrigin(event) {
-  const origin = event.headers?.origin || event.headers?.Origin || '';
-  if (origin.startsWith('http://localhost:')) return origin;
-  return process.env.ALLOWED_ORIGIN;
-}
+${authHelperCode}
 
 // GitHub API helper
 async function githubApi(method, path, body = null) {
@@ -2285,7 +1800,7 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': getCorsOrigin(event),
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 
   // Handle CORS preflight
@@ -2294,10 +1809,9 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Validate auth
-    const token = await getToken();
-    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (providedToken !== token) {
+    // Validate DM auth via Cognito JWT
+    const auth = await validateAuth(event);
+    if (!auth.valid || !auth.roles?.isDm) {
       return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
     }
 
@@ -2438,15 +1952,10 @@ exports.handler = async (event) => {
     // Grant S3 permissions to GitHub publish function
     this.bucket.grantReadWrite(githubPublishFunction);
 
-    // Grant SSM parameter read access for both tokens
+    // Grant SSM parameter read access for GitHub PAT
     githubPublishFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: ['ssm:GetParameter'],
       resources: [
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: tokenParameterName.replace(/^\//, ''),
-        }),
         cdk.Stack.of(this).formatArn({
           service: 'ssm',
           resource: 'parameter',
@@ -2495,8 +2004,8 @@ exports.handler = async (event) => {
       timeout: cdk.Duration.seconds(10),
       memorySize: 256,
       environment: {
-        TOKEN_PARAMETER_NAME: tokenParameterName,
         ALLOWED_ORIGIN: props.allowedOrigin,
+        ...authEnvironment,
       },
       bundling: {
         // Include Zod and related dependencies
@@ -2505,18 +2014,6 @@ exports.handler = async (event) => {
         sourceMap: false,
       },
     });
-
-    // Grant SSM parameter read access to validation function
-    validationFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['ssm:GetParameter'],
-      resources: [
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: tokenParameterName.replace(/^\//, ''),
-        }),
-      ],
-    }));
 
     // Add validation route
     this.api.addRoutes({
@@ -2533,319 +2030,6 @@ exports.handler = async (event) => {
       alarmName: `${cdk.Names.uniqueId(this)}-validation-errors`,
       alarmDescription: 'Entity validation function errors',
       metric: validationFunction.metricErrors({
-        statistic: 'Sum',
-        period: cdk.Duration.minutes(5),
-      }),
-      threshold: 1,
-      evaluationPeriods: 1,
-      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-
-    // ==========================================================================
-    // Character Token Validation Endpoint
-    // ==========================================================================
-    //
-    // Validates per-player tokens and returns which character they can edit.
-    // Tokens stored as /dndblog/player-token/{character-slug}
-    //
-    // ==========================================================================
-
-    const validateCharacterTokenFunction = new lambda.Function(this, 'ValidateCharacterTokenFunction', {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'index.handler',
-      timeout: cdk.Duration.seconds(15),
-      memorySize: 256,
-      environment: {
-        ALLOWED_ORIGIN: props.allowedOrigin,
-      },
-      code: lambda.Code.fromInline(`
-const { SSMClient, GetParametersByPathCommand } = require('@aws-sdk/client-ssm');
-
-const ssmClient = new SSMClient({});
-
-// Cache character tokens for 5 minutes
-let cachedTokens = null;
-let tokenExpiry = 0;
-
-async function getCharacterTokens() {
-  const now = Date.now();
-  if (cachedTokens && now < tokenExpiry) {
-    return cachedTokens;
-  }
-
-  const tokens = {};
-  let nextToken = undefined;
-
-  do {
-    const result = await ssmClient.send(new GetParametersByPathCommand({
-      Path: '/dndblog/player-token',
-      WithDecryption: true,
-      NextToken: nextToken,
-    }));
-
-    for (const param of result.Parameters || []) {
-      // Extract character slug from parameter name: /dndblog/player-token/{slug}
-      const slug = param.Name.split('/').pop();
-      tokens[param.Value] = slug;
-    }
-
-    nextToken = result.NextToken;
-  } while (nextToken);
-
-  cachedTokens = tokens;
-  tokenExpiry = now + 5 * 60 * 1000;
-  return tokens;
-}
-
-function getCorsOrigin(event) {
-  const origin = event.headers?.origin || event.headers?.Origin || '';
-  const allowed = process.env.ALLOWED_ORIGIN;
-  if (origin.startsWith('http://localhost:')) {
-    return origin;
-  }
-  return allowed;
-}
-
-exports.handler = async (event) => {
-  const corsOrigin = getCorsOrigin(event);
-  const headers = {
-    'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-Player-Token',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
-  };
-
-  // Handle CORS preflight
-  if (event.requestContext?.http?.method === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
-
-  try {
-    const providedToken = event.headers?.['x-player-token'] || event.headers?.['X-Player-Token'];
-
-    if (!providedToken) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ valid: false, error: 'Missing player token' }),
-      };
-    }
-
-    const tokens = await getCharacterTokens();
-    const characterSlug = tokens[providedToken];
-
-    if (!characterSlug) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ valid: false, error: 'Invalid player token' }),
-      };
-    }
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ valid: true, characterSlug }),
-    };
-
-  } catch (error) {
-    console.error('Error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ valid: false, error: 'Internal server error' }),
-    };
-  }
-};
-      `),
-    });
-
-    // Grant SSM parameter list/read access for all player tokens
-    validateCharacterTokenFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['ssm:GetParametersByPath'],
-      resources: [
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: 'dndblog/player-token',
-        }),
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: 'dndblog/player-token/*',
-        }),
-      ],
-    }));
-
-    // Add character token validation route
-    this.api.addRoutes({
-      path: '/validate-character-token',
-      methods: [apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
-      integration: new apigatewayIntegrations.HttpLambdaIntegration(
-        'ValidateCharacterTokenIntegration',
-        validateCharacterTokenFunction
-      ),
-    });
-
-    // Character Token Validation Function Alarm
-    new cloudwatch.Alarm(this, 'ValidateCharacterTokenFunctionErrors', {
-      alarmName: `${cdk.Names.uniqueId(this)}-validate-character-token-errors`,
-      alarmDescription: 'Character token validation function errors',
-      metric: validateCharacterTokenFunction.metricErrors({
-        statistic: 'Sum',
-        period: cdk.Duration.minutes(5),
-      }),
-      threshold: 1,
-      evaluationPeriods: 1,
-      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-
-    // ==========================================================================
-    // DM Token Validation Endpoint
-    // ==========================================================================
-    //
-    // Validates DM tokens for /dm page access.
-    // Token is stored in SSM Parameter Store.
-    //
-    // ==========================================================================
-
-    const validateDmTokenFunction = new lambda.Function(this, 'ValidateDmTokenFunction', {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'index.handler',
-      timeout: cdk.Duration.seconds(10),
-      memorySize: 256,
-      environment: {
-        DM_TOKEN_PARAMETER_NAME: tokenParameterName,
-        ALLOWED_ORIGIN: props.allowedOrigin,
-      },
-      code: lambda.Code.fromInline(`
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
-
-const ssmClient = new SSMClient({});
-
-let cachedToken = null;
-let tokenExpiry = 0;
-
-async function getDmToken() {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiry) {
-    return cachedToken;
-  }
-
-  const result = await ssmClient.send(new GetParameterCommand({
-    Name: process.env.DM_TOKEN_PARAMETER_NAME,
-    WithDecryption: true,
-  }));
-
-  cachedToken = result.Parameter.Value;
-  tokenExpiry = now + 5 * 60 * 1000; // Cache for 5 minutes
-  return cachedToken;
-}
-
-function getCorsOrigin(event) {
-  const origin = event.headers?.origin || event.headers?.Origin || '';
-  const allowed = process.env.ALLOWED_ORIGIN;
-  if (origin.startsWith('http://localhost:')) {
-    return origin;
-  }
-  return allowed;
-}
-
-exports.handler = async (event) => {
-  const corsOrigin = getCorsOrigin(event);
-  const headers = {
-    'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
-  };
-
-  // Handle CORS preflight
-  if (event.requestContext?.http?.method === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
-
-  try {
-    // Validate DM auth - support both token and Cognito JWT
-    let isDmAuthorized = false;
-    let authMethod = 'none';
-    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (providedToken) {
-      const validToken = await getDmToken();
-      if (providedToken === validToken) {
-        isDmAuthorized = true;
-        authMethod = 'token';
-      }
-    }
-    if (!isDmAuthorized) {
-      const authHeader = event.headers?.authorization || event.headers?.Authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const jwt = authHeader.substring(7);
-        const result = await validateCognitoToken(jwt);
-        if (result.valid && result.payload) {
-          const groups = result.payload['cognito:groups'] || [];
-          if (groups.includes('dm')) {
-            isDmAuthorized = true;
-            authMethod = 'cognito';
-          }
-        }
-      }
-    }
-    if (!isDmAuthorized) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ valid: false, error: 'DM access required' }),
-      };
-    }
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ valid: true, authMethod }),
-    };
-
-  } catch (error) {
-    console.error('Error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ valid: false, error: 'Internal server error' }),
-    };
-  }
-};
-      `),
-    });
-
-    // Grant SSM parameter read access to DM token validation function
-    validateDmTokenFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['ssm:GetParameter'],
-      resources: [
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: tokenParameterName.replace(/^\//, ''),
-        }),
-      ],
-    }));
-
-    // Add DM token validation route
-    this.api.addRoutes({
-      path: '/validate-dm-token',
-      methods: [apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
-      integration: new apigatewayIntegrations.HttpLambdaIntegration(
-        'ValidateDmTokenIntegration',
-        validateDmTokenFunction
-      ),
-    });
-
-    // DM Token Validation Function Alarm
-    new cloudwatch.Alarm(this, 'ValidateDmTokenFunctionErrors', {
-      alarmName: `${cdk.Names.uniqueId(this)}-validate-dm-token-errors`,
-      alarmDescription: 'DM token validation function errors',
-      metric: validateDmTokenFunction.metricErrors({
         statistic: 'Sum',
         period: cdk.Duration.minutes(5),
       }),
@@ -2874,8 +2058,8 @@ exports.handler = async (event) => {
     // Build environment for player draft function
     const playerDraftEnvironment: Record<string, string> = {
       BUCKET_NAME: this.bucket.bucketName,
-      DM_TOKEN_PARAMETER_NAME: tokenParameterName,
       ALLOWED_ORIGIN: props.allowedOrigin,
+      ...authEnvironment,
     };
 
     // Add WebSocket config if provided
@@ -2892,73 +2076,13 @@ exports.handler = async (event) => {
       memorySize: 256,
       environment: playerDraftEnvironment,
       code: lambda.Code.fromInline(`
-const { SSMClient, GetParametersByPathCommand, GetParameterCommand } = require('@aws-sdk/client-ssm');
 const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const { DynamoDBClient, ScanCommand, DeleteItemCommand } = require('@aws-sdk/client-dynamodb');
 const { ApiGatewayManagementApiClient, PostToConnectionCommand } = require('@aws-sdk/client-apigatewaymanagementapi');
 
-const ssmClient = new SSMClient({});
 const s3Client = new S3Client({});
 
-// Token caches
-let cachedPlayerTokens = null;
-let playerTokenExpiry = 0;
-let cachedDmToken = null;
-let dmTokenExpiry = 0;
-
-async function getPlayerTokens() {
-  const now = Date.now();
-  if (cachedPlayerTokens && now < playerTokenExpiry) {
-    return cachedPlayerTokens;
-  }
-
-  const tokens = {};
-  let nextToken = undefined;
-
-  do {
-    const result = await ssmClient.send(new GetParametersByPathCommand({
-      Path: '/dndblog/player-token',
-      WithDecryption: true,
-      NextToken: nextToken,
-    }));
-
-    for (const param of result.Parameters || []) {
-      const slug = param.Name.split('/').pop();
-      tokens[param.Value] = slug;
-    }
-
-    nextToken = result.NextToken;
-  } while (nextToken);
-
-  cachedPlayerTokens = tokens;
-  playerTokenExpiry = now + 5 * 60 * 1000;
-  return tokens;
-}
-
-async function getDmToken() {
-  const now = Date.now();
-  if (cachedDmToken && now < dmTokenExpiry) {
-    return cachedDmToken;
-  }
-
-  const result = await ssmClient.send(new GetParameterCommand({
-    Name: process.env.DM_TOKEN_PARAMETER_NAME,
-    WithDecryption: true,
-  }));
-
-  cachedDmToken = result.Parameter.Value;
-  dmTokenExpiry = now + 5 * 60 * 1000;
-  return cachedDmToken;
-}
-
-function getCorsOrigin(event) {
-  const origin = event.headers?.origin || event.headers?.Origin || '';
-  const allowed = process.env.ALLOWED_ORIGIN;
-  if (origin.startsWith('http://localhost:')) {
-    return origin;
-  }
-  return allowed;
-}
+\${authHelperCode}
 
 // WebSocket broadcast helper - sends updates to all connected DM dashboards
 async function broadcastUpdate(action, character, data = {}) {
@@ -3016,7 +2140,7 @@ exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-Player-Token, X-DM-Token, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -3032,11 +2156,9 @@ exports.handler = async (event) => {
   try {
     // List all drafts (DM only)
     if (method === 'GET' && path === '/player/drafts') {
-      const dmToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-      const validDmToken = await getDmToken();
-
-      if (dmToken !== validDmToken) {
-        return { statusCode: 403, headers, body: JSON.stringify({ error: 'Invalid DM token' }) };
+      const auth = await validateAuth(event);
+      if (!auth.valid || !auth.roles?.isDm) {
+        return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required' }) };
       }
 
       const listResult = await s3Client.send(new ListObjectsV2Command({
@@ -3070,29 +2192,14 @@ exports.handler = async (event) => {
     }
     const slug = slugMatch[1];
 
-    // Validate auth - support both player token and Cognito JWT
-    let authorizedSlug = null;
-
-    // Try player token auth first
-    const playerToken = event.headers?.['x-player-token'] || event.headers?.['X-Player-Token'];
-    if (playerToken) {
-      const tokens = await getPlayerTokens();
-      authorizedSlug = tokens[playerToken];
+    // Validate auth via Cognito JWT
+    const auth = await validateAuth(event);
+    if (!auth.valid) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'Authentication required' }) };
     }
 
-    // Try Cognito JWT if token auth didn't work
-    if (!authorizedSlug) {
-      const authHeader = event.headers?.authorization || event.headers?.Authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const jwt = authHeader.substring(7);
-        const result = await validateCognitoToken(jwt);
-        if (result.valid && result.payload) {
-          // Get character slug from custom:characterSlug claim
-          authorizedSlug = result.payload['custom:characterSlug'];
-        }
-      }
-    }
-
+    // Get character slug from custom:characterSlug claim
+    const authorizedSlug = auth.payload?.['custom:characterSlug'];
     if (!authorizedSlug || authorizedSlug !== slug) {
       return { statusCode: 403, headers, body: JSON.stringify({ error: 'Not authorized for this character' }) };
     }
@@ -3171,8 +2278,8 @@ exports.handler = async (event) => {
     // Build environment for end-session function
     const endSessionEnvironment: Record<string, string> = {
       BUCKET_NAME: this.bucket.bucketName,
-      DM_TOKEN_PARAMETER_NAME: tokenParameterName,
       ALLOWED_ORIGIN: props.allowedOrigin,
+      ...authEnvironment,
     };
 
     // Add WebSocket config if provided
@@ -3189,36 +2296,13 @@ exports.handler = async (event) => {
       memorySize: 256,
       environment: endSessionEnvironment,
       code: lambda.Code.fromInline(`
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
 const { S3Client, ListObjectsV2Command, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { DynamoDBClient, ScanCommand, DeleteItemCommand } = require('@aws-sdk/client-dynamodb');
 const { ApiGatewayManagementApiClient, PostToConnectionCommand } = require('@aws-sdk/client-apigatewaymanagementapi');
 
-const ssmClient = new SSMClient({});
 const s3Client = new S3Client({});
 
-let cachedDmToken = null;
-let dmTokenExpiry = 0;
-
-async function getDmToken() {
-  const now = Date.now();
-  if (cachedDmToken && now < dmTokenExpiry) {
-    return cachedDmToken;
-  }
-  const result = await ssmClient.send(new GetParameterCommand({
-    Name: process.env.DM_TOKEN_PARAMETER_NAME,
-    WithDecryption: true,
-  }));
-  cachedDmToken = result.Parameter.Value;
-  dmTokenExpiry = now + 5 * 60 * 1000;
-  return cachedDmToken;
-}
-
-function getCorsOrigin(event) {
-  const origin = event.headers?.origin || event.headers?.Origin || '';
-  if (origin.startsWith('http://localhost:')) return origin;
-  return process.env.ALLOWED_ORIGIN;
-}
+\${authHelperCode}
 
 // Broadcast to all connected DM dashboards
 async function broadcastToAll(action, data = {}) {
@@ -3255,7 +2339,7 @@ exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -3265,29 +2349,9 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Validate DM auth - support both token and Cognito JWT
-    let isDmAuthorized = false;
-    const dmToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (dmToken) {
-      const validDmToken = await getDmToken();
-      if (dmToken === validDmToken) {
-        isDmAuthorized = true;
-      }
-    }
-    if (!isDmAuthorized) {
-      const authHeader = event.headers?.authorization || event.headers?.Authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const jwt = authHeader.substring(7);
-        const result = await validateCognitoToken(jwt);
-        if (result.valid && result.payload) {
-          const groups = result.payload['cognito:groups'] || [];
-          if (groups.includes('dm')) {
-            isDmAuthorized = true;
-          }
-        }
-      }
-    }
-    if (!isDmAuthorized) {
+    // Validate DM auth via Cognito JWT
+    const auth = await validateAuth(event);
+    if (!auth.valid || !auth.roles?.isDm) {
       return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required' }) };
     }
 
@@ -3330,18 +2394,6 @@ exports.handler = async (event) => {
     // Grant S3 permissions
     this.bucket.grantReadWrite(endSessionFunction);
 
-    // Grant SSM permissions
-    endSessionFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['ssm:GetParameter'],
-      resources: [
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: tokenParameterName.replace(/^\//, ''),
-        }),
-      ],
-    }));
-
     // Grant WebSocket permissions if configured
     if (props.webSocket) {
       props.webSocket.connectionsTable.grantReadWriteData(endSessionFunction);
@@ -3365,35 +2417,6 @@ exports.handler = async (event) => {
 
     // Grant S3 permissions to player draft function
     this.bucket.grantReadWrite(playerDraftFunction);
-
-    // Grant SSM permissions for token validation
-    playerDraftFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['ssm:GetParametersByPath'],
-      resources: [
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: 'dndblog/player-token',
-        }),
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: 'dndblog/player-token/*',
-        }),
-      ],
-    }));
-
-    // Grant SSM read for DM token (for listing all drafts)
-    playerDraftFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['ssm:GetParameter'],
-      resources: [
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: tokenParameterName.replace(/^\//, ''),
-        }),
-      ],
-    }));
 
     // Grant WebSocket permissions if configured
     if (props.webSocket) {
