@@ -1,0 +1,10 @@
+{
+  "DmNotesStack": {
+    "NotesBucketOutput": "dmnotesstack-dmnotesapinotesbucket42ccc9a8-lju9bdhmjy40",
+    "WebSocketApiWebSocketUrlE961D745": "wss://7jat2ejwf9.execute-api.us-east-1.amazonaws.com/prod",
+    "WebSocketApiConnectionsTableNameD16C2B3A": "DmLiveConnections",
+    "ApiUrlOutput": "https://yuze798ofb.execute-api.us-east-1.amazonaws.com",
+    "WebSocketUrlOutput": "wss://7jat2ejwf9.execute-api.us-east-1.amazonaws.com/prod",
+    "WebSocketApiWebSocketCallbackUrlD7462F0C": "https://7jat2ejwf9.execute-api.us-east-1.amazonaws.com/prod"
+  }
+}

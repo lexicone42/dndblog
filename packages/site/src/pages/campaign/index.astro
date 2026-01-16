@@ -61,11 +61,13 @@ const partyMembers: PartyMember[] = characters
         current: f.uses?.current ?? f.uses?.max ?? 0,
         recharge: f.uses?.recharge ?? 'long-rest',
       })),
-    spellSlots: (c.data.spellcasting?.spellSlots || []).map((s: { level: number; max: number; current?: number }) => ({
-      level: s.level,
-      max: s.max,
-      current: s.current ?? s.max,
-    })),
+    spellSlots: (c.data.spellcasting?.spellSlots || []).map((s: { level: number; total?: number; max?: number; expended?: number; current?: number }) => {
+      // Support both formats: {total, expended} and {max, current}
+      const max = s.total ?? s.max ?? 0;
+      const expended = s.expended ?? 0;
+      const current = s.current ?? (max - expended);
+      return { level: s.level, max, current };
+    }),
   }));
 
 // Standard D&D 5e conditions
@@ -130,11 +132,11 @@ const dndConditions = [
             <span class="save-text">Saved</span>
           </span>
           <a id="register-passkey-link" href="#" class="passkey-link" title="Enable faster login with passkey">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
-            Passkey
+            <span class="passkey-text">Setup passkey</span>
           </a>
           <button id="sign-out-btn" class="sign-out-btn">Sign Out</button>
         </div>
@@ -1157,22 +1159,27 @@ const dndConditions = [
   .passkey-link {
     display: flex;
     align-items: center;
-    gap: var(--space-xs);
-    padding: var(--space-xs) var(--space-sm);
+    gap: 4px;
+    padding: 2px 6px;
     color: var(--color-text-muted);
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     text-decoration: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     transition: all var(--transition-fast);
+    opacity: 0.7;
   }
 
   .passkey-link:hover {
-    color: var(--color-accent);
-    background: var(--color-bg-secondary);
+    color: var(--color-gold);
+    opacity: 1;
   }
 
   .passkey-link svg {
     flex-shrink: 0;
+  }
+
+  .passkey-text {
+    white-space: nowrap;
   }
 
   .sign-out-btn {
