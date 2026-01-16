@@ -237,7 +237,7 @@ export function getLoginUrl(returnUrl?: string): string {
   return `https://${config.domain}/login?` +
     `client_id=${config.clientId}` +
     `&response_type=code` +
-    `&scope=openid+email` +
+    `&scope=openid+email+profile` +
     `&redirect_uri=${callbackUrl}` +
     (state ? `&state=${state}` : '');
 }
