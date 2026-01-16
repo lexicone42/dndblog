@@ -38,6 +38,11 @@ export class AuthStack extends cdk.Stack {
 
     const domainPrefix = props.cognitoDomainPrefix || 'chronicles-auth';
 
+    // The Relying Party ID for passkeys must match where authentication happens.
+    // Since we use the Cognito prefix domain (not a custom domain), the RP ID
+    // must be the full Cognito domain FQDN.
+    const cognitoAuthDomain = `${domainPrefix}.auth.${this.region}.amazoncognito.com`;
+
     // =========================================================================
     // Cognito User Pool with Managed Login + Passkeys
     // =========================================================================
@@ -60,8 +65,9 @@ export class AuthStack extends cdk.Stack {
         },
       },
 
-      // Relying Party ID for passkeys (must match your domain)
-      passkeyRelyingPartyId: props.siteDomain,
+      // Relying Party ID for passkeys must match the authentication domain.
+      // For prefix domains (not custom domains), this must be the Cognito domain.
+      passkeyRelyingPartyId: cognitoAuthDomain,
 
       // Require user verification (biometric/PIN) for passkey auth
       passkeyUserVerification: cognito.PasskeyUserVerification.PREFERRED,
@@ -124,7 +130,7 @@ export class AuthStack extends cdk.Stack {
       managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
     });
 
-    this.cognitoDomain = `${domainPrefix}.auth.${this.region}.amazoncognito.com`;
+    this.cognitoDomain = cognitoAuthDomain;
 
     // =========================================================================
     // User Pool Client (for SPA)
