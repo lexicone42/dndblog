@@ -1,9 +1,8 @@
 /**
- * Auth Service - Unified authentication for D&D Blog
+ * Auth Service - Cognito authentication for D&D Blog
  *
- * Supports both legacy token auth and Cognito JWT auth (dual-mode).
- * Token auth stays working for simple use cases.
- * Cognito adds individual accounts + future OAuth scaffolding.
+ * Handles Cognito JWT auth with automatic token refresh.
+ * Passkey users get 30-day sessions, password users get 1-day sessions.
  */
 
 // ==========================================================================
@@ -11,7 +10,7 @@
 // ==========================================================================
 
 export interface AuthState {
-  method: 'token' | 'cognito';
+  method: 'cognito';
   roles: {
     isDm: boolean;
     isPlayer: boolean;
@@ -19,7 +18,12 @@ export interface AuthState {
   accessToken: string;
   idToken?: string;
   refreshToken?: string;
+  /** When the access token expires (for refresh timing) */
   expiresAt?: number;
+  /** When the session expires (passkey: 30 days, password: 1 day) - no refresh after this */
+  sessionExpiresAt?: number;
+  /** Whether user authenticated with a passkey (enables long sessions) */
+  hasPasskey?: boolean;
   userId?: string;
   email?: string;
   /** Character slug assigned to this user (from custom:characterSlug claim) */
@@ -27,7 +31,6 @@ export interface AuthState {
 }
 
 export interface AuthConfig {
-  mode: 'token' | 'dual' | 'cognito';
   region?: string;
   userPoolId?: string;
   clientId?: string;
@@ -39,8 +42,11 @@ export interface AuthConfig {
 // ==========================================================================
 
 const AUTH_STORAGE_KEY = 'dndblog-cognito-auth';
-const LEGACY_DM_TOKEN_KEY = 'dm-token';
-const LEGACY_PLAYER_TOKEN_KEY = 'player-token';
+
+// Session durations
+const PASSKEY_SESSION_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days
+const PASSWORD_SESSION_DURATION = 24 * 60 * 60 * 1000; // 1 day
+const TOKEN_REFRESH_BUFFER = 5 * 60 * 1000; // Refresh 5 minutes before expiry
 
 // ==========================================================================
 // Helper Functions
@@ -61,12 +67,87 @@ function parseJwt(token: string): Record<string, unknown> | null {
 }
 
 /**
- * Check if a token is expired
+ * Check if a token needs refresh (within buffer period)
  */
-function isTokenExpired(expiresAt?: number): boolean {
+function needsRefresh(expiresAt?: number): boolean {
   if (!expiresAt) return false;
-  // Add 5 minute buffer for refresh
-  return expiresAt - Date.now() < 5 * 60 * 1000;
+  return expiresAt - Date.now() < TOKEN_REFRESH_BUFFER;
+}
+
+/**
+ * Check if session has completely expired (no more refreshes allowed)
+ */
+function isSessionExpired(sessionExpiresAt?: number): boolean {
+  if (!sessionExpiresAt) return false;
+  return Date.now() > sessionExpiresAt;
+}
+
+/**
+ * Refresh tokens using the refresh token
+ * Returns updated auth state or null if refresh failed
+ */
+async function refreshTokens(auth: AuthState): Promise<AuthState | null> {
+  const config = getAuthConfig();
+
+  if (!auth.refreshToken || !config.domain || !config.clientId) {
+    return null;
+  }
+
+  // Check if session has expired (no more refreshes allowed)
+  if (isSessionExpired(auth.sessionExpiresAt)) {
+    return null;
+  }
+
+  try {
+    const tokenUrl = `https://${config.domain}/oauth2/token`;
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: config.clientId,
+        refresh_token: auth.refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn('Token refresh failed:', response.status);
+      return null;
+    }
+
+    const tokens = await response.json();
+
+    // Parse new ID token for any updated claims
+    const idPayload = parseJwt(tokens.id_token);
+    const groups = idPayload ? (idPayload['cognito:groups'] as string[]) || [] : [];
+
+    const updatedAuth: AuthState = {
+      ...auth,
+      accessToken: tokens.access_token,
+      idToken: tokens.id_token,
+      // Keep existing refresh token if not returned (Cognito behavior)
+      refreshToken: tokens.refresh_token || auth.refreshToken,
+      expiresAt: Date.now() + (tokens.expires_in * 1000),
+      // Preserve session expiry and passkey status
+      sessionExpiresAt: auth.sessionExpiresAt,
+      hasPasskey: auth.hasPasskey,
+      roles: {
+        isDm: groups.includes('dm'),
+        isPlayer: groups.includes('player') || groups.includes('dm'),
+      },
+    };
+
+    // Save refreshed auth
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedAuth));
+    window.dispatchEvent(new Event('auth-change'));
+
+    return updatedAuth;
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    return null;
+  }
 }
 
 // ==========================================================================
@@ -78,7 +159,6 @@ function isTokenExpired(expiresAt?: number): boolean {
  */
 export function getAuthConfig(): AuthConfig {
   return {
-    mode: (import.meta.env.PUBLIC_AUTH_MODE as AuthConfig['mode']) || 'token',
     region: import.meta.env.PUBLIC_AWS_REGION || 'us-west-2',
     userPoolId: import.meta.env.PUBLIC_COGNITO_USER_POOL_ID,
     clientId: import.meta.env.PUBLIC_COGNITO_CLIENT_ID,
@@ -91,42 +171,19 @@ export function getAuthConfig(): AuthConfig {
 // ==========================================================================
 
 /**
- * Get current authentication state
- * Checks both token auth (localStorage) and Cognito auth
+ * Get current authentication state (synchronous)
+ * Note: Call ensureValidAuth() for async refresh before API calls
  */
 export function getAuthState(): AuthState | null {
   if (typeof window === 'undefined') return null;
 
-  // Check legacy token auth first (DM token)
-  const dmToken = localStorage.getItem(LEGACY_DM_TOKEN_KEY);
-  if (dmToken) {
-    return {
-      method: 'token',
-      roles: { isDm: true, isPlayer: true },
-      accessToken: dmToken,
-    };
-  }
-
-  // Check legacy token auth (Player token)
-  const playerToken = localStorage.getItem(LEGACY_PLAYER_TOKEN_KEY);
-  if (playerToken) {
-    return {
-      method: 'token',
-      roles: { isDm: false, isPlayer: true },
-      accessToken: playerToken,
-    };
-  }
-
-  // Check Cognito auth
   const cognitoAuth = localStorage.getItem(AUTH_STORAGE_KEY);
   if (cognitoAuth) {
     try {
       const auth = JSON.parse(cognitoAuth) as AuthState;
 
-      // Check if token is expired
-      if (auth.expiresAt && isTokenExpired(auth.expiresAt)) {
-        // Token expired and no refresh capability in static site
-        // User will need to re-login
+      // Check if session has completely expired (no more refreshes)
+      if (isSessionExpired(auth.sessionExpiresAt)) {
         localStorage.removeItem(AUTH_STORAGE_KEY);
         return null;
       }
@@ -139,6 +196,37 @@ export function getAuthState(): AuthState | null {
   }
 
   return null;
+}
+
+/**
+ * Ensure auth is valid, refreshing tokens if needed
+ * Call this before making API requests
+ * Returns null if session expired or refresh failed
+ */
+export async function ensureValidAuth(): Promise<AuthState | null> {
+  const auth = getAuthState();
+  if (!auth) return null;
+
+  // Check if session expired
+  if (isSessionExpired(auth.sessionExpiresAt)) {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    window.dispatchEvent(new Event('auth-change'));
+    return null;
+  }
+
+  // Check if access token needs refresh
+  if (needsRefresh(auth.expiresAt)) {
+    const refreshed = await refreshTokens(auth);
+    if (!refreshed) {
+      // Refresh failed, clear auth
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      window.dispatchEvent(new Event('auth-change'));
+      return null;
+    }
+    return refreshed;
+  }
+
+  return auth;
 }
 
 /**
@@ -156,8 +244,6 @@ export function setAuthState(auth: AuthState): void {
  */
 export function clearAuth(): void {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(LEGACY_DM_TOKEN_KEY);
-  localStorage.removeItem(LEGACY_PLAYER_TOKEN_KEY);
   localStorage.removeItem(AUTH_STORAGE_KEY);
   window.dispatchEvent(new Event('auth-change'));
 }
@@ -168,17 +254,11 @@ export function clearAuth(): void {
 
 /**
  * Get authorization headers for API calls
- * Works with both token and Cognito auth
  */
 export function getAuthHeaders(): Record<string, string> {
   const auth = getAuthState();
   if (!auth) return {};
-
-  if (auth.method === 'token') {
-    return { 'X-DM-Token': auth.accessToken };
-  } else {
-    return { 'Authorization': `Bearer ${auth.accessToken}` };
-  }
+  return { 'Authorization': `Bearer ${auth.accessToken}` };
 }
 
 // ==========================================================================
@@ -191,8 +271,7 @@ export function getAuthHeaders(): Record<string, string> {
 export function getLoginUrl(returnUrl?: string): string {
   const config = getAuthConfig();
 
-  if (config.mode === 'token' || !config.domain || !config.clientId) {
-    // Fallback to current page (no Cognito SSO available)
+  if (!config.domain || !config.clientId) {
     return '#';
   }
 
@@ -219,7 +298,7 @@ export function getLogoutUrl(returnPath?: string): string {
   // Clear local auth state first
   clearAuth();
 
-  if (config.mode === 'token' || !config.domain || !config.clientId) {
+  if (!config.domain || !config.clientId) {
     return returnPath || '/';
   }
 
@@ -237,7 +316,7 @@ export function getLogoutUrl(returnPath?: string): string {
  */
 export function isSsoAvailable(): boolean {
   const config = getAuthConfig();
-  return config.mode !== 'token' && !!config.domain && !!config.clientId;
+  return !!config.domain && !!config.clientId;
 }
 
 /**
@@ -247,7 +326,7 @@ export function isSsoAvailable(): boolean {
 export function getPasskeyRegistrationUrl(): string {
   const config = getAuthConfig();
 
-  if (config.mode === 'token' || !config.domain || !config.clientId) {
+  if (!config.domain || !config.clientId) {
     return '#';
   }
 
@@ -267,7 +346,27 @@ export function getPasskeyRegistrationUrl(): string {
 // ==========================================================================
 
 /**
+ * Detect if passkey was used based on amr claim
+ * Cognito includes authentication method references in the ID token
+ */
+function detectPasskeyAuth(idPayload: Record<string, unknown>): boolean {
+  const amr = idPayload['amr'] as string[] | undefined;
+  if (!amr) return false;
+
+  // Check for WebAuthn/passkey indicators
+  // Cognito uses different values, check for common ones
+  return amr.some(method =>
+    method === 'mfa' ||
+    method === 'hwk' ||
+    method === 'swk' ||
+    method.includes('webauthn') ||
+    method.includes('passkey')
+  );
+}
+
+/**
  * Exchange authorization code for tokens (used by callback page)
+ * Automatically detects passkey usage and sets appropriate session duration
  */
 export async function exchangeCodeForTokens(code: string): Promise<AuthState> {
   const config = getAuthConfig();
@@ -303,9 +402,13 @@ export async function exchangeCodeForTokens(code: string): Promise<AuthState> {
   }
 
   const groups = (idPayload['cognito:groups'] as string[]) || [];
-
-  // Extract custom attributes (prefixed with custom: in Cognito)
   const characterSlug = idPayload['custom:characterSlug'] as string | undefined;
+
+  // Detect if passkey was used
+  const hasPasskey = detectPasskeyAuth(idPayload);
+
+  // Set session duration based on auth method
+  const sessionDuration = hasPasskey ? PASSKEY_SESSION_DURATION : PASSWORD_SESSION_DURATION;
 
   const authState: AuthState = {
     method: 'cognito',
@@ -317,6 +420,8 @@ export async function exchangeCodeForTokens(code: string): Promise<AuthState> {
     idToken: tokens.id_token,
     refreshToken: tokens.refresh_token,
     expiresAt: Date.now() + (tokens.expires_in * 1000),
+    sessionExpiresAt: Date.now() + sessionDuration,
+    hasPasskey,
     userId: idPayload.sub as string,
     email: idPayload.email as string,
     characterSlug,
@@ -324,4 +429,21 @@ export async function exchangeCodeForTokens(code: string): Promise<AuthState> {
 
   setAuthState(authState);
   return authState;
+}
+
+/**
+ * Mark current user as having passkey (call after successful passkey registration)
+ * This upgrades their session to 30 days
+ */
+export function upgradeToPasskeySession(): void {
+  const auth = getAuthState();
+  if (!auth) return;
+
+  const updatedAuth: AuthState = {
+    ...auth,
+    hasPasskey: true,
+    sessionExpiresAt: Date.now() + PASSKEY_SESSION_DURATION,
+  };
+
+  setAuthState(updatedAuth);
 }
