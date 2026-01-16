@@ -170,6 +170,17 @@ export class AuthStack extends cdk.Stack {
     });
 
     // =========================================================================
+    // Managed Login Branding (enables new UI with passkey support)
+    // =========================================================================
+    // Managed Login is required for passkeys to work in the hosted UI.
+    // Without this, users see the classic hosted UI which doesn't support passkeys.
+    new cognito.CfnManagedLoginBranding(this, 'ManagedLoginBranding', {
+      userPoolId: this.userPool.userPoolId,
+      clientId: this.userPoolClient.userPoolClientId,
+      useCognitoProvidedValues: true, // Use default Cognito branding
+    });
+
+    // =========================================================================
     // User Pool Groups
     // =========================================================================
     const dmGroup = new cognito.CfnUserPoolGroup(this, 'DmGroup', {
