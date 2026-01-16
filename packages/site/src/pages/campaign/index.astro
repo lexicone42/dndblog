@@ -129,6 +129,13 @@ const dndConditions = [
             <span class="save-dot"></span>
             <span class="save-text">Saved</span>
           </span>
+          <a id="register-passkey-link" href="#" class="passkey-link" title="Enable faster login with passkey">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Passkey
+          </a>
           <button id="sign-out-btn" class="sign-out-btn">Sign Out</button>
         </div>
       </header>
@@ -305,6 +312,7 @@ const dndConditions = [
     getAuthState,
     getLoginUrl,
     getLogoutUrl,
+    getPasskeyRegistrationUrl,
     isSsoAvailable,
     getAuthHeaders,
     type AuthState,
@@ -335,6 +343,7 @@ const dndConditions = [
   const userGreeting = document.getElementById('user-greeting');
   const characterTitle = document.getElementById('character-title');
   const signOutBtn = document.getElementById('sign-out-btn');
+  const passkeyLink = document.getElementById('register-passkey-link') as HTMLAnchorElement;
   const noCharacterMessage = document.getElementById('no-character-message');
   const trackerContent = document.getElementById('tracker-content');
   const saveStatus = document.getElementById('save-status');
@@ -886,6 +895,11 @@ const dndConditions = [
       signOutBtn.addEventListener('click', handleSignOut);
     }
 
+    // Passkey registration link
+    if (passkeyLink) {
+      passkeyLink.href = getPasskeyRegistrationUrl();
+    }
+
     // HP input
     if (currentHpInput) {
       currentHpInput.addEventListener('change', () => {
@@ -1138,6 +1152,27 @@ const dndConditions = [
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
+  }
+
+  .passkey-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+  }
+
+  .passkey-link:hover {
+    color: var(--color-accent);
+    background: var(--color-bg-secondary);
+  }
+
+  .passkey-link svg {
+    flex-shrink: 0;
   }
 
   .sign-out-btn {

@@ -273,6 +273,28 @@ export function isSsoAvailable(): boolean {
   return config.mode !== 'token' && !!config.domain && !!config.clientId;
 }
 
+/**
+ * Get Cognito passkey registration URL
+ * Users must be signed in first, then visit this URL to register a passkey
+ */
+export function getPasskeyRegistrationUrl(): string {
+  const config = getAuthConfig();
+
+  if (config.mode === 'token' || !config.domain || !config.clientId) {
+    return '#';
+  }
+
+  const callbackUrl = encodeURIComponent(
+    `${window.location.origin}/auth/callback`
+  );
+
+  return `https://${config.domain}/passkeys/add?` +
+    `client_id=${config.clientId}` +
+    `&response_type=code` +
+    `&scope=openid+email+profile` +
+    `&redirect_uri=${callbackUrl}`;
+}
+
 // ==========================================================================
 // Token Exchange (for OAuth callback)
 // ==========================================================================
