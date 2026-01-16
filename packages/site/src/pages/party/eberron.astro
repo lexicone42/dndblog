@@ -1,0 +1,1436 @@
+---
+/**
+ * Eberron World Guide
+ *
+ * Comprehensive overview of the Eberron setting for players, including
+ * world lore, visited locations, and campaign connections.
+ */
+
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+// World quick facts
+const worldFacts = [
+  { aspect: 'Setting', detail: 'High magic, wide magic - magic is common and integrated into daily life', icon: '✨' },
+  { aspect: 'Technology', detail: 'Magitech (lightning rail, airships, warforged, everbright lanterns)', icon: '⚡' },
+  { aspect: 'Tone', detail: 'Noir, pulp adventure, political intrigue, moral complexity', icon: '🎭' },
+  { aspect: 'Era', detail: 'Post-war (Treaty of Thronehold signed 2 years ago)', icon: '📅' },
+  { aspect: 'Key Feature', detail: 'Dragonmarked Houses control commerce and industry', icon: '🏛️' },
+];
+
+// The Five Nations
+const fiveNations = [
+  {
+    name: 'Breland',
+    status: 'visited',
+    description: 'Industrial heart of Khorvaire, known for diversity and progress',
+    highlight: 'Home to Sharn, City of Towers - our primary location',
+    icon: '🏭',
+  },
+  {
+    name: 'Aundair',
+    status: 'mentioned',
+    description: 'Arcane education and magical research',
+    highlight: 'Famous for the Floating Towers of Arcanix',
+    icon: '📚',
+  },
+  {
+    name: 'Karrnath',
+    status: 'mentioned',
+    description: 'Martial nation with a dark history',
+    highlight: 'Employed undead soldiers during the Last War',
+    icon: '💀',
+  },
+  {
+    name: 'Thrane',
+    status: 'mentioned',
+    description: 'Theocratic nation devoted to the Silver Flame',
+    highlight: 'Religious zealotry meets political power',
+    icon: '🔥',
+  },
+  {
+    name: 'Cyre (The Mournland)',
+    status: 'destroyed',
+    description: 'Once the jewel of Galifar, now a dead gray wasteland',
+    highlight: 'Destroyed by the Day of Mourning - cause unknown',
+    icon: '☠️',
+  },
+];
+
+// Sharn districts
+const sharnDistricts = [
+  {
+    name: "Tavick's Landing",
+    level: 'Middle',
+    status: 'visited',
+    description: 'Lightning Rail terminal district',
+    events: ['Arrived in Sharn', 'Battle with Slanted Circle', 'Exposed Harlix and Veyra as traitors'],
+  },
+  {
+    name: 'Callestan',
+    level: 'Lower',
+    status: 'visited',
+    description: 'Entertainment district with fighting pits',
+    events: ['Met "contact" Veyra at Cornerstone Tavern', 'Ambushed when Black Mantle cover blown'],
+  },
+  {
+    name: 'Verdant Hollow',
+    level: 'Hidden',
+    status: 'visited',
+    description: 'Secret Emerald Enclave grove within a tower',
+    events: ['Met Elder Elarion Mossbark', 'Received the Heart of the Wild', 'Drank from Thalen\'s Well (+5 max HP)'],
+  },
+  {
+    name: 'Dava Gate (Sky Market)',
+    level: 'Upper',
+    status: 'visited',
+    description: 'Floating marketplace with rope bridges and arcane lifts',
+    events: ['Explored shops', 'Met Lux at The Floating Trinket', 'Used Grand Lift to Skyway'],
+  },
+  {
+    name: 'Skyway',
+    level: 'Upper',
+    status: 'visited',
+    description: 'Floating district for the wealthy and powerful',
+    events: ['Met Arvell d\'Cannith at Cannith Hall', 'Witnessed Slanted Circle attack', 'Regulator plans stolen'],
+  },
+  {
+    name: 'The Depths',
+    level: 'Ancient',
+    status: 'visited',
+    description: 'Dhakaani ruins beneath the city',
+    events: ['Stabilized the Heart Stone', 'Defeated General Varkuun', 'Recovered dragonshards'],
+  },
+];
+
+// Notable Sharn locations
+const sharnLocations = [
+  { name: 'Cornerstone Tavern', district: 'Callestan', description: 'Fighting pit tavern where we first met Veyra' },
+  { name: 'The Floating Trinket', district: 'Sky Market', description: 'Lux\'s wandering shop - appears where needed' },
+  { name: 'Cannith Hall (Suite 47)', district: 'Skyway', description: 'Arvell d\'Cannith\'s office in House Cannith facility' },
+  { name: 'Thalen\'s Well', district: 'Verdant Hollow', description: 'Sacred pool connected to leylines, grants vitality' },
+  { name: 'Heart Stone Chamber', district: 'The Depths', description: 'Ancient ley anchor we stabilized' },
+];
+
+// Dragonmarked houses
+const houses = [
+  {
+    name: 'House Cannith',
+    mark: 'Mark of Making',
+    role: 'Manufacturing, artifice, creation',
+    encountered: true,
+    details: 'Developed the ley regulator technology. Key NPC: Arvell d\'Cannith. Symbol: Gorgon\'s head.',
+    icon: '⚙️',
+  },
+  {
+    name: 'House Jorasco',
+    mark: 'Mark of Healing',
+    role: 'Healing services and medicine',
+    encountered: false,
+    details: 'Halfling house that runs hospitals and healing services across Khorvaire.',
+    icon: '💚',
+  },
+  {
+    name: 'House Ghallanda',
+    mark: 'Mark of Hospitality',
+    role: 'Inns, taverns, food service',
+    encountered: false,
+    details: 'Halfling house known for exceptional hospitality and protection of guests.',
+    icon: '🏨',
+  },
+  {
+    name: 'House Orien',
+    mark: 'Mark of Passage',
+    role: 'Transportation and shipping',
+    encountered: true,
+    details: 'Operates the Lightning Rail. We traveled on their trains.',
+    icon: '🚂',
+  },
+  {
+    name: 'House Sivis',
+    mark: 'Mark of Scribing',
+    role: 'Communication and documentation',
+    encountered: false,
+    details: 'Gnome house that handles sending stones, message services, and notary work.',
+    icon: '✍️',
+  },
+];
+
+// Eberron concepts
+const concepts = [
+  {
+    name: 'Leylines & Ley Network',
+    description: 'Rivers of magical energy flowing beneath the world',
+    encountered: 'Stabilized a Dhakaani anchor, received blessing from Thalen\'s Well',
+    threat: 'The Ley Maw - a growing rift that threatens the network',
+    icon: '🌐',
+  },
+  {
+    name: 'Dragonshards',
+    description: 'Crystallized magic used in magical devices and technology',
+    encountered: 'Recovered shards from ruins, intercepted a shipment',
+    threat: 'Slanted Circle was stealing dragonshard shipments',
+    icon: '💎',
+  },
+  {
+    name: 'Everbright Lanterns',
+    description: 'Magical lighting that illuminates Sharn',
+    encountered: 'Used them to signal Emerald Enclave (turned green)',
+    threat: null,
+    icon: '💡',
+  },
+  {
+    name: 'The Lightning Rail',
+    description: 'Magical train system connecting cities across Khorvaire',
+    encountered: 'Battle with Slanted Circle on a train',
+    threat: 'Slanted Circle attacked our train',
+    icon: '⚡',
+  },
+  {
+    name: 'Changelings',
+    description: 'Shapeshifting humanoids who can assume any humanoid form',
+    encountered: 'Veyra was a changeling (traitor, now dead)',
+    threat: 'Impossible to trust appearances',
+    icon: '🎭',
+  },
+  {
+    name: 'Warforged',
+    description: 'Living constructs created by House Cannith for the Last War',
+    encountered: 'Mentioned in Cannith history',
+    threat: null,
+    icon: '🤖',
+  },
+];
+
+// Ancient history
+const history = [
+  {
+    name: 'The Dhakaani Empire',
+    era: 'Thousands of years ago',
+    description: 'Ancient goblinoid civilization that ruled Khorvaire',
+    relevance: 'Built the ruins beneath Sharn, including the Heart Stone we stabilized. General Varkuun was their last warlord - we defeated his undead form.',
+    icon: '👹',
+  },
+  {
+    name: 'Thalen',
+    era: 'Centuries ago',
+    description: 'Ancient druid who bound himself to the leylines beneath Sharn',
+    relevance: 'His essence merged with the water table, creating Thalen\'s Well. We drank from it and gained +5 max HP.',
+    icon: '🌿',
+  },
+  {
+    name: 'The Day of Mourning',
+    era: '2 years ago (994 YK)',
+    description: 'Catastrophe that destroyed the nation of Cyre in a single day',
+    relevance: 'Cause unknown. Created the Mournland, a dead gray wasteland. Could it happen again?',
+    icon: '💥',
+  },
+  {
+    name: 'The Last War',
+    era: '102 years (894-996 YK)',
+    description: 'Century-long civil war between the Five Nations',
+    relevance: 'Ended with Treaty of Thronehold. Peace is fragile. Political tensions remain.',
+    icon: '⚔️',
+  },
+];
+
+// Campaign connections - NPCs
+const npcs = [
+  { name: 'Arvell d\'Cannith', role: 'House Cannith artificer', connection: 'Leading the regulator project, attacked by Slanted Circle' },
+  { name: 'Lux', role: 'Halfling shopkeeper', connection: 'Runs The Floating Trinket, secret Emerald Enclave agent' },
+  { name: 'Elder Elarion Mossbark', role: 'Emerald Enclave leader', connection: 'Gave us the Heart of the Wild' },
+  { name: 'Master Molrik', role: 'Dwarven clan leader', connection: 'Allied with us in Sharn' },
+  { name: 'Captain Tallow', role: 'Druid ship captain', connection: 'Brought us to Sharn' },
+  { name: 'Alkanar', role: 'Dragonborn historian', connection: 'Provided information about Dhakaani ruins' },
+];
+
+// Ongoing threats
+const threats = [
+  {
+    name: 'The Slanted Circle',
+    status: 'active',
+    description: 'Criminal organization stealing dragonshards and magical artifacts',
+    lastEncounter: 'Attacked Cannith Hall, stole regulator plans',
+    icon: '⭕',
+  },
+  {
+    name: 'The Ley Maw',
+    status: 'growing',
+    description: 'A mysterious rift in the ley network beneath Sharn',
+    lastEncounter: 'Mentioned by the Emerald Enclave - "The Maw isn\'t a threat—it\'s a door."',
+    icon: '🕳️',
+  },
+  {
+    name: 'Circle Mage',
+    status: 'escaped',
+    description: 'Powerful spellcaster working with the Slanted Circle',
+    lastEncounter: 'Escaped during the Cannith Hall attack',
+    icon: '🧙',
+  },
+];
+---
+
+<BaseLayout
+  title="Eberron World Guide - Rudiger's Evocation of Events"
+  description="A comprehensive guide to the world of Eberron for our D&D campaign, including locations visited and lore encountered."
+>
+  <div class="eberron-page">
+    <header class="page-header">
+      <nav class="breadcrumb">
+        <a href="/party">Player Hub</a>
+        <span class="breadcrumb-sep">/</span>
+        <span>Eberron Guide</span>
+      </nav>
+      <h1 class="page-title">Welcome to Eberron</h1>
+      <p class="page-subtitle">
+        World guide & campaign atlas
+      </p>
+    </header>
+
+    <!-- World at a Glance -->
+    <section class="section section--highlight">
+      <h2 class="section-title">
+        <span class="section-icon">🌍</span>
+        The World at a Glance
+      </h2>
+      <p class="section-intro">
+        Eberron is a world of swashbuckling adventure and noir intrigue, where magic fuels technology and the scars of war are still fresh.
+      </p>
+
+      <div class="facts-grid">
+        {worldFacts.map((fact) => (
+          <div class="fact-card">
+            <span class="fact-icon">{fact.icon}</span>
+            <div class="fact-content">
+              <span class="fact-aspect">{fact.aspect}</span>
+              <span class="fact-detail">{fact.detail}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Khorvaire -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">🏰</span>
+        Khorvaire
+      </h2>
+      <p class="section-intro">
+        The primary continent of Eberron, home to the Five Nations and the dragonmarked houses.
+        We're currently in <strong>Breland</strong>, in the city of <strong>Sharn</strong>.
+      </p>
+
+      <h3 class="subsection-title">The Five Nations</h3>
+      <p class="subsection-intro">Once united under the Kingdom of Galifar, these nations spent a century at war.</p>
+
+      <div class="nations-grid">
+        {fiveNations.map((nation) => (
+          <div class={`nation-card nation-card--${nation.status}`}>
+            <div class="nation-header">
+              <span class="nation-icon">{nation.icon}</span>
+              <h4 class="nation-name">{nation.name}</h4>
+              <span class={`status-badge status-badge--${nation.status}`}>
+                {nation.status === 'visited' ? '✓ Visited' : nation.status === 'destroyed' ? '💀 Destroyed' : 'Mentioned'}
+              </span>
+            </div>
+            <p class="nation-description">{nation.description}</p>
+            <p class="nation-highlight"><strong>Note:</strong> {nation.highlight}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Sharn -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">🏙️</span>
+        Sharn, City of Towers
+      </h2>
+      <p class="section-intro">
+        A massive vertical city built on five plateaus, with towers reaching into the sky.
+        Sharn is where our adventure is centered.
+      </p>
+
+      <div class="sharn-structure">
+        <div class="structure-card">
+          <h3 class="structure-title">City Structure</h3>
+          <div class="structure-layers">
+            <div class="layer layer--upper">
+              <span class="layer-label">Upper City</span>
+              <span class="layer-desc">Wealthy, powerful, floating districts</span>
+            </div>
+            <div class="layer layer--middle">
+              <span class="layer-label">Middle City</span>
+              <span class="layer-desc">Commerce, trade, most residents</span>
+            </div>
+            <div class="layer layer--lower">
+              <span class="layer-label">Lower City</span>
+              <span class="layer-desc">Black markets, criminal operations</span>
+            </div>
+            <div class="layer layer--depths">
+              <span class="layer-label">The Depths</span>
+              <span class="layer-desc">Ancient Dhakaani ruins, forgotten places</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="subsection-title">Districts We've Visited</h3>
+      <div class="districts-list">
+        {sharnDistricts.map((district) => (
+          <div class="district-card">
+            <div class="district-header">
+              <h4 class="district-name">{district.name}</h4>
+              <span class={`level-badge level-badge--${district.level.toLowerCase()}`}>
+                {district.level}
+              </span>
+            </div>
+            <p class="district-description">{district.description}</p>
+            <div class="district-events">
+              <span class="events-label">What happened here:</span>
+              <ul class="events-list">
+                {district.events.map((event) => (
+                  <li>{event}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <h3 class="subsection-title">Notable Locations</h3>
+      <div class="locations-grid">
+        {sharnLocations.map((loc) => (
+          <div class="location-card">
+            <h4 class="location-name">{loc.name}</h4>
+            <span class="location-district">{loc.district}</span>
+            <p class="location-description">{loc.description}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Dragonmarked Houses -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">🏛️</span>
+        The Dragonmarked Houses
+      </h2>
+      <p class="section-intro">
+        Thirteen powerful houses bearing hereditary magical marks.
+        They control much of Khorvaire's commerce and industry.
+      </p>
+
+      <div class="houses-grid">
+        {houses.map((house) => (
+          <div class={`house-card ${house.encountered ? 'house-card--encountered' : ''}`}>
+            <div class="house-header">
+              <span class="house-icon">{house.icon}</span>
+              <div class="house-titles">
+                <h4 class="house-name">{house.name}</h4>
+                <span class="house-mark">{house.mark}</span>
+              </div>
+              {house.encountered && (
+                <span class="encountered-badge">✓ Encountered</span>
+              )}
+            </div>
+            <p class="house-role">{house.role}</p>
+            <p class="house-details">{house.details}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Eberron Concepts -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">⚡</span>
+        Eberron Concepts
+      </h2>
+      <p class="section-intro">
+        Key magical and technological concepts that define the world of Eberron.
+      </p>
+
+      <div class="concepts-grid">
+        {concepts.map((concept) => (
+          <div class="concept-card">
+            <div class="concept-header">
+              <span class="concept-icon">{concept.icon}</span>
+              <h4 class="concept-name">{concept.name}</h4>
+            </div>
+            <p class="concept-description">{concept.description}</p>
+            <div class="concept-encounter">
+              <span class="encounter-label">Our encounter:</span>
+              <span class="encounter-text">{concept.encountered}</span>
+            </div>
+            {concept.threat && (
+              <div class="concept-threat">
+                <span class="threat-icon">⚠️</span>
+                <span class="threat-text">{concept.threat}</span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Ancient History -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">📜</span>
+        Ancient History
+      </h2>
+      <p class="section-intro">
+        The past shapes the present. These historical events are relevant to our campaign.
+      </p>
+
+      <div class="history-list">
+        {history.map((event) => (
+          <div class="history-card">
+            <div class="history-header">
+              <span class="history-icon">{event.icon}</span>
+              <div class="history-titles">
+                <h4 class="history-name">{event.name}</h4>
+                <span class="history-era">{event.era}</span>
+              </div>
+            </div>
+            <p class="history-description">{event.description}</p>
+            <div class="history-relevance">
+              <span class="relevance-label">Campaign relevance:</span>
+              <p class="relevance-text">{event.relevance}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Campaign Connections -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">🎭</span>
+        Campaign Connections
+      </h2>
+      <p class="section-intro">
+        What we've encountered in our adventure so far.
+      </p>
+
+      <div class="connections-layout">
+        <div class="connections-column">
+          <h3 class="connections-title">Key NPCs Met</h3>
+          <div class="npc-list">
+            {npcs.map((npc) => (
+              <div class="npc-card">
+                <h4 class="npc-name">{npc.name}</h4>
+                <span class="npc-role">{npc.role}</span>
+                <p class="npc-connection">{npc.connection}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div class="connections-column">
+          <h3 class="connections-title">Ongoing Threats</h3>
+          <div class="threats-list">
+            {threats.map((threat) => (
+              <div class={`threat-card threat-card--${threat.status}`}>
+                <div class="threat-header">
+                  <span class="threat-card-icon">{threat.icon}</span>
+                  <h4 class="threat-name">{threat.name}</h4>
+                  <span class={`threat-status threat-status--${threat.status}`}>
+                    {threat.status}
+                  </span>
+                </div>
+                <p class="threat-description">{threat.description}</p>
+                <p class="threat-last">
+                  <strong>Last seen:</strong> {threat.lastEncounter}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div class="items-section">
+        <h3 class="connections-title">Notable Items Acquired</h3>
+        <div class="items-grid">
+          <div class="item-card">
+            <span class="item-icon">💚</span>
+            <div class="item-content">
+              <h4 class="item-name">Heart of the Wild</h4>
+              <p class="item-description">Legendary dragonshard gifted by the Emerald Enclave</p>
+            </div>
+          </div>
+          <div class="item-card">
+            <span class="item-icon">💎</span>
+            <div class="item-content">
+              <h4 class="item-name">Dragonshards</h4>
+              <p class="item-description">Recovered from Dhakaani ruins</p>
+            </div>
+          </div>
+          <div class="item-card">
+            <span class="item-icon">❤️</span>
+            <div class="item-content">
+              <h4 class="item-name">Thalen's Blessing</h4>
+              <p class="item-description">+5 max HP from drinking at Thalen's Well</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <section class="section section--footer">
+      <div class="footer-note">
+        <p>This guide will be updated as we explore more of Eberron!</p>
+        <p class="footer-links">
+          <a href="/blog">Read the Session Logs</a>
+          <span class="link-sep">·</span>
+          <a href="/campaign">Browse the Campaign Wiki</a>
+        </p>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .eberron-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-lg);
+  }
+
+  /* Header */
+  .page-header {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .breadcrumb {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-md);
+  }
+
+  .breadcrumb a {
+    color: var(--color-link);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .breadcrumb-sep {
+    margin: 0 var(--space-sm);
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .page-subtitle {
+    color: var(--color-text-secondary);
+    font-size: var(--text-lg);
+    margin: 0;
+  }
+
+  /* Sections */
+  .section {
+    margin-bottom: var(--space-3xl);
+  }
+
+  .section--highlight {
+    padding: var(--space-xl);
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-gold);
+    border-radius: var(--radius-lg);
+  }
+
+  .section--footer {
+    padding-top: var(--space-2xl);
+    border-top: 2px solid var(--color-border);
+    text-align: center;
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-lg);
+    padding-bottom: var(--space-sm);
+    border-bottom: 2px solid var(--color-gold);
+  }
+
+  .section--highlight .section-title {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .section-icon {
+    font-size: var(--text-2xl);
+  }
+
+  .section-intro {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-lg);
+    line-height: 1.6;
+  }
+
+  .subsection-title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-text);
+    margin: var(--space-xl) 0 var(--space-md);
+  }
+
+  .subsection-intro {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-md);
+  }
+
+  /* Facts Grid */
+  .facts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .fact-card {
+    display: flex;
+    align-items: start;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+  }
+
+  .fact-icon {
+    font-size: var(--text-xl);
+    flex-shrink: 0;
+  }
+
+  .fact-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .fact-aspect {
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: var(--text-sm);
+  }
+
+  .fact-detail {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+  }
+
+  /* Nations Grid */
+  .nations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .nation-card {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--color-border);
+  }
+
+  .nation-card--visited {
+    border-left-color: var(--color-success);
+  }
+
+  .nation-card--destroyed {
+    border-left-color: var(--color-error);
+    opacity: 0.8;
+  }
+
+  .nation-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    flex-wrap: wrap;
+  }
+
+  .nation-icon {
+    font-size: var(--text-xl);
+  }
+
+  .nation-name {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    margin: 0;
+    flex: 1;
+  }
+
+  .status-badge {
+    font-size: var(--text-xs);
+    padding: 2px var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+  }
+
+  .status-badge--visited {
+    background: color-mix(in srgb, var(--color-success) 20%, transparent);
+    color: var(--color-success);
+  }
+
+  .status-badge--mentioned {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-muted);
+  }
+
+  .status-badge--destroyed {
+    background: color-mix(in srgb, var(--color-error) 20%, transparent);
+    color: var(--color-error);
+  }
+
+  .nation-description {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .nation-highlight {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  /* Sharn Structure */
+  .sharn-structure {
+    margin-bottom: var(--space-xl);
+  }
+
+  .structure-card {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .structure-title {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+  }
+
+  .structure-layers {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .layer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .layer--upper {
+    background: color-mix(in srgb, var(--color-gold) 15%, var(--color-bg));
+    border-left: 3px solid var(--color-gold);
+  }
+
+  .layer--middle {
+    background: color-mix(in srgb, var(--color-accent) 10%, var(--color-bg));
+    border-left: 3px solid var(--color-accent);
+  }
+
+  .layer--lower {
+    background: color-mix(in srgb, var(--color-warning) 10%, var(--color-bg));
+    border-left: 3px solid var(--color-warning);
+  }
+
+  .layer--depths {
+    background: color-mix(in srgb, var(--color-error) 10%, var(--color-bg));
+    border-left: 3px solid var(--color-error);
+  }
+
+  .layer-label {
+    font-weight: 600;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+
+  .layer-desc {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  /* Districts List */
+  .districts-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+  }
+
+  .district-card {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .district-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+  }
+
+  .district-name {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-gold);
+    margin: 0;
+  }
+
+  .level-badge {
+    font-size: var(--text-xs);
+    padding: 2px var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .level-badge--upper {
+    background: color-mix(in srgb, var(--color-gold) 20%, transparent);
+    color: var(--color-gold);
+  }
+
+  .level-badge--middle {
+    background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    color: var(--color-accent);
+  }
+
+  .level-badge--lower {
+    background: color-mix(in srgb, var(--color-warning) 20%, transparent);
+    color: var(--color-warning);
+  }
+
+  .level-badge--hidden {
+    background: color-mix(in srgb, var(--color-success) 20%, transparent);
+    color: var(--color-success);
+  }
+
+  .level-badge--ancient {
+    background: color-mix(in srgb, var(--color-error) 20%, transparent);
+    color: var(--color-error);
+  }
+
+  .district-description {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-md);
+  }
+
+  .district-events {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .events-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .events-list {
+    margin: var(--space-xs) 0 0;
+    padding-left: var(--space-lg);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .events-list li {
+    margin-bottom: var(--space-xs);
+  }
+
+  /* Locations Grid */
+  .locations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .location-card {
+    padding: var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .location-name {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    margin: 0 0 var(--space-xs);
+  }
+
+  .location-district {
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+    display: block;
+    margin-bottom: var(--space-sm);
+  }
+
+  .location-description {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  /* Houses Grid */
+  .houses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .house-card {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .house-card--encountered {
+    border-color: var(--color-gold);
+    border-width: 2px;
+  }
+
+  .house-header {
+    display: flex;
+    align-items: start;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .house-icon {
+    font-size: var(--text-2xl);
+    flex-shrink: 0;
+  }
+
+  .house-titles {
+    flex: 1;
+  }
+
+  .house-name {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .house-mark {
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+  }
+
+  .encountered-badge {
+    font-size: var(--text-xs);
+    padding: 2px var(--space-sm);
+    background: var(--color-gold);
+    color: var(--color-bg);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .house-role {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .house-details {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* Concepts Grid */
+  .concepts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .concept-card {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .concept-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+
+  .concept-icon {
+    font-size: var(--text-xl);
+  }
+
+  .concept-name {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-gold);
+    margin: 0;
+  }
+
+  .concept-description {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-md);
+  }
+
+  .concept-encounter {
+    padding: var(--space-sm);
+    background: color-mix(in srgb, var(--color-success) 10%, var(--color-bg));
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-sm);
+  }
+
+  .encounter-label {
+    font-size: var(--text-xs);
+    color: var(--color-success);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .encounter-text {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .concept-threat {
+    display: flex;
+    align-items: start;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    background: color-mix(in srgb, var(--color-warning) 10%, var(--color-bg));
+    border-radius: var(--radius-sm);
+  }
+
+  .threat-icon {
+    flex-shrink: 0;
+  }
+
+  .threat-text {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  /* History List */
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+  }
+
+  .history-card {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .history-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .history-icon {
+    font-size: var(--text-2xl);
+  }
+
+  .history-titles {
+    flex: 1;
+  }
+
+  .history-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0;
+  }
+
+  .history-era {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .history-description {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-md);
+  }
+
+  .history-relevance {
+    padding: var(--space-md);
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .relevance-label {
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .relevance-text {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: var(--space-xs) 0 0;
+  }
+
+  /* Connections Layout */
+  .connections-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+    margin-bottom: var(--space-xl);
+  }
+
+  .connections-title {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .npc-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .npc-card {
+    padding: var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+
+  .npc-name {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .npc-role {
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+    display: block;
+    margin-bottom: var(--space-xs);
+  }
+
+  .npc-connection {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  .threats-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .threat-card {
+    padding: var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-border);
+  }
+
+  .threat-card--active {
+    border-left-color: var(--color-error);
+  }
+
+  .threat-card--growing {
+    border-left-color: var(--color-warning);
+  }
+
+  .threat-card--escaped {
+    border-left-color: var(--color-accent);
+  }
+
+  .threat-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+  }
+
+  .threat-card-icon {
+    font-size: var(--text-lg);
+  }
+
+  .threat-name {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    margin: 0;
+    flex: 1;
+  }
+
+  .threat-status {
+    font-size: var(--text-xs);
+    padding: 2px var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .threat-status--active {
+    background: color-mix(in srgb, var(--color-error) 20%, transparent);
+    color: var(--color-error);
+  }
+
+  .threat-status--growing {
+    background: color-mix(in srgb, var(--color-warning) 20%, transparent);
+    color: var(--color-warning);
+  }
+
+  .threat-status--escaped {
+    background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    color: var(--color-accent);
+  }
+
+  .threat-description {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .threat-last {
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    margin: 0;
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* Items Section */
+  .items-section {
+    margin-top: var(--space-xl);
+  }
+
+  .items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .item-card {
+    display: flex;
+    align-items: start;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .item-icon {
+    font-size: var(--text-xl);
+    flex-shrink: 0;
+  }
+
+  .item-name {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    margin: 0 0 var(--space-xs);
+  }
+
+  .item-description {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  /* Footer */
+  .footer-note {
+    color: var(--color-text-muted);
+  }
+
+  .footer-note p {
+    margin: 0 0 var(--space-md);
+  }
+
+  .footer-links a {
+    color: var(--color-link);
+    text-decoration: none;
+  }
+
+  .footer-links a:hover {
+    text-decoration: underline;
+  }
+
+  .link-sep {
+    margin: 0 var(--space-sm);
+    color: var(--color-border);
+  }
+
+  /* Mobile Adjustments */
+  @media (max-width: 768px) {
+    .connections-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .houses-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .nations-grid,
+    .concepts-grid,
+    .locations-grid,
+    .items-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .layer {
+      flex-direction: column;
+      align-items: start;
+      gap: var(--space-xs);
+    }
+  }
+</style>
