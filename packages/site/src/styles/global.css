@@ -373,6 +373,18 @@ hr {
 .status--reference { background: var(--color-accent); color: white; }
 .status--dormant { background: #4b5563; color: white; }
 
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Print styles for archival and accessibility */
 @media print {
   /* Reset colors for print */

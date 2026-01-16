@@ -228,3 +228,40 @@
 .animate-flicker {
   animation: flicker 4s ease-in-out infinite;
 }
+
+/* ========================================
+   Reduced Motion Preferences
+   ======================================== */
+
+/**
+ * For users who prefer reduced motion:
+ * - Disable all animations
+ * - Provide static alternatives where meaningful
+ *
+ * This respects OS-level settings:
+ * - macOS: System Preferences > Accessibility > Display > Reduce motion
+ * - Windows: Settings > Ease of Access > Display > Show animations
+ * - iOS: Settings > Accessibility > Motion > Reduce Motion
+ */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-emerge,
+  .animate-hop,
+  .animate-wiggle,
+  .animate-pulse,
+  .animate-fadeInOut,
+  .animate-whisper,
+  .animate-flicker {
+    animation: none;
+  }
+
+  /* Keep whisper text visible instead of animated */
+  .animate-whisper {
+    opacity: 0.6;
+  }
+
+  /* Keep flickering elements at full opacity */
+  .animate-flicker {
+    opacity: 1;
+  }
+}

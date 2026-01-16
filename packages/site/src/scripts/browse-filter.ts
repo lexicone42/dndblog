@@ -3,6 +3,10 @@
  *
  * Generic client-side filtering for campaign browse pages.
  * Handles filter buttons, search input, results count, and optional section visibility.
+ *
+ * Accessibility features:
+ * - ARIA live region announces filter results to screen readers
+ * - Focus management for keyboard users
  */
 
 export interface FilterConfig {
@@ -46,6 +50,21 @@ export function initBrowseFilters(config: FilterConfig): void {
       ) as NodeListOf<HTMLElement>)
     : null;
 
+  // Create or get ARIA live region for announcements
+  let liveRegion = document.getElementById('filter-announcer');
+  if (!liveRegion) {
+    liveRegion = document.createElement('div');
+    liveRegion.id = 'filter-announcer';
+    liveRegion.setAttribute('role', 'status');
+    liveRegion.setAttribute('aria-live', 'polite');
+    liveRegion.setAttribute('aria-atomic', 'true');
+    liveRegion.className = 'sr-only';
+    document.body.appendChild(liveRegion);
+  }
+
+  // Track total count for announcements
+  const totalCount = cards.length;
+
   /**
    * Update card visibility based on current filter state
    */
@@ -83,6 +102,28 @@ export function initBrowseFilters(config: FilterConfig): void {
     // Update count display
     if (visibleCount) {
       visibleCount.textContent = String(count);
+    }
+
+    // Announce results to screen readers
+    if (liveRegion) {
+      // Build announcement based on active filters
+      const activeFilters = config.filters
+        .filter((f) => filters[f] !== 'all')
+        .map((f) => filters[f]);
+
+      let announcement = '';
+      if (count === 0) {
+        announcement = 'No results found';
+        if (searchTerm) announcement += ` for "${searchTerm}"`;
+        if (activeFilters.length) announcement += ` with selected filters`;
+      } else if (count === totalCount) {
+        announcement = `Showing all ${count} results`;
+      } else {
+        announcement = `Showing ${count} of ${totalCount} results`;
+        if (searchTerm) announcement += ` matching "${searchTerm}"`;
+      }
+
+      liveRegion.textContent = announcement;
     }
   }
 

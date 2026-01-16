@@ -368,6 +368,30 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     opacity: 0.6;
   }
 
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .landing__whisper,
+    .landing__title,
+    .subtitle-pulse,
+    .warning-glyph,
+    .nav-card__sigil {
+      animation: none;
+    }
+
+    .landing__whisper {
+      opacity: 0.5;
+    }
+
+    .subtitle-pulse {
+      opacity: 0.8;
+      position: relative;
+    }
+
+    .subtitle-static {
+      display: none;
+    }
+  }
+
   @media (max-width: 640px) {
     .landing {
       padding: var(--space-lg);
