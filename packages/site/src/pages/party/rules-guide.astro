@@ -1,0 +1,1239 @@
+---
+/**
+ * AD&D 2e → D&D 5e 2024 Rules Guide
+ *
+ * Reference page helping players transition from AD&D 2nd Edition to D&D 5e 2024.
+ * Covers key differences, new concepts, combat structure, and spellcasting.
+ */
+
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+// Quick reference comparisons
+const quickRef = [
+  { old: 'Low AC is good', new: 'High AC is good (ascending)', icon: '🛡️' },
+  { old: 'THAC0 calculation', new: 'd20 + modifier ≥ target AC', icon: '🎯' },
+  { old: '5 saving throw categories', new: '6 ability-based saves (STR, DEX, CON, INT, WIS, CHA)', icon: '💪' },
+  { old: 'Memorize specific spells per slot', new: 'Prepare spell LIST, cast any with slots', icon: '📖' },
+  { old: '-10 HP = death', new: '0 HP = death saves (3 successes/failures)', icon: '💀' },
+  { old: 'Weapon speed factors', new: 'Everyone acts once per round', icon: '⚔️' },
+  { old: 'Segments in combat', new: 'Action, Bonus Action, Reaction, Movement', icon: '⏱️' },
+  { old: '% abilities (Bend Bars, etc.)', new: 'Ability checks with proficiency', icon: '🎲' },
+];
+
+// What happened to... sections
+const whatHappenedTo = [
+  {
+    concept: 'THAC0 & Attack Tables',
+    replacement: 'Proficiency bonus + ability modifier',
+    details: 'Instead of subtracting from THAC0, you now add your proficiency bonus (+2 to +6 based on level) plus your ability modifier (STR for melee, DEX for ranged). Roll d20, add bonuses, compare to AC. Higher is always better!',
+    icon: '🎯',
+  },
+  {
+    concept: 'Non-Weapon Proficiencies',
+    replacement: 'Skills (with proficiency/expertise)',
+    details: "There are 18 skills in 5e. If you're proficient, add your proficiency bonus to checks. Some classes can get 'expertise' for double proficiency. No more slot-based NWPs!",
+    icon: '🧰',
+  },
+  {
+    concept: 'Weapon Proficiencies',
+    replacement: 'Simple/Martial + Weapon Mastery (2024)',
+    details: "Weapons are now 'Simple' (anyone can use) or 'Martial' (need proficiency). In 5e 2024, martial classes also get Weapon Mastery - special effects when you hit (Topple, Vex, etc).",
+    icon: '⚔️',
+  },
+  {
+    concept: 'Saving Throw Categories',
+    replacement: '6 ability-based saves',
+    details: 'Gone are Paralyzation, Rod/Staff/Wand, Petrification, Breath Weapon, and Spell saves. Now each of the 6 abilities (STR, DEX, CON, INT, WIS, CHA) has its own save. Your class gives you proficiency in 2 of them.',
+    icon: '🛡️',
+  },
+  {
+    concept: 'Level Limits for Demihumans',
+    replacement: 'Gone completely',
+    details: 'Elves, dwarves, and other species can reach level 20 in any class. No artificial caps!',
+    icon: '📈',
+  },
+  {
+    concept: 'Class/Race Restrictions',
+    replacement: 'Gone completely',
+    details: 'Any species can be any class. Want a halfling barbarian or a half-orc wizard? Go for it!',
+    icon: '🚫',
+  },
+  {
+    concept: 'Ability Score Minimums',
+    replacement: 'Gone completely',
+    details: "No minimum ability scores to be a class. A wizard with 8 INT is legal (though not optimal). Your character, your choice.",
+    icon: '📊',
+  },
+  {
+    concept: 'Exceptional Strength (18/xx)',
+    replacement: 'Just "18" (scores go to 20, or 22 with items)',
+    details: "No more percentile strength. An 18 is an 18. The normal cap is 20, though some magic items can push you to 22 or higher.",
+    icon: '💪',
+  },
+  {
+    concept: 'Negative AC',
+    replacement: 'AC 20+ is "very good"',
+    details: 'AC 10 is baseline (unarmored, no DEX). Plate armor + shield = AC 20. Some builds can reach AC 25+, but that\'s exceptional.',
+    icon: '🛡️',
+  },
+  {
+    concept: 'Spell Memorization',
+    replacement: 'Spell preparation + spell slots',
+    details: 'You prepare a LIST of spells each day. You can then cast ANY of those prepared spells using your spell slots. No need to memorize Fireball twice to cast it twice!',
+    icon: '✨',
+  },
+  {
+    concept: 'Material Components',
+    replacement: 'Component pouch or focus (most ignored)',
+    details: 'Unless a component has a gold cost listed, you can use a component pouch or arcane/divine focus. Most tables ignore components entirely unless they have a cost.',
+    icon: '🎒',
+  },
+  {
+    concept: 'Alignment Restrictions',
+    replacement: 'Mostly suggestions now',
+    details: 'Paladins don\'t have to be Lawful Good. Alignment is more of a roleplay guideline than a mechanical restriction.',
+    icon: '⚖️',
+  },
+  {
+    concept: 'XP for Gold',
+    replacement: 'XP from encounters/milestones only',
+    details: 'No more GP = XP. You gain experience from overcoming challenges (combat or otherwise) or when the DM awards milestone levels.',
+    icon: '💰',
+  },
+];
+
+// New concepts that didn't exist in 2e
+const newConcepts = [
+  {
+    name: 'Proficiency Bonus',
+    description: 'A universal bonus (+2 at level 1, up to +6 at level 17+) added to everything you\'re trained in: attack rolls with proficient weapons, saving throws you\'re proficient in, skill checks for proficient skills, and spell attack rolls.',
+    tip: 'Your proficiency bonus is always (Level ÷ 4) + 2, rounded down.',
+    icon: '➕',
+  },
+  {
+    name: 'Advantage / Disadvantage',
+    description: 'Roll 2d20 and take the higher (advantage) or lower (disadvantage). Replaces most situational modifiers. If you have both, they cancel out completely.',
+    tip: 'Advantage is roughly equivalent to a +5 bonus on average.',
+    icon: '🎲',
+  },
+  {
+    name: 'Bounded Accuracy',
+    description: 'Numbers stay relatively small. A +10 is exceptional. This means lower-level creatures remain threats and high-level characters aren\'t invincible.',
+    tip: 'Even a goblin can hit a level 20 fighter on a good roll.',
+    icon: '📏',
+  },
+  {
+    name: 'Concentration',
+    description: 'Many powerful spells require concentration. You can only concentrate on ONE spell at a time. Taking damage forces a CON save (DC 10 or half damage, whichever is higher) or you lose the spell.',
+    tip: 'Check if your buff spells require concentration before stacking them!',
+    icon: '🧘',
+  },
+  {
+    name: 'Cantrips',
+    description: 'At-will spells that never run out. Damage cantrips scale at levels 5, 11, and 17 (e.g., Fire Bolt goes 1d10 → 2d10 → 3d10 → 4d10).',
+    tip: 'Cantrips ensure spellcasters always have something magical to do.',
+    icon: '✨',
+  },
+  {
+    name: 'Bonus Actions',
+    description: 'A secondary action each turn. Some abilities, spells, and class features use your bonus action. You can\'t take one unless something grants it.',
+    tip: "Most spells that use a bonus action can't be paired with another leveled spell.",
+    icon: '⚡',
+  },
+  {
+    name: 'Reactions',
+    description: 'You get ONE reaction per round (resets at your turn start). Used for opportunity attacks, the Shield spell, Counterspell, etc. Triggered by specific events.',
+    tip: 'Plan your reaction! Once you use it, you can\'t react again until your turn.',
+    icon: '🔄',
+  },
+  {
+    name: 'Death Saves',
+    description: 'At 0 HP, you\'re unconscious but not dead. Each turn, roll d20: 10+ = success, <10 = failure. Three successes = stable. Three failures = dead. A 20 = regain 1 HP. A 1 = two failures.',
+    tip: 'Healing someone at 0 HP resets their death saves!',
+    icon: '💀',
+  },
+  {
+    name: 'Short & Long Rests',
+    description: 'Short Rest = 1 hour (regain Hit Dice, some class features). Long Rest = 8 hours (regain all HP, half your Hit Dice, most features).',
+    tip: 'Warlocks love short rests - they get all spell slots back!',
+    icon: '🛏️',
+  },
+  {
+    name: 'Hit Dice',
+    description: 'During a short rest, spend Hit Dice to heal. Roll your class\'s die (d6 to d12) + CON mod per die spent. You have Hit Dice equal to your level.',
+    tip: 'You regain half your total Hit Dice on a long rest.',
+    icon: '❤️',
+  },
+  {
+    name: 'Inspiration',
+    description: 'A DM reward for good roleplay. When you have it, you can spend it to gain advantage on one roll. You either have it or you don\'t (no stacking).',
+    tip: 'Use it before you forget you have it!',
+    icon: '⭐',
+  },
+];
+
+// Combat turn structure
+const actions = [
+  { name: 'Attack', description: 'Make weapon attack(s). Extra Attack lets you attack more than once.' },
+  { name: 'Cast a Spell', description: 'Cast a spell with a casting time of 1 action.' },
+  { name: 'Dash', description: 'Gain extra movement equal to your speed for this turn.' },
+  { name: 'Disengage', description: 'Your movement doesn\'t provoke opportunity attacks this turn.' },
+  { name: 'Dodge', description: 'Attacks against you have disadvantage; you have advantage on DEX saves.' },
+  { name: 'Help', description: 'Give an ally advantage on their next ability check or attack roll.' },
+  { name: 'Hide', description: 'Make a Stealth check to hide from enemies.' },
+  { name: 'Ready', description: 'Prepare an action to trigger on a specific condition (uses your reaction).' },
+  { name: 'Search', description: 'Make a Perception or Investigation check to find something.' },
+  { name: 'Use an Object', description: 'Interact with an object that requires an action (potions, etc.).' },
+];
+
+// 5e 2024 specific features
+const features2024 = [
+  {
+    category: 'Species (formerly "Race")',
+    changes: [
+      'Ability score bonuses now come from your background, not species',
+      'Species provide unique traits, senses, and abilities',
+      'Many species have been updated with new or revised features',
+      'Terminology changed from "race" to "species" throughout',
+    ],
+    icon: '🧬',
+  },
+  {
+    category: 'Backgrounds',
+    changes: [
+      'Now provide an Origin Feat at level 1 (e.g., Magic Initiate, Skilled)',
+      'Determine your starting ability score bonuses (+2/+1 or +1/+1/+1)',
+      'Include skill proficiencies and starting equipment',
+      'More mechanically important than in 2014 5e',
+    ],
+    icon: '📜',
+  },
+  {
+    category: 'Weapon Mastery',
+    changes: [
+      'Martial classes get mastery properties on specific weapons',
+      '8 mastery properties: Cleave, Graze, Nick, Push, Sap, Slow, Topple, Vex',
+      'Can change which weapons you have mastered when you level up',
+      'Adds tactical depth to weapon choice',
+    ],
+    icon: '⚔️',
+  },
+  {
+    category: 'Class Updates',
+    changes: [
+      'Most classes have been revised with updated or new features',
+      'Subclass levels have been standardized (most at level 3)',
+      'Some new subclasses added to existing classes',
+      'Spell lists reorganized (Arcane, Divine, Primal)',
+    ],
+    icon: '📚',
+  },
+  {
+    category: 'Rules Glossary',
+    changes: [
+      'Official, standardized definitions for game terms',
+      'Conditions clearly defined with consistent effects',
+      'Keywords like "Emanation," "Unarmed Strike," "Exhaustion" clarified',
+      'Makes rules arguments easier to settle!',
+    ],
+    icon: '📖',
+  },
+];
+---
+
+<BaseLayout
+  title="2e → 5e 2024 Rules Guide - Rudiger's Evocation of Events"
+  description="A comprehensive guide for AD&D 2nd Edition players transitioning to D&D 5e 2024. Learn what changed, what's new, and how it all works."
+>
+  <div class="rules-page">
+    <header class="page-header">
+      <nav class="breadcrumb">
+        <a href="/party">Player Hub</a>
+        <span class="breadcrumb-sep">/</span>
+        <span>Rules Guide</span>
+      </nav>
+      <h1 class="page-title">2e → 5e 2024</h1>
+      <p class="page-subtitle">
+        A survival guide for AD&D veterans entering the modern era
+      </p>
+    </header>
+
+    <!-- Quick Reference Card -->
+    <section class="section section--highlight">
+      <h2 class="section-title">
+        <span class="section-icon">⚡</span>
+        Quick Reference
+      </h2>
+      <p class="section-intro">
+        The most important "muscle memory" changes. Print this section!
+      </p>
+
+      <div class="quick-ref-table">
+        <div class="quick-ref-header">
+          <span class="col-old">2e Habit</span>
+          <span class="col-arrow"></span>
+          <span class="col-new">5e 2024 Reality</span>
+        </div>
+        {quickRef.map((item) => (
+          <div class="quick-ref-row">
+            <span class="col-old">
+              <span class="ref-icon">{item.icon}</span>
+              <span class="old-text">{item.old}</span>
+            </span>
+            <span class="col-arrow">→</span>
+            <span class="col-new">{item.new}</span>
+          </div>
+        ))}
+      </div>
+
+      <div class="key-formula">
+        <h3 class="formula-title">The Most Important Formula</h3>
+        <div class="formula-box">
+          <span class="formula">d20 + Ability Mod + Proficiency ≥ Target Number</span>
+        </div>
+        <p class="formula-note">This applies to attacks (vs AC), saves (vs DC), and skill checks (vs DC). Higher is ALWAYS better.</p>
+      </div>
+    </section>
+
+    <!-- What Happened To... -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">🔄</span>
+        What Happened To...
+      </h2>
+      <p class="section-intro">
+        Familiar 2e concepts and their modern equivalents. Click to expand each one.
+      </p>
+
+      <div class="accordion-list">
+        {whatHappenedTo.map((item, index) => (
+          <details class="accordion-item">
+            <summary class="accordion-header">
+              <span class="accordion-icon">{item.icon}</span>
+              <span class="accordion-concept">{item.concept}</span>
+              <span class="accordion-arrow">→</span>
+              <span class="accordion-replacement">{item.replacement}</span>
+            </summary>
+            <div class="accordion-content">
+              <p>{item.details}</p>
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+
+    <!-- New Concepts -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">🆕</span>
+        New Concepts
+      </h2>
+      <p class="section-intro">
+        These mechanics didn't exist in 2e. They're fundamental to 5e!
+      </p>
+
+      <div class="concepts-grid">
+        {newConcepts.map((concept) => (
+          <div class="concept-card">
+            <div class="concept-header">
+              <span class="concept-icon">{concept.icon}</span>
+              <h3 class="concept-name">{concept.name}</h3>
+            </div>
+            <p class="concept-description">{concept.description}</p>
+            <div class="concept-tip">
+              <span class="tip-icon">💡</span>
+              <span class="tip-text">{concept.tip}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Combat Turn Structure -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">⚔️</span>
+        Combat Turn Structure
+      </h2>
+      <p class="section-intro">
+        No more segments or weapon speed! Combat is streamlined and fast.
+      </p>
+
+      <div class="combat-layout">
+        <div class="turn-structure">
+          <h3 class="structure-title">Your Turn</h3>
+          <div class="turn-components">
+            <div class="turn-component">
+              <span class="component-label">Movement</span>
+              <span class="component-detail">Up to your speed. Can split before/after action!</span>
+            </div>
+            <div class="turn-component turn-component--action">
+              <span class="component-label">Action</span>
+              <span class="component-detail">Attack, Cast Spell, Dash, Dodge, Help, Hide, etc.</span>
+            </div>
+            <div class="turn-component">
+              <span class="component-label">Bonus Action</span>
+              <span class="component-detail">Only if you have an ability that uses one</span>
+            </div>
+            <div class="turn-component">
+              <span class="component-label">Free Object Interaction</span>
+              <span class="component-detail">Draw weapon, open door, pick up item</span>
+            </div>
+          </div>
+
+          <div class="not-your-turn">
+            <h4 class="structure-subtitle">Not Your Turn</h4>
+            <div class="turn-component turn-component--reaction">
+              <span class="component-label">Reaction</span>
+              <span class="component-detail">Once per round. Opportunity attacks, Shield spell, etc.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions-reference">
+          <h3 class="structure-title">Standard Actions</h3>
+          <div class="actions-list">
+            {actions.map((action) => (
+              <div class="action-item">
+                <span class="action-name">{action.name}</span>
+                <span class="action-desc">{action.description}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div class="combat-changes">
+        <h3 class="changes-title">Key Combat Changes from 2e</h3>
+        <ul class="changes-list">
+          <li>No weapon speed or initiative modifiers by weapon type</li>
+          <li>Everyone rolls initiative once at start (d20 + DEX mod)</li>
+          <li>You can move → attack → move more (split movement)</li>
+          <li><strong>Opportunity attacks</strong> when enemies leave your reach</li>
+          <li>No facing rules (optional flanking variant exists)</li>
+          <li>Attacks of opportunity don't exist - they're "opportunity attacks" now</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Spellcasting Explained -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">✨</span>
+        Spellcasting Explained
+      </h2>
+      <p class="section-intro">
+        The spell slot system is probably the biggest mental shift from 2e.
+      </p>
+
+      <div class="spellcasting-layout">
+        <div class="spell-explanation">
+          <h3 class="spell-title">How It Works</h3>
+          <ol class="spell-steps">
+            <li>
+              <strong>Spell Slots:</strong> You have X slots of each level
+              <span class="example">(e.g., 4 first-level, 3 second-level)</span>
+            </li>
+            <li>
+              <strong>Prepared Spells:</strong> Each day, choose spells from your list
+              <span class="example">(usually = ability mod + level)</span>
+            </li>
+            <li>
+              <strong>Casting:</strong> Spend a slot of appropriate level to cast ANY prepared spell
+            </li>
+            <li>
+              <strong>Upcasting:</strong> Many spells get stronger when cast with higher slots
+            </li>
+          </ol>
+        </div>
+
+        <div class="spell-example">
+          <h3 class="spell-title">Example</h3>
+          <div class="example-box">
+            <p class="example-setup">
+              <strong>Rudiger</strong> (Wizard) has <strong>3 first-level slots</strong> and prepares:
+            </p>
+            <ul class="prepared-spells">
+              <li>Magic Missile</li>
+              <li>Shield</li>
+              <li>Sleep</li>
+            </ul>
+            <p class="example-options">He can cast:</p>
+            <ul class="cast-options">
+              <li>Magic Missile three times, OR</li>
+              <li>Magic Missile twice + Shield once, OR</li>
+              <li>One of each, OR</li>
+              <li>Any combination until slots are gone!</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="spell-mechanics">
+        <h3 class="mechanics-title">Important Mechanics</h3>
+        <div class="mechanics-grid">
+          <div class="mechanic-card">
+            <h4 class="mechanic-name">🧘 Concentration</h4>
+            <p>Only ONE concentration spell active at a time. Taking damage = CON save (DC 10 or half damage) or lose the spell.</p>
+          </div>
+          <div class="mechanic-card">
+            <h4 class="mechanic-name">📿 Ritual Casting</h4>
+            <p>Spells marked (ritual) can be cast in 10 minutes without using a slot. Great for utility spells!</p>
+          </div>
+          <div class="mechanic-card">
+            <h4 class="mechanic-name">✨ Cantrips</h4>
+            <p>At-will, unlimited use. Damage scales at levels 5, 11, 17. You always have something to cast!</p>
+          </div>
+          <div class="mechanic-card">
+            <h4 class="mechanic-name">🎯 Attack vs Save</h4>
+            <p>Spells either require YOUR attack roll OR the target's saving throw - never both.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5e 2024 Specific Changes -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-icon">📅</span>
+        5e 2024 Specific Changes
+      </h2>
+      <p class="section-intro">
+        These are new even compared to 5e 2014. Most online resources don't cover these yet!
+      </p>
+
+      <div class="features-2024">
+        {features2024.map((feature) => (
+          <div class="feature-card">
+            <div class="feature-header">
+              <span class="feature-icon">{feature.icon}</span>
+              <h3 class="feature-category">{feature.category}</h3>
+            </div>
+            <ul class="feature-changes">
+              {feature.changes.map((change) => (
+                <li>{change}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Footer Tips -->
+    <section class="section section--footer">
+      <h2 class="section-title">
+        <span class="section-icon">💡</span>
+        Final Tips
+      </h2>
+      <div class="tips-grid">
+        <div class="tip-card">
+          <h3>Don't Overthink It</h3>
+          <p>5e is designed to be simpler. If you're not sure about a rule, make a ruling and move on. The DM can always look it up later.</p>
+        </div>
+        <div class="tip-card">
+          <h3>Embrace the New</h3>
+          <p>Advantage/disadvantage, bonus actions, and reactions add tactical depth in different ways than 2e. Lean into them!</p>
+        </div>
+        <div class="tip-card">
+          <h3>Ask Questions</h3>
+          <p>Your DM and fellow players want you to succeed. If something doesn't make sense, ask. We've all been there.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .rules-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-lg);
+  }
+
+  /* Header */
+  .page-header {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .breadcrumb {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-md);
+  }
+
+  .breadcrumb a {
+    color: var(--color-link);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .breadcrumb-sep {
+    margin: 0 var(--space-sm);
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .page-subtitle {
+    color: var(--color-text-secondary);
+    font-size: var(--text-lg);
+    margin: 0;
+    font-style: italic;
+  }
+
+  /* Sections */
+  .section {
+    margin-bottom: var(--space-3xl);
+  }
+
+  .section--highlight {
+    padding: var(--space-xl);
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-gold);
+    border-radius: var(--radius-lg);
+  }
+
+  .section--footer {
+    padding-top: var(--space-2xl);
+    border-top: 2px solid var(--color-border);
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-lg);
+    padding-bottom: var(--space-sm);
+    border-bottom: 2px solid var(--color-gold);
+  }
+
+  .section--highlight .section-title {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .section-icon {
+    font-size: var(--text-2xl);
+  }
+
+  .section-intro {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-lg);
+    line-height: 1.6;
+  }
+
+  /* Quick Reference Table */
+  .quick-ref-table {
+    margin-bottom: var(--space-xl);
+  }
+
+  .quick-ref-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    font-weight: 700;
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .quick-ref-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+    align-items: center;
+  }
+
+  .quick-ref-row:nth-child(even) {
+    background: var(--color-bg-tertiary);
+  }
+
+  .col-old {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .ref-icon {
+    font-size: var(--text-lg);
+    width: 28px;
+    text-align: center;
+  }
+
+  .old-text {
+    color: var(--color-text-muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--color-error);
+  }
+
+  .col-arrow {
+    color: var(--color-gold);
+    font-weight: 700;
+    font-size: var(--text-lg);
+  }
+
+  .col-new {
+    color: var(--color-success);
+    font-weight: 500;
+  }
+
+  /* Key Formula */
+  .key-formula {
+    text-align: center;
+    padding: var(--space-lg);
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+  }
+
+  .formula-title {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-md);
+  }
+
+  .formula-box {
+    display: inline-block;
+    padding: var(--space-md) var(--space-xl);
+    background: var(--color-gold);
+    color: var(--color-bg);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .formula {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-lg);
+    font-weight: 700;
+  }
+
+  .formula-note {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    margin: 0;
+  }
+
+  /* Accordion */
+  .accordion-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .accordion-item {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .accordion-item[open] {
+    border-color: var(--color-gold);
+  }
+
+  .accordion-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto 1fr;
+    gap: var(--space-md);
+    align-items: center;
+    padding: var(--space-md);
+    background: var(--color-bg-secondary);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .accordion-header::-webkit-details-marker {
+    display: none;
+  }
+
+  .accordion-header:hover {
+    background: var(--color-bg-tertiary);
+  }
+
+  .accordion-icon {
+    font-size: var(--text-lg);
+    width: 28px;
+    text-align: center;
+  }
+
+  .accordion-concept {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .accordion-arrow {
+    color: var(--color-gold);
+  }
+
+  .accordion-replacement {
+    color: var(--color-success);
+    font-size: var(--text-sm);
+  }
+
+  .accordion-content {
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-bg);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .accordion-content p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
+  /* Concepts Grid */
+  .concepts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .concept-card {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .concept-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+
+  .concept-icon {
+    font-size: var(--text-2xl);
+  }
+
+  .concept-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0;
+  }
+
+  .concept-description {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    margin: 0 0 var(--space-md);
+  }
+
+  .concept-tip {
+    display: flex;
+    align-items: start;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    background: color-mix(in srgb, var(--color-warning) 10%, var(--color-bg));
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+  }
+
+  .tip-icon {
+    flex-shrink: 0;
+  }
+
+  .tip-text {
+    color: var(--color-text-muted);
+  }
+
+  /* Combat Layout */
+  .combat-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+    margin-bottom: var(--space-xl);
+  }
+
+  .turn-structure,
+  .actions-reference {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .structure-title {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .structure-subtitle {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: var(--space-md) 0 var(--space-sm);
+    text-transform: uppercase;
+  }
+
+  .turn-components {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .turn-component {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-border);
+  }
+
+  .turn-component--action {
+    border-left-color: var(--color-gold);
+    background: color-mix(in srgb, var(--color-gold) 10%, var(--color-bg));
+  }
+
+  .turn-component--reaction {
+    border-left-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 10%, var(--color-bg));
+  }
+
+  .component-label {
+    display: block;
+    font-weight: 600;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    margin-bottom: 2px;
+  }
+
+  .component-detail {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .action-item {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: var(--space-sm);
+    padding: var(--space-xs) 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+  }
+
+  .action-item:last-child {
+    border-bottom: none;
+  }
+
+  .action-name {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .action-desc {
+    color: var(--color-text-muted);
+  }
+
+  .combat-changes {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .changes-title {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+  }
+
+  .changes-list {
+    margin: 0;
+    padding-left: var(--space-lg);
+    color: var(--color-text-secondary);
+  }
+
+  .changes-list li {
+    margin-bottom: var(--space-sm);
+    line-height: 1.5;
+  }
+
+  /* Spellcasting Layout */
+  .spellcasting-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+    margin-bottom: var(--space-xl);
+  }
+
+  .spell-explanation,
+  .spell-example {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .spell-title {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .spell-steps {
+    margin: 0;
+    padding-left: var(--space-lg);
+    counter-reset: step;
+    list-style: none;
+  }
+
+  .spell-steps li {
+    position: relative;
+    margin-bottom: var(--space-md);
+    padding-left: var(--space-md);
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+
+  .spell-steps li::before {
+    content: counter(step);
+    counter-increment: step;
+    position: absolute;
+    left: calc(-1 * var(--space-lg));
+    width: 24px;
+    height: 24px;
+    background: var(--color-gold);
+    color: var(--color-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-xs);
+    font-weight: 700;
+  }
+
+  .spell-steps .example {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  .example-box {
+    padding: var(--space-md);
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .example-setup {
+    margin: 0 0 var(--space-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .prepared-spells {
+    margin: 0 0 var(--space-md);
+    padding-left: var(--space-lg);
+    color: var(--color-accent);
+    font-weight: 500;
+  }
+
+  .prepared-spells li {
+    margin-bottom: var(--space-xs);
+  }
+
+  .example-options {
+    margin: 0 0 var(--space-sm);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .cast-options {
+    margin: 0;
+    padding-left: var(--space-lg);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .cast-options li {
+    margin-bottom: var(--space-xs);
+  }
+
+  .spell-mechanics {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .mechanics-title {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+  }
+
+  .mechanics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .mechanic-card {
+    padding: var(--space-md);
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .mechanic-name {
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    margin: 0 0 var(--space-xs);
+  }
+
+  .mechanic-card p {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* 5e 2024 Features */
+  .features-2024 {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+  }
+
+  .feature-card {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .feature-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+
+  .feature-icon {
+    font-size: var(--text-xl);
+  }
+
+  .feature-category {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0;
+  }
+
+  .feature-changes {
+    margin: 0;
+    padding-left: var(--space-lg);
+    color: var(--color-text-secondary);
+  }
+
+  .feature-changes li {
+    margin-bottom: var(--space-sm);
+    line-height: 1.5;
+  }
+
+  /* Tips Grid */
+  .tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .tip-card {
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    text-align: center;
+  }
+
+  .tip-card h3 {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .tip-card p {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  /* Mobile Adjustments */
+  @media (max-width: 768px) {
+    .combat-layout,
+    .spellcasting-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .quick-ref-header,
+    .quick-ref-row {
+      grid-template-columns: 1fr;
+      gap: var(--space-xs);
+    }
+
+    .col-arrow {
+      display: none;
+    }
+
+    .col-new {
+      padding-left: 36px;
+    }
+
+    .accordion-header {
+      grid-template-columns: auto 1fr;
+    }
+
+    .accordion-arrow,
+    .accordion-replacement {
+      display: none;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .concepts-grid,
+    .tips-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Print styles */
+  @media print {
+    .section--highlight {
+      border: 1px solid #000;
+      background: none;
+    }
+
+    .accordion-item[open] .accordion-content {
+      display: block;
+    }
+  }
+</style>
