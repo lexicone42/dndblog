@@ -607,5 +607,5 @@ Reject a player's draft changes.
 |------|---------|------|
 | `/dm` | DM Dashboard - notes, entities, drafts | DM Token |
 | `/dm/entities` | Entity editor with staging branches | DM Token |
-| `/player` | Player Hub - party resources | Player Token |
-| `/player/session/{slug}` | Session Tracker for a character | Character Token |
+| `/party` | Party Hub - party resources | Character Token |
+| `/party/session/{slug}` | Session Tracker for a character | Character Token |

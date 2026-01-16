@@ -162,8 +162,8 @@ test.describe('Post-deployment smoke tests', () => {
       await expect(accessDenied).toBeVisible();
     });
 
-    test('Player hub shows auth gate when not authenticated', async ({ page }) => {
-      await page.goto('/player');
+    test('Party hub shows auth gate when not authenticated', async ({ page }) => {
+      await page.goto('/party');
 
       // Auth gate should be visible
       const authGate = page.locator('#auth-gate');

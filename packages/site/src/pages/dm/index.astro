@@ -293,7 +293,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         actions.appendChild(rejectBtn);
 
         var viewLink = document.createElement('a');
-        viewLink.href = '/player/session/' + draft.characterSlug;
+        viewLink.href = '/party/session/' + draft.characterSlug;
         viewLink.className = 'draft-btn draft-btn--view';
         viewLink.textContent = 'View Details';
         viewLink.target = '_blank';

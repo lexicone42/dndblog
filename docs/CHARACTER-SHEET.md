@@ -271,7 +271,7 @@ Build fails if character frontmatter doesn't match schema.
 
 ## Session Tracker Integration
 
-The Session Tracker (`/player/session/{slug}`) provides real-time character state management during gameplay sessions.
+The Session Tracker (`/party/session/{slug}`) provides real-time character state management during gameplay sessions.
 
 ### Features
 - **HP Management**: Track current HP, temp HP with +/- buttons
