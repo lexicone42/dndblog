@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { DmNotesApi } from './constructs/dm-notes-api.js';
+import { DmGuideApi } from './constructs/dmguide-api.js';
 import { WebSocketApiConstruct } from './constructs/websocket-api.js';
 
 /**
@@ -19,7 +19,7 @@ export interface CognitoAuthConfig {
   userPoolClientId: string;
 }
 
-export interface DmNotesStackProps extends cdk.StackProps {
+export interface DmGuideStackProps extends cdk.StackProps {
   /**
    * The domain name for CORS (e.g., https://chronicles.mawframe.ninja)
    */
@@ -32,12 +32,12 @@ export interface DmNotesStackProps extends cdk.StackProps {
   cognitoAuth: CognitoAuthConfig;
 }
 
-export class DmNotesStack extends cdk.Stack {
+export class DmGuideStack extends cdk.Stack {
   public readonly apiUrl: string;
   public readonly bucketName: string;
   public readonly wsUrl: string;
 
-  constructor(scope: Construct, id: string, props: DmNotesStackProps) {
+  constructor(scope: Construct, id: string, props: DmGuideStackProps) {
     super(scope, id, props);
 
     // WebSocket API for real-time session updates
@@ -46,7 +46,7 @@ export class DmNotesStack extends cdk.Stack {
       allowedOrigin: props.allowedOrigin,
     });
 
-    const dmNotesApi = new DmNotesApi(this, 'DmNotesApi', {
+    const dmGuideApi = new DmGuideApi(this, 'DmNotesApi', {
       allowedOrigin: props.allowedOrigin,
       cognitoAuth: props.cognitoAuth,
       // WebSocket configuration for real-time updates
@@ -58,27 +58,27 @@ export class DmNotesStack extends cdk.Stack {
       },
     });
 
-    this.apiUrl = dmNotesApi.apiUrl;
-    this.bucketName = dmNotesApi.bucket.bucketName;
+    this.apiUrl = dmGuideApi.apiUrl;
+    this.bucketName = dmGuideApi.bucket.bucketName;
     this.wsUrl = webSocketApi.wsUrl;
 
     // Stack outputs
     new cdk.CfnOutput(this, 'ApiUrlOutput', {
-      value: dmNotesApi.apiUrl,
-      description: 'DM Notes API URL',
-      exportName: 'DmNotesApiUrl',
+      value: dmGuideApi.apiUrl,
+      description: 'DM Guide API URL',
+      exportName: 'DmNotesApiUrl',  // Keep export name for compatibility
     });
 
     new cdk.CfnOutput(this, 'NotesBucketOutput', {
-      value: dmNotesApi.bucket.bucketName,
-      description: 'S3 bucket for DM notes',
-      exportName: 'DmNotesBucket',
+      value: dmGuideApi.bucket.bucketName,
+      description: 'S3 bucket for DM content',
+      exportName: 'DmNotesBucket',  // Keep export name for compatibility
     });
 
     new cdk.CfnOutput(this, 'WebSocketUrlOutput', {
       value: webSocketApi.wsUrl,
       description: 'WebSocket URL for real-time updates',
-      exportName: 'DmNotesWebSocketUrl',
+      exportName: 'DmNotesWebSocketUrl',  // Keep export name for compatibility
     });
   }
 }

@@ -11,8 +11,8 @@ The DM Notes API provides a secure interface for the Dungeon Master to upload, r
 └─────────────────┘     └──────────────────┘     └──────┬──────┘
                                                         │
                         ┌──────────────────┐            │
-                        │   SSM Parameter  │◀───────────┤
-                        │   Store (Auth)   │            │
+                        │  Cognito JWT     │◀───────────┤
+                        │  (Auth)          │            │
                         └──────────────────┘            │
                                                         ▼
                         ┌──────────────────┐     ┌─────────────┐
@@ -23,39 +23,10 @@ The DM Notes API provides a secure interface for the Dungeon Master to upload, r
 
 ## Authentication
 
-All endpoints require the `X-DM-Token` header with a valid token.
+All endpoints require a valid Cognito JWT token in the `Authorization: Bearer` header. The token is validated against the Cognito User Pool, and the user's group membership determines their role:
 
-### Token Setup
-
-The token is stored in AWS SSM Parameter Store:
-
-```bash
-# Set the DM notes token (SecureString)
-aws ssm put-parameter \
-  --name "/dndblog/dm-notes-token" \
-  --value "your-secret-token-here" \
-  --type SecureString \
-  --overwrite
-
-# Verify it's set
-aws ssm get-parameter \
-  --name "/dndblog/dm-notes-token" \
-  --with-decryption \
-  --query "Parameter.Value" \
-  --output text
-```
-
-### Using the Token
-
-Pass the token in requests:
-```bash
-curl -H "X-DM-Token: your-token" https://api.../notes
-```
-
-Or via URL parameter on the frontend:
-```
-https://chronicles.mawframe.ninja/dm-notes?token=your-token
-```
+- **DM endpoints**: User must be in the `dm` Cognito group
+- **Player endpoints**: User must be in the `player` Cognito group
 
 ### Client-Side Auth Module
 
@@ -142,7 +113,7 @@ Get a pre-signed S3 URL for uploading notes.
 **Request:**
 ```bash
 curl -X GET "https://api.../upload-url?filename=session-10.md" \
-  -H "X-DM-Token: your-token"
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 **Response:**
@@ -170,7 +141,7 @@ Submit notes for AI review (powered by Amazon Bedrock).
 **Request:**
 ```bash
 curl -X POST "https://api.../review" \
-  -H "X-DM-Token: your-token" \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"content": "# Session 10\n\n..."}'
 ```
@@ -213,7 +184,7 @@ List all notes with metadata.
 **Request:**
 ```bash
 curl -X GET "https://api.../notes" \
-  -H "X-DM-Token: your-token"
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 **Response:**
@@ -249,7 +220,7 @@ Get a specific note's content.
 **Request:**
 ```bash
 curl -X GET "https://api.../notes/dm-notes%2Fsession-10.md" \
-  -H "X-DM-Token: your-token"
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 **Response:**
@@ -271,7 +242,7 @@ Delete a note from S3.
 **Request:**
 ```bash
 curl -X DELETE "https://api.../notes/dm-notes%2Fsession-10.md" \
-  -H "X-DM-Token: your-token"
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 **Response:**
@@ -341,7 +312,7 @@ function getCorsOrigin(event) {
 // Response headers include:
 {
   'Access-Control-Allow-Origin': corsOrigin,
-  'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
 }
 ```
@@ -363,7 +334,7 @@ Dashboard metrics available:
 
 ## Security Considerations
 
-1. **Token-based authentication:** All requests validated against SSM SecureString
+1. **JWT authentication:** All requests validated against Cognito User Pool
 2. **Path validation:** Keys must start with `dm-notes/` prefix
 3. **CORS restrictions:** Only allowed origin can make requests (plus localhost for dev)
 4. **Pre-signed URLs:** S3 upload URLs expire after 5 minutes
@@ -441,7 +412,7 @@ The staging API allows the DM to create, edit, and publish campaign entities (ch
 
 ### Staging Endpoints
 
-All staging endpoints require `X-DM-Token` header.
+All staging endpoints require `Authorization: Bearer` header with a JWT token from a user in the `dm` Cognito group.
 
 #### GET /staging/branches
 
@@ -561,39 +532,15 @@ Valid entity types and their fields:
 
 ## Player Hub & Session Tracker API
 
-The Player Hub and Session Tracker use per-character authentication. Each player has their own token associated with their character, providing personalized access to the player hub and session tracker.
+The Player Hub and Session Tracker use Cognito authentication. Players log in via SSO and their character assignment is stored in their Cognito user profile via the `custom:characterSlug` attribute.
 
-### Per-Character Authentication
+### Player Authentication
 
-Each player has their own token stored in SSM:
-
-```bash
-# Set per-character token
-aws ssm put-parameter \
-  --name "/dndblog/player-token/rudiger" \
-  --value "rudigers-secret-token" \
-  --type SecureString \
-  --overwrite
-```
+Players authenticate using the same Cognito login flow as DMs. Their role and character assignment are determined by:
+- **Cognito group membership**: `player` group grants player access
+- **Character assignment**: `custom:characterSlug` attribute in Cognito specifies which character the player can edit
 
 ### Endpoints
-
-#### POST /validate-character-token
-
-Validate a character-specific token and return which character can be edited.
-
-**Request Headers:**
-```
-X-Player-Token: rudigers-secret-token
-```
-
-**Response:**
-```json
-{
-  "valid": true,
-  "characterSlug": "rudiger"
-}
-```
 
 #### GET /player/drafts/{slug}
 
@@ -601,7 +548,7 @@ Load a player's draft session data.
 
 **Request Headers:**
 ```
-X-Player-Token: character-token
+Authorization: Bearer <JWT_TOKEN>
 ```
 
 **Response:**
@@ -650,8 +597,9 @@ List all pending player drafts.
 
 **Request Headers:**
 ```
-X-DM-Token: dm-token
+Authorization: Bearer <JWT_TOKEN>
 ```
+(User must be in `dm` Cognito group)
 
 **Response:**
 ```json
@@ -681,7 +629,7 @@ Reject a player's draft changes.
 
 | Page | Purpose | Auth |
 |------|---------|------|
-| `/dm` | DM Dashboard - notes, entities, drafts | DM Token |
-| `/dm/entities` | Entity editor with staging branches | DM Token |
-| `/party` | Party Hub - party resources | Character Token |
-| `/party/session/{slug}` | Session Tracker for a character | Character Token |
+| `/dm` | DM Dashboard - notes, entities, drafts | Cognito (dm group) |
+| `/dm/entities` | Entity editor with staging branches | Cognito (dm group) |
+| `/party` | Party Hub - party resources | Cognito (player group) |
+| `/party/session/{slug}` | Session Tracker for a character | Cognito (player group) |

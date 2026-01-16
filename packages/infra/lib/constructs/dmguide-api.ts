@@ -48,7 +48,7 @@ export interface CognitoAuthConfig {
   customDomain?: string;
 }
 
-export interface DmNotesApiProps {
+export interface DmGuideApiProps {
   /**
    * The domain name for CORS configuration
    */
@@ -77,7 +77,7 @@ export interface DmNotesApiProps {
   };
 }
 
-export class DmNotesApi extends Construct {
+export class DmGuideApi extends Construct {
   public readonly bucket: s3.Bucket;
   public readonly api: apigateway.HttpApi;
   public readonly apiUrl: string;
@@ -92,7 +92,7 @@ export class DmNotesApi extends Construct {
    */
   public readonly userPoolClient: cognito.IUserPoolClient;
 
-  constructor(scope: Construct, id: string, props: DmNotesApiProps) {
+  constructor(scope: Construct, id: string, props: DmGuideApiProps) {
     super(scope, id);
 
     // S3 bucket for DM notes (private, encrypted)

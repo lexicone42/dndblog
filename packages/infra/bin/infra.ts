@@ -3,7 +3,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { StaticSiteStack } from '../lib/static-site-stack.js';
 import { GithubOidcStack } from '../lib/github-oidc-stack.js';
-import { DmNotesStack } from '../lib/dm-notes-stack.js';
+import { DmGuideStack } from '../lib/dmguide-stack.js';
 import { AuthStack } from '../lib/auth-stack.js';
 
 const app = new cdk.App();
@@ -79,9 +79,9 @@ if (domainName && hostedZoneDomain) {
     ],
   });
 
-  // DM Notes API Stack - for secure markdown note submission
+  // DM Guide API Stack - for secure DM tools and session management
   // Uses Cognito JWT authentication from AuthStack
-  const dmNotesStack = new DmNotesStack(app, 'DmNotesStack', {
+  const dmGuideStack = new DmGuideStack(app, 'DmNotesStack', {  // Keep stack ID for CloudFormation compatibility
     env,
     allowedOrigin: `https://${domainName}`,
     cognitoAuth: {
@@ -91,8 +91,8 @@ if (domainName && hostedZoneDomain) {
     description: 'DM Notes API: Lambda + API Gateway + S3 for session note uploads',
   });
 
-  // Ensure DmNotesStack deploys after AuthStack
-  dmNotesStack.addDependency(authStack);
+  // Ensure DmGuideStack deploys after AuthStack
+  dmGuideStack.addDependency(authStack);
 } else if (!githubRepo) {
   // Provide helpful error message if no context is provided
   console.log(`
