@@ -86,6 +86,11 @@ function extractLinks(htmlContent: string, sourceFile: string): LinkInfo[] {
  * Check if a link should be skipped
  */
 function shouldSkipLink(href: string): boolean {
+  // Skip links with template literal syntax (from bundled JavaScript)
+  if (href.includes('${')) {
+    return true;
+  }
+
   // Skip links with query parameters (client-side handled)
   if (href.includes('?')) {
     return true;

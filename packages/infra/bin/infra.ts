@@ -4,6 +4,7 @@ import * as cdk from 'aws-cdk-lib';
 import { StaticSiteStack } from '../lib/static-site-stack.js';
 import { GithubOidcStack } from '../lib/github-oidc-stack.js';
 import { DmNotesStack } from '../lib/dm-notes-stack.js';
+import { AuthStack } from '../lib/auth-stack.js';
 
 const app = new cdk.App();
 
@@ -66,6 +67,22 @@ if (domainName && hostedZoneDomain) {
     env,
     allowedOrigin: `https://${domainName}`,
     description: 'DM Notes API: Lambda + API Gateway + S3 for session note uploads',
+  });
+
+  // Auth Stack - Cognito User Pool for player authentication
+  new AuthStack(app, 'AuthStack', {
+    env,
+    siteDomain: domainName,
+    cognitoDomainPrefix: 'chronicles-mawframe',
+    description: 'Authentication: Cognito User Pool for player login',
+    initialUsers: [
+      // Test user: Rudiger's player
+      {
+        email: 'bryan.egan@gmail.com',
+        group: 'player',
+        characterSlug: 'rudiger',
+      },
+    ],
   });
 } else if (!githubRepo) {
   // Provide helpful error message if no context is provided

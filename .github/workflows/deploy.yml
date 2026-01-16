@@ -53,6 +53,27 @@ jobs:
           DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
           HOSTED_ZONE_DOMAIN: ${{ vars.HOSTED_ZONE_DOMAIN }}
 
+      - name: Deploy Auth Stack
+        id: auth
+        working-directory: packages/infra
+        run: |
+          npx cdk deploy AuthStack \
+            --require-approval never \
+            --outputs-file auth-outputs.json \
+            --context domainName="${DOMAIN_NAME}" \
+            --context hostedZoneDomain="${HOSTED_ZONE_DOMAIN}"
+
+          # Extract Cognito config for site build
+          USER_POOL_ID=$(jq -r '.AuthStack.UserPoolId' auth-outputs.json)
+          CLIENT_ID=$(jq -r '.AuthStack.UserPoolClientId' auth-outputs.json)
+          COGNITO_DOMAIN=$(jq -r '.AuthStack.CognitoDomainOutput' auth-outputs.json)
+          echo "user_pool_id=$USER_POOL_ID" >> "$GITHUB_OUTPUT"
+          echo "client_id=$CLIENT_ID" >> "$GITHUB_OUTPUT"
+          echo "cognito_domain=$COGNITO_DOMAIN" >> "$GITHUB_OUTPUT"
+        env:
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          HOSTED_ZONE_DOMAIN: ${{ vars.HOSTED_ZONE_DOMAIN }}
+
       - name: Build content pipeline
         working-directory: packages/content-pipeline
         run: pnpm run build
@@ -63,6 +84,10 @@ jobs:
         env:
           SITE_URL: https://${{ vars.DOMAIN_NAME }}
           PUBLIC_DM_NOTES_API_URL: ${{ steps.dm-notes.outputs.api_url }}
+          PUBLIC_COGNITO_USER_POOL_ID: ${{ steps.auth.outputs.user_pool_id }}
+          PUBLIC_COGNITO_CLIENT_ID: ${{ steps.auth.outputs.client_id }}
+          PUBLIC_COGNITO_DOMAIN: ${{ steps.auth.outputs.cognito_domain }}
+          PUBLIC_AUTH_MODE: dual
 
       - name: CDK deploy
         working-directory: packages/infra

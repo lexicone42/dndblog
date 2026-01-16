@@ -1,0 +1,501 @@
+---
+/**
+ * Campaign Hub Landing Page
+ * Player landing page with Cognito authentication.
+ * After authentication, shows owned characters and session tracking.
+ */
+
+import { getCollection, type CollectionEntry } from 'astro:content';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+// Get active party members for display after auth
+const allCharacters = await getCollection('characters');
+const activeParty = allCharacters
+  .filter((c: CollectionEntry<'characters'>) => c.data.subtype === 'pc' && c.data.status === 'active')
+  .sort((a: CollectionEntry<'characters'>, b: CollectionEntry<'characters'>) => a.data.name.localeCompare(b.data.name))
+  .map((c: CollectionEntry<'characters'>) => ({
+    slug: c.id,
+    name: c.data.name,
+    level: c.data.level || 1,
+    class: c.data.class || 'Unknown',
+    subclass: c.data.subclass,
+    race: c.data.race,
+    player: c.data.player,
+  }));
+---
+
+<BaseLayout
+  title="Player Hub - Rudiger's Evocation of Events"
+  description="Sign in to access your character and session tracking."
+>
+  <div class="campaign-hub">
+    <!-- Auth Section (shown when not authenticated) -->
+    <section id="auth-section" class="auth-section">
+      <div class="auth-container">
+        <div class="auth-header">
+          <div class="auth-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <h1 class="auth-title">Player Hub</h1>
+          <p class="auth-subtitle">Sign in to access your character and track your session</p>
+        </div>
+
+        <div class="auth-methods">
+          <!-- Cognito SSO -->
+          <div class="auth-method">
+            <p class="method-description">Sign in with your account to access your character</p>
+            <button id="sso-btn" class="sso-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                <polyline points="10 17 15 12 10 7"></polyline>
+                <line x1="15" y1="12" x2="3" y2="12"></line>
+              </svg>
+              Sign in with Account
+            </button>
+            <p id="sso-error" class="auth-error" style="display: none;"></p>
+            <p id="sso-unavailable" class="auth-notice" style="display: none;">
+              Account sign-in is not yet configured. Check back soon!
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Authenticated Section (shown after auth) -->
+    <section id="authenticated-section" class="authenticated-section" style="display: none;">
+      <header class="dashboard-header">
+        <h1 class="dashboard-title">Player Hub</h1>
+        <p id="user-greeting" class="dashboard-subtitle">Welcome back!</p>
+      </header>
+
+      <div class="character-access">
+        <h2 class="section-title">Your Characters</h2>
+        
+        <div id="character-list" class="character-grid">
+          <!-- Characters populated by JavaScript -->
+        </div>
+
+        <p id="ownership-notice" class="ownership-notice" style="display: none;">
+          Character ownership linking is coming soon. For now, you can access any party member's session tracker.
+        </p>
+        
+        <button id="sign-out-btn" class="sign-out-btn">Sign Out</button>
+      </div>
+    </section>
+
+  </div>
+</BaseLayout>
+
+<script define:vars={{ activeParty }}>
+  // Make activeParty available to the module script
+  window.__activeParty = activeParty;
+</script>
+
+<script>
+  import { 
+    getAuthState, 
+    clearAuth, 
+    getLoginUrl, 
+    getLogoutUrl,
+    isSsoAvailable,
+  } from '@lib/auth';
+
+  // Get server-provided data
+  const activeParty = (window as any).__activeParty || [];
+
+  // DOM Elements
+  const authSection = document.getElementById('auth-section');
+  const authenticatedSection = document.getElementById('authenticated-section');
+  const ssoBtn = document.getElementById('sso-btn');
+  const ssoError = document.getElementById('sso-error');
+  const ssoUnavailable = document.getElementById('sso-unavailable');
+  const userGreeting = document.getElementById('user-greeting');
+  const characterList = document.getElementById('character-list');
+  const ownershipNotice = document.getElementById('ownership-notice');
+  const signOutBtn = document.getElementById('sign-out-btn');
+
+  // Show error message
+  function showError(message: string) {
+    if (ssoError) {
+      ssoError.textContent = message;
+      ssoError.style.display = 'block';
+    }
+  }
+
+  // Build character card HTML
+  function buildCharacterCard(character: typeof activeParty[0]) {
+    return `
+      <div class="character-card">
+        <div class="character-card-content">
+          <h3 class="character-name">${character.name}</h3>
+          <div class="character-details">
+            <span class="char-level">Level ${character.level}</span>
+            <span class="char-class">${character.class}${character.subclass ? ` (${character.subclass})` : ''}</span>
+            ${character.race ? `<span class="char-race">${character.race}</span>` : ''}
+          </div>
+          ${character.player ? `<span class="char-player">Played by ${character.player}</span>` : ''}
+        </div>
+        <a href="/party/session/${character.slug}" class="character-action">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+          Session Tracker
+        </a>
+      </div>
+    `;
+  }
+
+  // Show authenticated state
+  function showAuthenticatedState(auth: ReturnType<typeof getAuthState>) {
+    if (!auth) return;
+
+    if (authSection) authSection.style.display = 'none';
+    if (authenticatedSection) authenticatedSection.style.display = 'block';
+
+    // Show user email if available
+    if (userGreeting && auth.email) {
+      userGreeting.textContent = `Welcome back, ${auth.email}`;
+    }
+
+    // Show all party characters (until ownership API is implemented)
+    if (characterList) {
+      characterList.innerHTML = activeParty.map(buildCharacterCard).join('');
+    }
+
+    // Show ownership notice
+    if (ownershipNotice) {
+      ownershipNotice.style.display = 'block';
+    }
+  }
+
+  // Show unauthenticated state
+  function showUnauthenticatedState() {
+    if (authSection) authSection.style.display = 'block';
+    if (authenticatedSection) authenticatedSection.style.display = 'none';
+
+    // Check if SSO is available
+    if (!isSsoAvailable()) {
+      if (ssoBtn) (ssoBtn as HTMLButtonElement).disabled = true;
+      if (ssoUnavailable) ssoUnavailable.style.display = 'block';
+    }
+  }
+
+  // Handle SSO button click
+  function handleSsoClick() {
+    const loginUrl = getLoginUrl('/campaign');
+    if (loginUrl && loginUrl !== '#') {
+      window.location.href = loginUrl;
+    } else {
+      showError('Sign-in is not available. Please try again later.');
+    }
+  }
+
+  // Handle sign out
+  function handleSignOut() {
+    const logoutUrl = getLogoutUrl();
+    window.location.href = logoutUrl;
+  }
+
+  // Initialize page
+  function init() {
+    // Check for existing auth
+    const auth = getAuthState();
+    if (auth && auth.method === 'cognito') {
+      showAuthenticatedState(auth);
+    } else {
+      showUnauthenticatedState();
+    }
+
+    // Set up event listeners
+    if (ssoBtn) {
+      ssoBtn.addEventListener('click', handleSsoClick);
+    }
+
+    if (signOutBtn) {
+      signOutBtn.addEventListener('click', handleSignOut);
+    }
+
+    // Listen for auth changes (from callback page)
+    window.addEventListener('auth-change', () => {
+      const newAuth = getAuthState();
+      if (newAuth && newAuth.method === 'cognito') {
+        showAuthenticatedState(newAuth);
+      } else {
+        showUnauthenticatedState();
+      }
+    });
+  }
+
+  // Run on page load
+  init();
+</script>
+
+<style>
+  .campaign-hub {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+  }
+
+  /* Auth Section */
+  .auth-section {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .auth-container {
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-gold);
+    border-radius: var(--radius-lg);
+    padding: var(--space-2xl);
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .auth-header {
+    text-align: center;
+    margin-bottom: var(--space-xl);
+  }
+
+  .auth-icon {
+    color: var(--color-gold);
+    margin-bottom: var(--space-md);
+  }
+
+  .auth-title {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .auth-subtitle {
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+
+  /* Auth Methods */
+  .auth-methods {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+  }
+
+  .auth-method {
+    text-align: center;
+  }
+
+  .method-description {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-md);
+  }
+
+  .auth-error {
+    color: var(--color-accent);
+    background: rgba(var(--color-accent-rgb, 192, 86, 86), 0.1);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    margin-top: var(--space-md);
+  }
+
+  .auth-notice {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    margin-top: var(--space-md);
+    font-style: italic;
+  }
+
+  /* SSO Button */
+  .sso-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    width: 100%;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-gold);
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--color-bg);
+    font-size: var(--text-base);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .sso-btn:hover:not(:disabled) {
+    background: var(--color-gold-light);
+    transform: translateY(-1px);
+  }
+
+  .sso-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* Authenticated Section */
+  .authenticated-section {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .dashboard-header {
+    text-align: center;
+    margin-bottom: var(--space-xl);
+  }
+
+  .dashboard-title {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .dashboard-subtitle {
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+
+  /* Character Access */
+  .character-access {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .character-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+  }
+
+  .character-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md) var(--space-lg);
+    transition: all var(--transition-fast);
+  }
+
+  .character-card:hover {
+    border-color: var(--color-gold);
+  }
+
+  .character-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-xs);
+  }
+
+  .character-details {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-xs);
+  }
+
+  .char-level {
+    background: var(--color-gold);
+    color: var(--color-bg);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: var(--text-xs);
+  }
+
+  .char-class {
+    color: var(--color-accent);
+  }
+
+  .char-player {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .character-action {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-accent);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+  }
+
+  .character-action:hover {
+    background: var(--color-accent-hover);
+    transform: translateY(-1px);
+  }
+
+  .ownership-notice {
+    text-align: center;
+    padding: var(--space-md);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-lg);
+  }
+
+  .sign-out-btn {
+    display: block;
+    width: 100%;
+    padding: var(--space-sm);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .sign-out-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+@media (max-width: 640px) {
+    .character-card {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .character-details {
+      justify-content: center;
+    }
+
+    .tools-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

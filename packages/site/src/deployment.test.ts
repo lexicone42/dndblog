@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const DIST_DIR = path.join(__dirname, '..', 'dist');
 
 describe('Security Headers', () => {
   it('should have _headers file for deployment platforms', () => {
@@ -43,5 +44,43 @@ describe('Security Headers', () => {
 
     expect(content).toContain('X-Frame-Options');
     expect(content).toContain('X-Content-Type-Options');
+  });
+});
+
+describe('Page Build Verification', () => {
+  it('should build campaign landing page', () => {
+    const pagePath = path.join(DIST_DIR, 'campaign', 'index.html');
+    expect(fs.existsSync(pagePath)).toBe(true);
+    
+    const content = fs.readFileSync(pagePath, 'utf-8');
+    expect(content).toContain('Player Hub');
+    expect(content).toContain('Sign in with Account');
+  });
+
+  it('should build auth callback page', () => {
+    const pagePath = path.join(DIST_DIR, 'auth', 'callback', 'index.html');
+    expect(fs.existsSync(pagePath)).toBe(true);
+    
+    const content = fs.readFileSync(pagePath, 'utf-8');
+    expect(content).toContain('Signing in');
+    expect(content).toContain('Completing authentication');
+  });
+
+  it('should build DM party tracker page', () => {
+    const pagePath = path.join(DIST_DIR, 'dm', 'party-tracker', 'index.html');
+    expect(fs.existsSync(pagePath)).toBe(true);
+    
+    const content = fs.readFileSync(pagePath, 'utf-8');
+    expect(content).toContain('Party Tracker');
+    expect(content).toContain('DM Dashboard');
+  });
+
+  it('should build party session tracker pages', () => {
+    // Check at least one session tracker page exists
+    const rudigerPath = path.join(DIST_DIR, 'party', 'session', 'rudiger', 'index.html');
+    expect(fs.existsSync(rudigerPath)).toBe(true);
+    
+    const content = fs.readFileSync(rudigerPath, 'utf-8');
+    expect(content).toContain('Character Dashboard');
   });
 });
