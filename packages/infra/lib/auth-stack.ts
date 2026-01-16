@@ -39,29 +39,45 @@ export class AuthStack extends cdk.Stack {
     const domainPrefix = props.cognitoDomainPrefix || 'chronicles-auth';
 
     // =========================================================================
-    // Cognito User Pool
+    // Cognito User Pool with Managed Login + Passkeys
     // =========================================================================
     this.userPool = new cognito.UserPool(this, 'UserPool', {
       userPoolName: 'dndblog-players',
-      
+
       // Sign-in configuration
       signInAliases: {
         email: true,
         username: false,
       },
-      
+
+      // Passkey configuration (WebAuthn/FIDO2)
+      // Allows passwordless login with passkeys + traditional password as fallback
+      signInPolicy: {
+        allowedFirstAuthFactors: {
+          password: true,
+          passkey: true,
+          emailOtp: true, // Email code as fallback
+        },
+      },
+
+      // Relying Party ID for passkeys (must match your domain)
+      passkeyRelyingPartyId: props.siteDomain,
+
+      // Require user verification (biometric/PIN) for passkey auth
+      passkeyUserVerification: cognito.PasskeyUserVerification.PREFERRED,
+
       // Self-registration disabled - admin creates users
       selfSignUpEnabled: false,
-      
+
       // Account recovery via email
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-      
+
       // Email verification
       autoVerify: {
         email: true,
       },
-      
-      // Password policy
+
+      // Password policy (for password fallback)
       passwordPolicy: {
         minLength: 8,
         requireLowercase: true,
@@ -69,7 +85,7 @@ export class AuthStack extends cdk.Stack {
         requireDigits: false,
         requireSymbols: false,
       },
-      
+
       // Standard attributes
       standardAttributes: {
         email: {
@@ -77,7 +93,7 @@ export class AuthStack extends cdk.Stack {
           mutable: true,
         },
       },
-      
+
       // Custom attributes for character ownership
       customAttributes: {
         characterSlug: new cognito.StringAttribute({
@@ -85,13 +101,13 @@ export class AuthStack extends cdk.Stack {
           maxLen: 64,
         }),
       },
-      
+
       // Email configuration (use Cognito default for now)
       email: cognito.UserPoolEmail.withCognito(),
-      
+
       // Deletion protection for production
       deletionProtection: false, // Set to true for production
-      
+
       // Remove users when stack is deleted (for development)
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
@@ -144,9 +160,10 @@ export class AuthStack extends cdk.Stack {
       // Prevent user existence errors (security)
       preventUserExistenceErrors: true,
       
-      // Auth flows
+      // Auth flows - USER_AUTH required for passkeys/managed login
       authFlows: {
         userSrp: true,
+        user: true, // Choice-based auth (USER_AUTH) for passkeys
       },
     });
 

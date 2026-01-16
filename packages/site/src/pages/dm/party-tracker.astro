@@ -3,13 +3,14 @@
  * DM Party Tracker Page
  * Real-time view of party status during sessions.
  * Shows HP, conditions, features, and death saves for all active PCs.
- * Polls for updates every 30 seconds.
+ * Uses WebSocket for instant updates with polling fallback.
  */
 
 import { getCollection, type CollectionEntry } from 'astro:content';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
 const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
+const wsUrl = import.meta.env.PUBLIC_WS_URL || '';
 
 // Type for party member data
 interface PartyFeature {
@@ -106,15 +107,32 @@ const partyMembers: PartyMember[] = characters
             DM Dashboard
           </a>
           <h1 class="tracker-title">Party Status</h1>
-          <div id="refresh-indicator" class="refresh-indicator">
-            <span class="refresh-time">Updated just now</span>
-            <button id="refresh-btn" class="refresh-btn" title="Refresh now">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <polyline points="1 20 1 14 7 14"></polyline>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          <div class="header-actions">
+            <!-- Connection Status -->
+            <div id="connection-status" class="connection-status connection-status--disconnected" title="WebSocket disconnected">
+              <span class="connection-dot"></span>
+              <span class="connection-text">Disconnected</span>
+            </div>
+            <!-- End Session Button -->
+            <button id="end-session-btn" class="end-session-btn" title="Clear all session state">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
               </svg>
+              End Session
             </button>
+            <!-- Refresh Button -->
+            <div id="refresh-indicator" class="refresh-indicator">
+              <span class="refresh-time">Updated just now</span>
+              <button id="refresh-btn" class="refresh-btn" title="Refresh now">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -185,12 +203,11 @@ const partyMembers: PartyMember[] = characters
               </div>
             )}
 
-            <a href={`/party/session/${member.slug}`} class="view-tracker-link" target="_blank">
-              Open Session Tracker
+            <a href={`/campaign/characters/${member.slug}`} class="view-character-link">
+              View Character
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
               </svg>
             </a>
           </div>
@@ -212,13 +229,17 @@ const partyMembers: PartyMember[] = characters
   </div>
 </BaseLayout>
 
-<script is:inline define:vars={{ apiUrl, partyMembers }}>
+<script is:inline define:vars={{ apiUrl, wsUrl, partyMembers }}>
 (function() {
   var TOKEN_KEY = 'dm-token';
   var API_URL = apiUrl;
-  var REFRESH_INTERVAL = 30000; // 30 seconds
+  var WS_URL = wsUrl;
+  var REFRESH_INTERVAL = 60000; // 60 seconds (reduced - WebSocket is primary)
+  var RECONNECT_DELAY = 3000; // 3 seconds
   var refreshTimer = null;
   var lastRefresh = Date.now();
+  var ws = null;
+  var wsReconnectTimer = null;
 
   // DOM elements
   var authGate = document.getElementById('auth-gate');
@@ -228,6 +249,156 @@ const partyMembers: PartyMember[] = characters
   var tokenInput = document.getElementById('dm-token');
   var refreshBtn = document.getElementById('refresh-btn');
   var refreshTime = document.querySelector('.refresh-time');
+  var connectionStatus = document.getElementById('connection-status');
+  var endSessionBtn = document.getElementById('end-session-btn');
+
+  // ============================================
+  // WebSocket Connection
+  // ============================================
+
+  function connectWebSocket() {
+    if (!WS_URL) {
+      console.log('WebSocket URL not configured, using polling only');
+      return;
+    }
+
+    var token = localStorage.getItem(TOKEN_KEY);
+    if (!token) return;
+
+    // Close existing connection
+    if (ws) {
+      ws.close();
+    }
+
+    try {
+      ws = new WebSocket(WS_URL + '?token=' + encodeURIComponent(token));
+
+      ws.onopen = function() {
+        console.log('WebSocket connected');
+        updateConnectionStatus('connected');
+        // Clear any reconnect timer
+        if (wsReconnectTimer) {
+          clearTimeout(wsReconnectTimer);
+          wsReconnectTimer = null;
+        }
+      };
+
+      ws.onmessage = function(event) {
+        try {
+          var data = JSON.parse(event.data);
+          console.log('WebSocket message:', data);
+
+          if (data.action === 'session_update') {
+            // Player updated their session state - refresh that character
+            if (data.sessionData) {
+              applySessionDataToCard(data.character, data.sessionData);
+              lastRefresh = Date.now();
+              updateRefreshTime();
+            } else {
+              // Full refresh as fallback
+              loadDrafts();
+            }
+          } else if (data.action === 'session_ended') {
+            // Session ended - reset all cards to default
+            console.log('Session ended, clearing all state');
+            resetAllCards();
+            lastRefresh = Date.now();
+            updateRefreshTime();
+          } else if (data.action === 'pong') {
+            // Heartbeat response
+            console.log('Pong received');
+          }
+        } catch (e) {
+          console.error('Failed to parse WebSocket message:', e);
+        }
+      };
+
+      ws.onclose = function(event) {
+        console.log('WebSocket disconnected:', event.code, event.reason);
+        updateConnectionStatus('disconnected');
+        ws = null;
+
+        // Auto-reconnect after delay
+        if (!wsReconnectTimer) {
+          wsReconnectTimer = setTimeout(function() {
+            wsReconnectTimer = null;
+            connectWebSocket();
+          }, RECONNECT_DELAY);
+        }
+      };
+
+      ws.onerror = function(error) {
+        console.error('WebSocket error:', error);
+        updateConnectionStatus('disconnected');
+      };
+    } catch (e) {
+      console.error('Failed to create WebSocket:', e);
+      updateConnectionStatus('disconnected');
+    }
+  }
+
+  function disconnectWebSocket() {
+    if (wsReconnectTimer) {
+      clearTimeout(wsReconnectTimer);
+      wsReconnectTimer = null;
+    }
+    if (ws) {
+      ws.close();
+      ws = null;
+    }
+    updateConnectionStatus('disconnected');
+  }
+
+  function updateConnectionStatus(status) {
+    if (!connectionStatus) return;
+
+    connectionStatus.className = 'connection-status connection-status--' + status;
+    var text = connectionStatus.querySelector('.connection-text');
+    if (text) {
+      text.textContent = status === 'connected' ? 'Live' : 'Disconnected';
+    }
+    connectionStatus.title = status === 'connected' ? 'WebSocket connected - receiving live updates' : 'WebSocket disconnected - using polling';
+  }
+
+  // ============================================
+  // End Session
+  // ============================================
+
+  async function endSession() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    if (!token || !API_URL) return;
+
+    if (!confirm('End the session? This will clear all player session state.')) {
+      return;
+    }
+
+    try {
+      var response = await fetch(API_URL + '/dm/end-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-DM-Token': token,
+        },
+      });
+
+      if (response.ok) {
+        var data = await response.json();
+        console.log('Session ended:', data);
+        // Cards will be reset via WebSocket broadcast, but reset locally too
+        resetAllCards();
+      } else {
+        console.error('Failed to end session:', response.status);
+        alert('Failed to end session. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error ending session:', error);
+      alert('Error ending session. Please try again.');
+    }
+  }
+
+  if (endSessionBtn) {
+    endSessionBtn.addEventListener('click', endSession);
+  }
 
   // ============================================
   // Authentication
@@ -259,6 +430,7 @@ const partyMembers: PartyMember[] = characters
         showTracker();
         loadDrafts();
         startAutoRefresh();
+        connectWebSocket();
       } else {
         localStorage.removeItem(TOKEN_KEY);
         showAuthGate();
@@ -289,6 +461,7 @@ const partyMembers: PartyMember[] = characters
         showTracker();
         loadDrafts();
         startAutoRefresh();
+        connectWebSocket();
       } else {
         authError.textContent = 'Invalid token. Please try again.';
         authError.style.display = 'block';
@@ -298,13 +471,14 @@ const partyMembers: PartyMember[] = characters
 
   document.getElementById('logout-btn').addEventListener('click', function() {
     stopAutoRefresh();
+    disconnectWebSocket();
     localStorage.removeItem(TOKEN_KEY);
     showAuthGate();
     tokenInput.value = '';
   });
 
   // ============================================
-  // Auto-refresh
+  // Auto-refresh (fallback when WebSocket disconnected)
   // ============================================
 
   function startAutoRefresh() {
@@ -480,6 +654,165 @@ const partyMembers: PartyMember[] = characters
   }
 
   // ============================================
+  // Single card update (for WebSocket messages)
+  // ============================================
+
+  function applySessionDataToCard(characterSlug, sessionData) {
+    var card = document.querySelector('.character-card[data-slug="' + characterSlug + '"]');
+    if (!card) return;
+
+    var member = partyMembers.find(function(m) { return m.slug === characterSlug; });
+    if (!member) return;
+
+    // Update status badge
+    var statusBadge = card.querySelector('.status-badge');
+    statusBadge.className = 'status-badge status-badge--draft';
+    statusBadge.textContent = 'Active';
+
+    // Update HP
+    var hp = sessionData.combat ? sessionData.combat.hp : member.currentHp;
+    var tempHp = sessionData.combat ? (sessionData.combat.tempHp || 0) : 0;
+    var maxHp = member.maxHp;
+
+    var hpValue = card.querySelector('.hp-value');
+    hpValue.textContent = hp + '/' + maxHp + (tempHp > 0 ? ' (+' + tempHp + ')' : '');
+
+    var hpBarFill = card.querySelector('.hp-bar-fill');
+    var percent = Math.min(100, (hp / maxHp) * 100);
+    hpBarFill.style.width = percent + '%';
+
+    // Update HP bar color
+    var hpBar = card.querySelector('.hp-bar');
+    hpBar.classList.remove('hp-bar--critical', 'hp-bar--warning', 'hp-bar--healthy', 'hp-bar--dead');
+    if (percent <= 0) {
+      hpBar.classList.add('hp-bar--dead');
+    } else if (percent <= 25) {
+      hpBar.classList.add('hp-bar--critical');
+    } else if (percent <= 50) {
+      hpBar.classList.add('hp-bar--warning');
+    } else {
+      hpBar.classList.add('hp-bar--healthy');
+    }
+
+    // Update death saves
+    var deathSavesSection = card.querySelector('.death-saves');
+    if (hp === 0 && sessionData.deathSaves) {
+      deathSavesSection.style.display = 'block';
+      var successPips = card.querySelectorAll('.death-pips--success .pip');
+      var failurePips = card.querySelectorAll('.death-pips--failure .pip');
+
+      successPips.forEach(function(pip, i) {
+        pip.classList.toggle('pip--filled', i < sessionData.deathSaves.successes);
+      });
+      failurePips.forEach(function(pip, i) {
+        pip.classList.toggle('pip--filled', i < sessionData.deathSaves.failures);
+      });
+    } else {
+      deathSavesSection.style.display = 'none';
+    }
+
+    // Update conditions
+    var conditionsList = card.querySelector('.conditions-list');
+    while (conditionsList.firstChild) {
+      conditionsList.removeChild(conditionsList.firstChild);
+    }
+
+    var conditions = sessionData.activeConditions || [];
+    if (conditions.length === 0) {
+      var noConditions = document.createElement('span');
+      noConditions.className = 'no-conditions';
+      noConditions.textContent = 'No conditions';
+      conditionsList.appendChild(noConditions);
+    } else {
+      conditions.forEach(function(condition) {
+        var tag = document.createElement('span');
+        tag.className = 'condition-tag' + (condition.beneficial ? ' condition-tag--beneficial' : '');
+        tag.textContent = condition.name;
+        conditionsList.appendChild(tag);
+      });
+    }
+
+    // Update features
+    var featuresSection = card.querySelector('.features-section');
+    if (featuresSection && sessionData.features) {
+      sessionData.features.forEach(function(feature) {
+        var featureItem = card.querySelector('.feature-item[data-feature="' + feature.name + '"]');
+        if (featureItem) {
+          var pips = featureItem.querySelectorAll('.pip');
+          pips.forEach(function(pip, i) {
+            pip.classList.toggle('pip--available', i < feature.current);
+            pip.classList.toggle('pip--used', i >= feature.current);
+          });
+        }
+      });
+    }
+
+    // Visual flash to indicate update
+    card.classList.add('card-updated');
+    setTimeout(function() {
+      card.classList.remove('card-updated');
+    }, 1000);
+  }
+
+  // ============================================
+  // Reset all cards (for session end)
+  // ============================================
+
+  function resetAllCards() {
+    partyMembers.forEach(function(member) {
+      var card = document.querySelector('.character-card[data-slug="' + member.slug + '"]');
+      if (!card) return;
+
+      // Reset status badge
+      var statusBadge = card.querySelector('.status-badge');
+      statusBadge.className = 'status-badge status-badge--none';
+      statusBadge.textContent = 'No draft';
+
+      // Reset HP to baseline
+      var hpValue = card.querySelector('.hp-value');
+      hpValue.textContent = member.currentHp + '/' + member.maxHp;
+
+      var hpBarFill = card.querySelector('.hp-bar-fill');
+      var percent = Math.min(100, (member.currentHp / member.maxHp) * 100);
+      hpBarFill.style.width = percent + '%';
+
+      // Reset HP bar color
+      var hpBar = card.querySelector('.hp-bar');
+      hpBar.classList.remove('hp-bar--critical', 'hp-bar--warning', 'hp-bar--dead');
+      hpBar.classList.add('hp-bar--healthy');
+
+      // Hide death saves
+      var deathSavesSection = card.querySelector('.death-saves');
+      deathSavesSection.style.display = 'none';
+
+      // Reset conditions
+      var conditionsList = card.querySelector('.conditions-list');
+      while (conditionsList.firstChild) {
+        conditionsList.removeChild(conditionsList.firstChild);
+      }
+      var noConditions = document.createElement('span');
+      noConditions.className = 'no-conditions';
+      noConditions.textContent = 'No conditions';
+      conditionsList.appendChild(noConditions);
+
+      // Reset features
+      var featuresSection = card.querySelector('.features-section');
+      if (featuresSection) {
+        member.features.forEach(function(feature) {
+          var featureItem = card.querySelector('.feature-item[data-feature="' + feature.name + '"]');
+          if (featureItem) {
+            var pips = featureItem.querySelectorAll('.pip');
+            pips.forEach(function(pip) {
+              pip.classList.add('pip--available');
+              pip.classList.remove('pip--used');
+            });
+          }
+        });
+      }
+    });
+  }
+
+  // ============================================
   // Initialize
   // ============================================
 
@@ -619,6 +952,90 @@ const partyMembers: PartyMember[] = characters
     margin: 0;
     flex: 1;
     text-align: center;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  /* Connection Status */
+  .connection-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+  }
+
+  .connection-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    transition: all var(--transition-fast);
+  }
+
+  .connection-status--connected {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--color-success, #10b981);
+  }
+
+  .connection-status--connected .connection-dot {
+    background: var(--color-success, #10b981);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    animation: pulse-connected 2s ease-in-out infinite;
+  }
+
+  .connection-status--disconnected {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--color-error);
+  }
+
+  .connection-status--disconnected .connection-dot {
+    background: var(--color-error);
+  }
+
+  @keyframes pulse-connected {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* End Session Button */
+  .end-session-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    background: transparent;
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-md);
+    color: var(--color-error);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .end-session-btn:hover {
+    background: var(--color-error);
+    color: white;
+  }
+
+  /* Card update animation */
+  .card-updated {
+    animation: card-flash 1s ease-out;
+  }
+
+  @keyframes card-flash {
+    0% {
+      box-shadow: 0 0 0 2px var(--color-accent);
+    }
+    100% {
+      box-shadow: none;
+    }
   }
 
   .refresh-indicator {
@@ -918,7 +1335,7 @@ const partyMembers: PartyMember[] = characters
   }
 
   /* View Link */
-  .view-tracker-link {
+  .view-character-link {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -933,7 +1350,7 @@ const partyMembers: PartyMember[] = characters
     margin-top: auto;
   }
 
-  .view-tracker-link:hover {
+  .view-character-link:hover {
     background: var(--color-bg);
     color: var(--color-accent);
   }

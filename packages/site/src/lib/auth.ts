@@ -22,6 +22,8 @@ export interface AuthState {
   expiresAt?: number;
   userId?: string;
   email?: string;
+  /** Character slug assigned to this user (from custom:characterSlug claim) */
+  characterSlug?: string;
 }
 
 export interface AuthConfig {
@@ -361,6 +363,9 @@ export async function exchangeCodeForTokens(code: string): Promise<AuthState> {
 
   const groups = (idPayload['cognito:groups'] as string[]) || [];
 
+  // Extract custom attributes (prefixed with custom: in Cognito)
+  const characterSlug = idPayload['custom:characterSlug'] as string | undefined;
+
   const authState: AuthState = {
     method: 'cognito',
     roles: {
@@ -373,6 +378,7 @@ export async function exchangeCodeForTokens(code: string): Promise<AuthState> {
     expiresAt: Date.now() + (tokens.expires_in * 1000),
     userId: idPayload.sub as string,
     email: idPayload.email as string,
+    characterSlug,
   };
 
   setAuthState(authState);

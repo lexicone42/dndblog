@@ -78,12 +78,6 @@ const activeParty = allCharacters
                 )}
               </a>
 
-              <a href={`/party/session/${character.id}`} class="session-tracker-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-                Session Tracker
-              </a>
             </div>
           ))}
         </div>
@@ -320,27 +314,6 @@ const activeParty = allCharacters
     color: var(--color-text-secondary);
     margin: 0;
     line-height: 1.5;
-  }
-
-  .session-tracker-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-xs);
-    margin: 0 var(--space-lg) var(--space-lg);
-    padding: var(--space-sm) var(--space-md);
-    background: var(--color-accent);
-    color: white;
-    text-decoration: none;
-    border-radius: var(--radius-sm);
-    font-size: var(--text-xs);
-    font-weight: 600;
-    transition: all var(--transition-fast);
-  }
-
-  .session-tracker-btn:hover {
-    background: var(--color-accent-hover);
-    transform: translateY(-1px);
   }
 
   .empty-state {

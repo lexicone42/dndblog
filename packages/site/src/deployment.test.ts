@@ -55,9 +55,9 @@ describe.skipIf(!distExists)('Page Build Verification', () => {
   it('should build campaign landing page', () => {
     const pagePath = path.join(DIST_DIR, 'campaign', 'index.html');
     expect(fs.existsSync(pagePath)).toBe(true);
-    
+
     const content = fs.readFileSync(pagePath, 'utf-8');
-    expect(content).toContain('Player Hub');
+    expect(content).toContain('Session Tracker');
     expect(content).toContain('Sign in with Account');
   });
 
@@ -79,12 +79,12 @@ describe.skipIf(!distExists)('Page Build Verification', () => {
     expect(content).toContain('DM Dashboard');
   });
 
-  it('should build party session tracker pages', () => {
-    // Check at least one session tracker page exists
-    const rudigerPath = path.join(DIST_DIR, 'party', 'session', 'rudiger', 'index.html');
-    expect(fs.existsSync(rudigerPath)).toBe(true);
-    
-    const content = fs.readFileSync(rudigerPath, 'utf-8');
-    expect(content).toContain('Character Dashboard');
+  it('should build campaign session tracker page', () => {
+    // Check campaign page exists (player session tracker)
+    const campaignPath = path.join(DIST_DIR, 'campaign', 'index.html');
+    expect(fs.existsSync(campaignPath)).toBe(true);
+
+    const content = fs.readFileSync(campaignPath, 'utf-8');
+    expect(content).toContain('Session Tracker');
   });
 });

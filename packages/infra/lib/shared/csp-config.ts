@@ -61,8 +61,14 @@ export const CSP_DIRECTIVES: Record<string, string[]> = {
     'https://use.fontawesome.com',
   ],
 
-  // API connections - self, AWS API Gateway, and S3 for presigned URL uploads
-  'connect-src': ["'self'", 'https://*.execute-api.us-east-1.amazonaws.com', 'https://*.s3.us-east-1.amazonaws.com'],
+  // API connections - self, AWS API Gateway, S3 for uploads, Cognito for auth, WebSocket for real-time
+  'connect-src': [
+    "'self'",
+    'https://*.execute-api.us-east-1.amazonaws.com',
+    'wss://*.execute-api.us-east-1.amazonaws.com',
+    'https://*.s3.us-east-1.amazonaws.com',
+    'https://*.auth.us-east-1.amazoncognito.com',
+  ],
 
   // Prevent embedding in frames (clickjacking protection)
   'frame-ancestors': ["'none'"],
