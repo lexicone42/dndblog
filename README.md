@@ -11,6 +11,7 @@ A modular static blog platform built with Astro and deployed to AWS, designed fo
 **Current Features:**
 - Public static blog with markdown content
 - D&D 5e 2024 character sheets with interactive components
+- Player Hub with Session Tracker and Party Synergies guide
 - DM session notes editor with S3 storage and AI review
 - CloudWatch monitoring with alarms and dashboards
 - PWA support for offline reading
@@ -79,9 +80,9 @@ pnpm test
 pnpm test:watch
 
 # Package-specific tests
-pnpm --filter site test              # Site components (61 tests)
+pnpm --filter site test              # Site components (74 tests)
 pnpm --filter content-pipeline test  # Content processing (61 tests)
-pnpm --filter infra test             # CDK constructs (20 tests)
+pnpm --filter infra test             # CDK constructs (26 tests)
 
 # E2E and smoke tests
 pnpm test:e2e                        # Full E2E with Playwright

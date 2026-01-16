@@ -327,7 +327,7 @@ npx cdk deploy DmNotesStack
 
 After deployment, the API URL is output and should be set in the site's environment:
 ```bash
-PUBLIC_DM_NOTES_API_URL=https://xxx.execute-api.us-west-2.amazonaws.com
+PUBLIC_DM_NOTES_API_URL=https://xxx.execute-api.us-east-1.amazonaws.com
 ```
 
 ---

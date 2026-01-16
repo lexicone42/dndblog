@@ -36,7 +36,21 @@ This project implements the following security measures:
 - S3 buckets are not publicly accessible
 - CloudFront distributions use HTTPS only
 
+### API Security
+- Token-based authentication via SSM SecureString parameters
+- Rate limiting (5 req/s, burst 10) on API Gateway
+- CORS restrictions (production origin + localhost for dev)
+- Pre-signed S3 URLs expire after 5 minutes
+- Path validation (notes must use `dm-notes/` prefix)
+
+### Content Security
+- Content Security Policy (CSP) headers via CloudFront
+- XSS protection via DOMPurify for markdown rendering
+- Security headers: HSTS, X-Frame-Options, X-Content-Type-Options
+- TLS 1.2+ only
+
 ### Code
 - No secrets or credentials committed to repository
 - Dependencies regularly audited for vulnerabilities
 - TypeScript for type safety
+- Pre-commit hooks prevent committing sensitive files
