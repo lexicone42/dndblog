@@ -206,15 +206,15 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
     var submitBtn = authForm.querySelector('button[type="submit"]');
     var btnTextSpan = submitBtn.querySelector('span') || submitBtn;
 
-    // Validate token against server
+    // Validate token against server (per-character tokens)
     async function validateToken(token) {
       if (!API_URL) {
         console.warn('API URL not configured, skipping server validation');
-        return true; // Graceful degradation for local dev
+        return { valid: true, characterSlug: null }; // Graceful degradation for local dev
       }
 
       try {
-        var response = await fetch(API_URL + '/validate-player-token', {
+        var response = await fetch(API_URL + '/validate-character-token', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -223,14 +223,14 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         });
 
         if (!response.ok) {
-          return false;
+          return { valid: false, characterSlug: null };
         }
 
         var data = await response.json();
-        return data.valid === true;
+        return { valid: data.valid === true, characterSlug: data.characterSlug || null };
       } catch (error) {
         console.error('Token validation error:', error);
-        return false;
+        return { valid: false, characterSlug: null };
       }
     }
 
@@ -238,20 +238,39 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       var token = localStorage.getItem(TOKEN_KEY);
       if (token) {
         // Validate stored token server-side
-        var isValid = await validateToken(token);
-        if (isValid) {
-          showDashboard();
+        var result = await validateToken(token);
+        if (result.valid) {
+          showDashboard(result.characterSlug);
         } else {
           // Invalid stored token, clear it
           localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem('player-character-slug');
           showAuthGate();
         }
       }
     }
 
-    function showDashboard() {
+    function showDashboard(characterSlug) {
       authGate.style.display = 'none';
       dashboardContent.style.display = 'block';
+
+      // Store character slug for session tracker access
+      if (characterSlug) {
+        localStorage.setItem('player-character-slug', characterSlug);
+        // Highlight the logged-in character's card
+        highlightCharacterCard(characterSlug);
+      }
+    }
+
+    function highlightCharacterCard(slug) {
+      // Find and highlight the character card for the logged-in user
+      var cards = document.querySelectorAll('.character-card');
+      cards.forEach(function(card) {
+        var link = card.querySelector('.character-card-link');
+        if (link && link.href.includes('/' + slug)) {
+          card.classList.add('character-card--current');
+        }
+      });
     }
 
     function showAuthGate() {
@@ -276,13 +295,13 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         setLoading(true);
         authError.style.display = 'none';
 
-        var isValid = await validateToken(token);
+        var result = await validateToken(token);
 
         setLoading(false);
 
-        if (isValid) {
+        if (result.valid) {
           localStorage.setItem(TOKEN_KEY, token);
-          showDashboard();
+          showDashboard(result.characterSlug);
         } else {
           authError.textContent = 'Invalid token. Please try again.';
           authError.style.display = 'block';
@@ -292,6 +311,11 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
     logoutBtn.addEventListener('click', function() {
       localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('player-character-slug');
+      // Remove highlight from character cards
+      document.querySelectorAll('.character-card--current').forEach(function(card) {
+        card.classList.remove('character-card--current');
+      });
       showAuthGate();
       tokenInput.value = '';
     });
@@ -449,18 +473,42 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
   }
 
   .character-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     background: var(--color-bg-secondary);
     border: 2px solid var(--color-gold);
     border-radius: var(--radius-lg);
-    overflow: hidden;
+    overflow: visible;
     transition: all var(--transition-fast);
   }
 
   .character-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(var(--color-gold-rgb, 201, 162, 39), 0.2);
+  }
+
+  .character-card--current {
+    border-color: var(--color-success);
+    box-shadow: 0 0 0 2px var(--color-success);
+  }
+
+  .character-card--current .character-name {
+    color: var(--color-success);
+  }
+
+  .character-card--current::before {
+    content: "Your Character";
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-success);
+    color: white;
+    font-size: var(--text-xs);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
   }
 
   .character-card-link {

@@ -483,50 +483,13 @@ Valid entity types and their fields:
 
 ---
 
-## Player Hub API
+## Player Hub & Session Tracker API
 
-The Player Hub provides authenticated access for players to view party resources and manage session data.
-
-### Authentication
-
-Players authenticate with a shared player token stored in SSM:
-
-```bash
-# Set player hub token
-aws ssm put-parameter \
-  --name "/dndblog/player-notes-token" \
-  --value "shared-player-token" \
-  --type SecureString \
-  --overwrite
-```
-
-### Endpoints
-
-#### POST /validate-player-token
-
-Validate a player token.
-
-**Request Headers:**
-```
-X-Player-Token: shared-player-token
-```
-
-**Response:**
-```json
-{
-  "valid": true
-}
-```
-
----
-
-## Session Tracker API (Per-Character)
-
-The Session Tracker allows individual players to track HP, spell slots, and conditions during gameplay.
+The Player Hub and Session Tracker use per-character authentication. Each player has their own token associated with their character, providing personalized access to the player hub and session tracker.
 
 ### Per-Character Authentication
 
-Each player has their own token associated with a character:
+Each player has their own token stored in SSM:
 
 ```bash
 # Set per-character token

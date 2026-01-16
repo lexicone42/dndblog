@@ -273,18 +273,26 @@ export function isSsoAvailable(): boolean {
 // ==========================================================================
 
 /**
- * Validate player token against server
- * Returns true if token is valid, false otherwise
+ * Result of character token validation
  */
-export async function validatePlayerToken(token: string): Promise<boolean> {
+export interface CharacterTokenResult {
+  valid: boolean;
+  characterSlug: string | null;
+}
+
+/**
+ * Validate character token against server
+ * Returns validation result with character slug if valid
+ */
+export async function validateCharacterToken(token: string): Promise<CharacterTokenResult> {
   const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL;
   if (!apiUrl) {
     console.warn('API URL not configured, skipping server validation');
-    return true; // Graceful degradation for local dev without API
+    return { valid: true, characterSlug: null }; // Graceful degradation for local dev without API
   }
 
   try {
-    const response = await fetch(`${apiUrl}/validate-player-token`, {
+    const response = await fetch(`${apiUrl}/validate-character-token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -293,15 +301,26 @@ export async function validatePlayerToken(token: string): Promise<boolean> {
     });
 
     if (!response.ok) {
-      return false;
+      return { valid: false, characterSlug: null };
     }
 
     const data = await response.json();
-    return data.valid === true;
+    return {
+      valid: data.valid === true,
+      characterSlug: data.characterSlug || null,
+    };
   } catch (error) {
     console.error('Token validation error:', error);
-    return false;
+    return { valid: false, characterSlug: null };
   }
+}
+
+/**
+ * @deprecated Use validateCharacterToken instead
+ */
+export async function validatePlayerToken(token: string): Promise<boolean> {
+  const result = await validateCharacterToken(token);
+  return result.valid;
 }
 
 /**

@@ -815,7 +815,7 @@ const dynamoClient = new DynamoDBClient({});
 const snsClient = new SNSClient({});
 
 // Paths to track (successful token validations)
-const TRACKED_PATHS = ['/validate-player-token', '/validate-dm-token'];
+const TRACKED_PATHS = ['/validate-character-token', '/validate-dm-token'];
 
 exports.handler = async (event) => {
   // CloudWatch Logs subscription sends base64-encoded gzipped data
@@ -892,7 +892,7 @@ exports.handler = async (event) => {
       logGroup: apiAccessLogGroup,
       destination: new logsDestinations.LambdaDestination(ipTrackerFunction),
       filterPattern: logs.FilterPattern.anyTerm(
-        'validate-player-token',
+        'validate-character-token',
         'validate-dm-token'
       ),
     });
@@ -2425,148 +2425,6 @@ exports.handler = async (event) => {
       alarmName: `${cdk.Names.uniqueId(this)}-validation-errors`,
       alarmDescription: 'Entity validation function errors',
       metric: validationFunction.metricErrors({
-        statistic: 'Sum',
-        period: cdk.Duration.minutes(5),
-      }),
-      threshold: 1,
-      evaluationPeriods: 1,
-      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-
-    // ==========================================================================
-    // Player Token Validation Function
-    // ==========================================================================
-    //
-    // Validates player tokens for /player page access.
-    // Player tokens are separate from DM tokens - they grant player-level access only.
-    // Token is stored in SSM Parameter Store: /dndblog/player-notes-token
-    //
-    // ==========================================================================
-
-    const playerTokenParameterName = '/dndblog/player-notes-token';
-
-    const validatePlayerTokenFunction = new lambda.Function(this, 'ValidatePlayerTokenFunction', {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'index.handler',
-      timeout: cdk.Duration.seconds(10),
-      memorySize: 256,
-      environment: {
-        PLAYER_TOKEN_PARAMETER_NAME: playerTokenParameterName,
-        ALLOWED_ORIGIN: props.allowedOrigin,
-      },
-      code: lambda.Code.fromInline(`
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
-
-const ssmClient = new SSMClient({});
-
-let cachedToken = null;
-let tokenExpiry = 0;
-
-async function getPlayerToken() {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiry) {
-    return cachedToken;
-  }
-
-  const result = await ssmClient.send(new GetParameterCommand({
-    Name: process.env.PLAYER_TOKEN_PARAMETER_NAME,
-    WithDecryption: true,
-  }));
-
-  cachedToken = result.Parameter.Value;
-  tokenExpiry = now + 5 * 60 * 1000; // Cache for 5 minutes
-  return cachedToken;
-}
-
-function getCorsOrigin(event) {
-  const origin = event.headers?.origin || event.headers?.Origin || '';
-  const allowed = process.env.ALLOWED_ORIGIN;
-  if (origin.startsWith('http://localhost:')) {
-    return origin;
-  }
-  return allowed;
-}
-
-exports.handler = async (event) => {
-  const corsOrigin = getCorsOrigin(event);
-  const headers = {
-    'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-Player-Token',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
-  };
-
-  // Handle CORS preflight
-  if (event.requestContext?.http?.method === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
-
-  try {
-    const providedToken = event.headers?.['x-player-token'] || event.headers?.['X-Player-Token'];
-
-    if (!providedToken) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ valid: false, error: 'Missing player token' }),
-      };
-    }
-
-    const validToken = await getPlayerToken();
-    if (providedToken !== validToken) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ valid: false, error: 'Invalid player token' }),
-      };
-    }
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ valid: true }),
-    };
-
-  } catch (error) {
-    console.error('Error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ valid: false, error: 'Internal server error' }),
-    };
-  }
-};
-      `),
-    });
-
-    // Grant SSM parameter read access to player token validation function
-    validatePlayerTokenFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['ssm:GetParameter'],
-      resources: [
-        cdk.Stack.of(this).formatArn({
-          service: 'ssm',
-          resource: 'parameter',
-          resourceName: playerTokenParameterName.replace(/^\//, ''),
-        }),
-      ],
-    }));
-
-    // Add player token validation route
-    this.api.addRoutes({
-      path: '/validate-player-token',
-      methods: [apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
-      integration: new apigatewayIntegrations.HttpLambdaIntegration(
-        'ValidatePlayerTokenIntegration',
-        validatePlayerTokenFunction
-      ),
-    });
-
-    // Player Token Validation Function Alarm
-    new cloudwatch.Alarm(this, 'ValidatePlayerTokenFunctionErrors', {
-      alarmName: `${cdk.Names.uniqueId(this)}-validate-player-token-errors`,
-      alarmDescription: 'Player token validation function errors',
-      metric: validatePlayerTokenFunction.metricErrors({
         statistic: 'Sum',
         period: cdk.Duration.minutes(5),
       }),
