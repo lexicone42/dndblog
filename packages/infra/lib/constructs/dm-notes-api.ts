@@ -2928,7 +2928,7 @@ exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-Player-Token, X-DM-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Player-Token, X-DM-Token, Authorization',
     'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -2982,10 +2982,28 @@ exports.handler = async (event) => {
     }
     const slug = slugMatch[1];
 
-    // Validate player token
+    // Validate auth - support both player token and Cognito JWT
+    let authorizedSlug = null;
+
+    // Try player token auth first
     const playerToken = event.headers?.['x-player-token'] || event.headers?.['X-Player-Token'];
-    const tokens = await getPlayerTokens();
-    const authorizedSlug = tokens[playerToken];
+    if (playerToken) {
+      const tokens = await getPlayerTokens();
+      authorizedSlug = tokens[playerToken];
+    }
+
+    // Try Cognito JWT if token auth didn't work
+    if (!authorizedSlug) {
+      const authHeader = event.headers?.authorization || event.headers?.Authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const jwt = authHeader.substring(7);
+        const result = await validateCognitoToken(jwt);
+        if (result.valid && result.payload) {
+          // Get character slug from custom:characterSlug claim
+          authorizedSlug = result.payload['custom:characterSlug'];
+        }
+      }
+    }
 
     if (!authorizedSlug || authorizedSlug !== slug) {
       return { statusCode: 403, headers, body: JSON.stringify({ error: 'Not authorized for this character' }) };
