@@ -237,7 +237,7 @@ const partyMembers: PartyMember[] = characters
     if (!API_URL) return false;
 
     try {
-      var response = await fetch(API_URL + '/validate-token', {
+      var response = await fetch(API_URL + '/validate-dm-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
