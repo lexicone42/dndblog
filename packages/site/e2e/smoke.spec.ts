@@ -185,11 +185,17 @@ test.describe('Post-deployment smoke tests', () => {
       await expect(playerNav).toHaveCSS('display', 'none');
     });
 
-    test('Navigation shows DM link when dm-token is set', async ({ page }) => {
-      // Set DM token before navigating
+    test('Navigation shows DM link when Cognito auth has DM role', async ({ page }) => {
+      // Set Cognito auth with DM role before navigating
       await page.goto('/');
       await page.evaluate(() => {
-        localStorage.setItem('dm-token', 'test-token');
+        const mockAuth = {
+          method: 'cognito',
+          roles: { isDm: true, isPlayer: false },
+          accessToken: 'mock-access-token',
+          expiresAt: Date.now() + 3600000, // 1 hour from now
+        };
+        localStorage.setItem('dndblog-cognito-auth', JSON.stringify(mockAuth));
       });
 
       // Reload to trigger nav visibility update
@@ -204,19 +210,25 @@ test.describe('Post-deployment smoke tests', () => {
 
       // Clean up
       await page.evaluate(() => {
-        localStorage.removeItem('dm-token');
+        localStorage.removeItem('dndblog-cognito-auth');
       });
     });
 
-    test('DM dashboard shows content when token is set', async ({ page }) => {
+    test('DM dashboard shows content when Cognito auth has DM role', async ({ page }) => {
+      // Set Cognito auth with DM role before navigating
+      await page.goto('/');
+      await page.evaluate(() => {
+        const mockAuth = {
+          method: 'cognito',
+          roles: { isDm: true, isPlayer: false },
+          accessToken: 'mock-access-token',
+          expiresAt: Date.now() + 3600000, // 1 hour from now
+        };
+        localStorage.setItem('dndblog-cognito-auth', JSON.stringify(mockAuth));
+      });
+
+      // Navigate to DM dashboard
       await page.goto('/dm');
-
-      // Enter token in the auth form
-      const tokenInput = page.locator('#dm-token');
-      await tokenInput.fill('test-token-value');
-
-      // Submit the form
-      await page.locator('#auth-form button[type="submit"]').click();
 
       // Dashboard content should now be visible
       const dashboard = page.locator('#dashboard-content');
@@ -226,17 +238,23 @@ test.describe('Post-deployment smoke tests', () => {
       const authGate = page.locator('#auth-gate');
       await expect(authGate).toBeHidden();
 
-      // Clean up token
+      // Clean up auth
       await page.evaluate(() => {
-        localStorage.removeItem('dm-token');
+        localStorage.removeItem('dndblog-cognito-auth');
       });
     });
 
-    test('DM notes loads content when token is in localStorage', async ({ page }) => {
-      // Set token first
+    test('DM notes loads content when Cognito auth has DM role', async ({ page }) => {
+      // Set Cognito auth with DM role first
       await page.goto('/');
       await page.evaluate(() => {
-        localStorage.setItem('dm-token', 'test-token');
+        const mockAuth = {
+          method: 'cognito',
+          roles: { isDm: true, isPlayer: false },
+          accessToken: 'mock-access-token',
+          expiresAt: Date.now() + 3600000, // 1 hour from now
+        };
+        localStorage.setItem('dndblog-cognito-auth', JSON.stringify(mockAuth));
       });
 
       // Navigate to DM notes
@@ -252,7 +270,7 @@ test.describe('Post-deployment smoke tests', () => {
 
       // Clean up
       await page.evaluate(() => {
-        localStorage.removeItem('dm-token');
+        localStorage.removeItem('dndblog-cognito-auth');
       });
     });
   });
