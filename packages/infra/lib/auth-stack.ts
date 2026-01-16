@@ -148,7 +148,9 @@ export class AuthStack extends cdk.Stack {
         ],
         logoutUrls: [
           `https://${props.siteDomain}`,
+          `https://${props.siteDomain}/campaign`,
           'http://localhost:4321',
+          'http://localhost:4321/campaign',
         ],
       },
       

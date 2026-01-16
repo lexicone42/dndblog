@@ -244,18 +244,21 @@ export function getLoginUrl(returnUrl?: string): string {
 
 /**
  * Get Cognito hosted UI logout URL
+ * @param returnPath - Optional path to redirect to after logout (e.g., '/campaign')
  */
-export function getLogoutUrl(): string {
+export function getLogoutUrl(returnPath?: string): string {
   const config = getAuthConfig();
 
   // Clear local auth state first
   clearAuth();
 
   if (config.mode === 'token' || !config.domain || !config.clientId) {
-    return '/';
+    return returnPath || '/';
   }
 
-  const logoutUri = encodeURIComponent(window.location.origin);
+  const logoutUri = encodeURIComponent(
+    window.location.origin + (returnPath || '')
+  );
 
   return `https://${config.domain}/logout?` +
     `client_id=${config.clientId}` +
