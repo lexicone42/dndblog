@@ -3094,6 +3094,326 @@ exports.handler = async (event) => {
       `),
     });
 
+    // ==========================================================================
+    // Player Draft Approval/Rejection Function (DM Only)
+    // ==========================================================================
+
+    const playerDraftApprovalFunction = new lambda.Function(this, 'PlayerDraftApprovalFunction', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(60),
+      memorySize: 512,
+      environment: {
+        BUCKET_NAME: this.bucket.bucketName,
+        SSM_TOKEN_PARAM: tokenParameterName,
+        SSM_GITHUB_PAT_PARAM: '/dndblog/github-pat',
+        GITHUB_OWNER: 'lexicone42',
+        GITHUB_REPO: 'dndblog',
+        GITHUB_DEFAULT_BRANCH: 'main',
+        ALLOWED_ORIGIN: props.allowedOrigin,
+      },
+      code: lambda.Code.fromInline(`
+const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
+const { S3Client, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const https = require('https');
+
+const ssmClient = new SSMClient({});
+const s3Client = new S3Client({});
+
+let cachedDmToken = null;
+let cachedGithubPat = null;
+
+async function getDmToken() {
+  if (cachedDmToken) return cachedDmToken;
+  const result = await ssmClient.send(new GetParameterCommand({
+    Name: process.env.SSM_TOKEN_PARAM,
+    WithDecryption: true,
+  }));
+  cachedDmToken = result.Parameter.Value;
+  return cachedDmToken;
+}
+
+async function getGitHubPat() {
+  if (cachedGithubPat) return cachedGithubPat;
+  const result = await ssmClient.send(new GetParameterCommand({
+    Name: process.env.SSM_GITHUB_PAT_PARAM,
+    WithDecryption: true,
+  }));
+  cachedGithubPat = result.Parameter.Value;
+  return cachedGithubPat;
+}
+
+function getCorsOrigin(event) {
+  const origin = event.headers?.origin || event.headers?.Origin || '';
+  if (origin.startsWith('http://localhost:')) return origin;
+  return process.env.ALLOWED_ORIGIN;
+}
+
+async function githubApi(method, path, body = null) {
+  const pat = await getGitHubPat();
+  const options = {
+    hostname: 'api.github.com',
+    port: 443,
+    path: path,
+    method: method,
+    headers: {
+      'Authorization': 'Bearer ' + pat,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'dndblog-player-draft-approval',
+      'Content-Type': 'application/json',
+    },
+  };
+
+  return new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const json = data ? JSON.parse(data) : {};
+          if (res.statusCode >= 400) {
+            reject(new Error(json.message || 'GitHub API error: ' + res.statusCode));
+          } else {
+            resolve(json);
+          }
+        } catch (e) {
+          reject(new Error('Failed to parse GitHub response'));
+        }
+      });
+    });
+    req.on('error', reject);
+    if (body) req.write(JSON.stringify(body));
+    req.end();
+  });
+}
+
+exports.handler = async (event) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': getCorsOrigin(event),
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+  };
+
+  if (event.requestContext?.http?.method === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  const method = event.requestContext?.http?.method || event.httpMethod;
+  const path = event.rawPath || event.path || '';
+
+  try {
+    // Validate DM token
+    const dmToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
+    const validDmToken = await getDmToken();
+
+    if (dmToken !== validDmToken) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'Invalid DM token' }) };
+    }
+
+    // Parse route: /player/drafts/{slug}/approve or /player/drafts/{slug}/reject
+    const approveMatch = path.match(/^\\/player\\/drafts\\/([^/]+)\\/approve$/);
+    const rejectMatch = path.match(/^\\/player\\/drafts\\/([^/]+)\\/reject$/);
+
+    if (rejectMatch && method === 'POST') {
+      // Reject: simply delete the draft
+      const slug = rejectMatch[1];
+      const s3Key = 'players/drafts/' + slug + '.json';
+
+      await s3Client.send(new DeleteObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: s3Key,
+      }));
+
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, message: 'Draft rejected' }) };
+    }
+
+    if (approveMatch && method === 'POST') {
+      const slug = approveMatch[1];
+      const s3Key = 'players/drafts/' + slug + '.json';
+      const owner = process.env.GITHUB_OWNER;
+      const repo = process.env.GITHUB_REPO;
+      const defaultBranch = process.env.GITHUB_DEFAULT_BRANCH;
+
+      // 1. Load draft from S3
+      let draft;
+      try {
+        const result = await s3Client.send(new GetObjectCommand({
+          Bucket: process.env.BUCKET_NAME,
+          Key: s3Key,
+        }));
+        draft = JSON.parse(await result.Body.transformToString());
+      } catch (err) {
+        if (err.name === 'NoSuchKey') {
+          return { statusCode: 404, headers, body: JSON.stringify({ error: 'No draft found' }) };
+        }
+        throw err;
+      }
+
+      // 2. Get current character file from GitHub
+      const filePath = 'packages/site/src/content/campaign/characters/' + slug + '.md';
+      let fileContent, fileSha;
+      try {
+        const fileData = await githubApi('GET', '/repos/' + owner + '/' + repo + '/contents/' + filePath + '?ref=' + defaultBranch);
+        fileSha = fileData.sha;
+        fileContent = Buffer.from(fileData.content, 'base64').toString('utf8');
+      } catch (err) {
+        return { statusCode: 404, headers, body: JSON.stringify({ error: 'Character file not found: ' + slug }) };
+      }
+
+      // 3. Parse and update frontmatter
+      const frontmatterMatch = fileContent.match(/^---\\n([\\s\\S]*?)\\n---/);
+      if (!frontmatterMatch) {
+        return { statusCode: 500, headers, body: JSON.stringify({ error: 'Could not parse character frontmatter' }) };
+      }
+
+      let frontmatter = frontmatterMatch[1];
+      const bodyContent = fileContent.slice(frontmatterMatch[0].length);
+
+      // Update combat.hp and combat.tempHp if present in draft
+      if (draft.combat) {
+        if (draft.combat.hp !== undefined) {
+          frontmatter = frontmatter.replace(/(combat:[\\s\\S]*?hp:)\\s*\\d+/, '$1 ' + draft.combat.hp);
+        }
+        if (draft.combat.tempHp !== undefined) {
+          // Add or update tempHp
+          if (frontmatter.includes('tempHp:')) {
+            frontmatter = frontmatter.replace(/tempHp:\\s*\\d+/, 'tempHp: ' + draft.combat.tempHp);
+          } else {
+            // Add tempHp after hp
+            frontmatter = frontmatter.replace(/(combat:[\\s\\S]*?hp:\\s*\\d+)/, '$1\\n  tempHp: ' + draft.combat.tempHp);
+          }
+        }
+      }
+
+      // Update spell slots if present
+      if (draft.spellSlots && Array.isArray(draft.spellSlots)) {
+        for (const slot of draft.spellSlots) {
+          if (slot.level && slot.expended !== undefined) {
+            // Update expended slots for this level
+            const levelRegex = new RegExp('(' + slot.level + ':[\\\\s\\\\S]*?expended:)\\\\s*\\\\d+');
+            frontmatter = frontmatter.replace(levelRegex, '$1 ' + slot.expended);
+          }
+        }
+      }
+
+      // Update active conditions if present
+      if (draft.activeConditions) {
+        // Remove existing activeConditions block and add new one
+        frontmatter = frontmatter.replace(/activeConditions:[\\s\\S]*?(?=\\n[a-zA-Z]|$)/m, '');
+        if (draft.activeConditions.length > 0) {
+          const conditionsYaml = 'activeConditions:\\n' + draft.activeConditions.map(c => {
+            let line = '  - name: "' + c.name + '"';
+            if (c.duration) line += '\\n    duration: "' + c.duration + '"';
+            if (c.source) line += '\\n    source: "' + c.source + '"';
+            return line;
+          }).join('\\n');
+          frontmatter = frontmatter.trim() + '\\n\\n' + conditionsYaml;
+        }
+      }
+
+      const newContent = '---\\n' + frontmatter.trim() + '\\n---' + bodyContent;
+
+      // 4. Create branch and commit
+      const branchName = 'player-update/' + slug + '-' + Date.now();
+
+      // Get base SHA
+      const refData = await githubApi('GET', '/repos/' + owner + '/' + repo + '/git/ref/heads/' + defaultBranch);
+      const baseSha = refData.object.sha;
+
+      // Create branch
+      await githubApi('POST', '/repos/' + owner + '/' + repo + '/git/refs', {
+        ref: 'refs/heads/' + branchName,
+        sha: baseSha,
+      });
+
+      // Update file
+      await githubApi('PUT', '/repos/' + owner + '/' + repo + '/contents/' + filePath, {
+        message: 'Update ' + slug + ' session data\\n\\nHP, spell slots, and conditions updated from player session tracker.',
+        content: Buffer.from(newContent).toString('base64'),
+        branch: branchName,
+        sha: fileSha,
+      });
+
+      // 5. Create PR
+      const prData = await githubApi('POST', '/repos/' + owner + '/' + repo + '/pulls', {
+        title: 'Player Session Update: ' + slug,
+        head: branchName,
+        base: defaultBranch,
+        body: '## Session Data Update\\n\\nApproved by DM from player session tracker.\\n\\n**Character:** ' + slug + '\\n**Updated at:** ' + new Date().toISOString(),
+      });
+
+      // 6. Delete draft from S3
+      await s3Client.send(new DeleteObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: s3Key,
+      }));
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          prUrl: prData.html_url,
+          message: 'Draft approved and PR created',
+        }),
+      };
+    }
+
+    return { statusCode: 404, headers, body: JSON.stringify({ error: 'Not found' }) };
+
+  } catch (error) {
+    console.error('Player draft approval error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Internal server error: ' + error.message }),
+    };
+  }
+};
+      `),
+    });
+
+    // Grant S3 permissions
+    this.bucket.grantReadWrite(playerDraftApprovalFunction);
+
+    // Grant SSM permissions
+    playerDraftApprovalFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: tokenParameterName.replace(/^\//, ''),
+        }),
+        cdk.Stack.of(this).formatArn({
+          service: 'ssm',
+          resource: 'parameter',
+          resourceName: 'dndblog/github-pat',
+        }),
+      ],
+    }));
+
+    // Add approval routes
+    this.api.addRoutes({
+      path: '/player/drafts/{slug}/approve',
+      methods: [apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'PlayerDraftApproveIntegration',
+        playerDraftApprovalFunction
+      ),
+    });
+
+    this.api.addRoutes({
+      path: '/player/drafts/{slug}/reject',
+      methods: [apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        'PlayerDraftRejectIntegration',
+        playerDraftApprovalFunction
+      ),
+    });
+
     // Grant S3 permissions
     this.bucket.grantReadWrite(playerDraftFunction);
 
