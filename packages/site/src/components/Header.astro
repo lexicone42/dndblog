@@ -314,18 +314,37 @@ function isActive(href: string): boolean {
 <script>
   // Role-based navigation visibility
   (function() {
+    const COGNITO_AUTH_KEY = 'dndblog-cognito-auth';
     const dmNav = document.getElementById('nav-dm');
     const playerNav = document.getElementById('nav-player');
 
+    function getAuthRoles() {
+      // Check Cognito auth
+      const cognitoAuth = localStorage.getItem(COGNITO_AUTH_KEY);
+      if (cognitoAuth) {
+        try {
+          const auth = JSON.parse(cognitoAuth);
+          // Check token expiration if available
+          if (auth.expiresAt && auth.expiresAt < Date.now()) {
+            localStorage.removeItem(COGNITO_AUTH_KEY);
+            return { isDm: false, isPlayer: false };
+          }
+          return auth.roles || { isDm: false, isPlayer: false };
+        } catch {
+          return { isDm: false, isPlayer: false };
+        }
+      }
+      return { isDm: false, isPlayer: false };
+    }
+
     function updateRoleNav() {
-      const hasDmToken = localStorage.getItem('dm-token');
-      const hasPlayerToken = localStorage.getItem('player-token');
+      const roles = getAuthRoles();
 
       if (dmNav) {
-        dmNav.style.display = hasDmToken ? '' : 'none';
+        dmNav.style.display = roles.isDm ? '' : 'none';
       }
       if (playerNav) {
-        playerNav.style.display = hasPlayerToken ? '' : 'none';
+        playerNav.style.display = roles.isPlayer ? '' : 'none';
       }
     }
 
@@ -334,6 +353,9 @@ function isActive(href: string): boolean {
 
     // Listen for storage changes (e.g., login/logout in another tab)
     window.addEventListener('storage', updateRoleNav);
+
+    // Listen for auth-change event (same tab login/logout)
+    window.addEventListener('auth-change', updateRoleNav);
 
     // Also check periodically in case of same-tab login/logout
     // This handles the case where user logs in on a different page
