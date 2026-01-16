@@ -251,15 +251,17 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
     }
 
     function showDashboard(characterSlug) {
-      authGate.style.display = 'none';
-      dashboardContent.style.display = 'block';
-
       // Store character slug for session tracker access
       if (characterSlug) {
         localStorage.setItem('player-character-slug', characterSlug);
-        // Highlight the logged-in character's card
-        highlightCharacterCard(characterSlug);
+        // Redirect directly to the character's dashboard
+        window.location.href = '/party/session/' + characterSlug;
+        return;
       }
+
+      // Fallback: show party list if no character slug (shouldn't happen with per-character tokens)
+      authGate.style.display = 'none';
+      dashboardContent.style.display = 'block';
     }
 
     function highlightCharacterCard(slug) {
