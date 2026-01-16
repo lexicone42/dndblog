@@ -1,6 +1,6 @@
 ---
 title: "Welcome to the Adventure"
-description: "Welcome to Chronicles of the Mawframe - a campaign journal documenting our D&D 5e adventures as we uncover ancient secrets and battle forces that threaten to unmake the world."
+description: "You've found these records. We don't know how. Read carefully—knowledge of the leylines carries weight."
 pubDate: 2026-01-13
 heroImage: "/assets/welcome-hero.jpg"
 draft: false
@@ -9,44 +9,82 @@ author: "The Dungeon Master"
 visibility: "public"
 ---
 
-# Welcome, Adventurers!
+# You Found This
 
-Welcome to **Chronicles of the Mawframe**, the official campaign journal for our ongoing D&D 5th Edition adventure. What started as a simple investigation into bandit raids has grown into an epic tale spanning multiple planes of existence.
+These are the recovered field notes of six individuals who investigated what they thought were simple bandit raids in the frontier town of Phandalin.
 
-## Our Story So Far
+They were wrong about everything.
 
-Our party of adventurers first met in the frontier town of Phandalin, summoned to investigate raids and kidnappings. What we discovered was far more sinister: an ancient cult, a fallen priest, and artifacts tied to the dark god Shavras.
+---
 
-After sealing the Vault of Shavras and defeating the Fallen Priest, we learned of an even greater threat: **Aru'xat the Verdant Maw**, a primordial world-devourer that the Slanted Circle seeks to awaken using the Maw Frame.
+## What Actually Happened
 
-Our quest has taken us from the haunted depths of Whisperwood Forest to the towering spires of Sharn in Eberron, where we've fought to protect the ley anchors that keep the world intact.
+It started with kidnappings. Then a golden bell inscribed with a name no one recognized—**Shavras**. Then a vault beneath the earth, a fallen priest, and a woman whose bloodline had been hunted for centuries.
+
+They sealed the vault. They thought they'd won.
+
+*They hadn't.*
+
+The Vault of Shavras was a lock. They'd just confirmed that somewhere, a key existed.
+
+---
+
+## What They Learned
+
+In **Astgrove**, rangers of the Emerald Enclave spoke of something wrong in the North Woods. Trees cut against their will. Rocks rolling uphill. Enslaved humans building a structure that resembled a jaw.
+
+They called it **The Maw Frame**.
+
+A resonance engine. A wooden machine designed to do one thing: wake **Aru'xat the Verdant Maw**—a primordial entity sealed during the Dawn Wars. Something old enough to have eaten worlds before this one existed.
+
+The ones building it? A cult called **The Slanted Circle**. Purple robes. Ice magic. Operatives embedded in every organization that might stop them.
+
+They've been planning this for a very long time.
+
+---
 
 ## The Party
 
-- **Stol** - Human Cleric (Life Domain) - Our steadfast healer
-- **Rudiger** - Human Wizard (Evoker) - Master of arcane destruction
-- **Skid Demon** - Half-Elf Ranger (Gloom Stalker) - Now marked by ley energy
-- **Kei Eaglesnout** - Human Fighter (Champion) - Our stalwart frontline
-- **Malum Munus Exemplar** - Half-Elf Rogue (Assassin) - Striking from the shadows
-- **Accoa Krigsdottir** - Aasimar Paladin (Oath of the Ancients) - Divine warrior
+Six people. Not heroes—not yet. Just the ones who happened to be there when everything started falling apart.
 
-## What You'll Find Here
-
-This blog chronicles our tabletop adventures:
-
-- **[Session Chronicles](/sessions)** - Detailed recaps of every session from the beginning
-- **[Campaign Reference](/reference)** - Characters, locations, factions, and lore
-
-## The Journey Continues
-
-With nine sessions behind us and the Eberron ley anchor now stabilized, our party prepares for what comes next. The Slanted Circle's burned mage still lurks in the shadows, and there are more anchors to protect before Aru'xat can be stopped for good.
-
-Roll well, and may your natural 20s be plentiful!
+| | |
+|---|---|
+| **Stol** | Human Cleric. Life Domain. Keeps the others standing. |
+| **Rudiger** | Human Wizard. Evoker. Storm building inside. |
+| **Skid Demon** | Half-Elf Ranger. Gloom Stalker. *Marked by the leylines now.* |
+| **Kei Eaglesnout** | Human Fighter. Champion. Won't let go. |
+| **Malum Munus Exemplar** | Half-Elf Rogue. Assassin. Works from the dark. |
+| **Accoa Krigsdottir** | Aasimar Paladin. Oath of the Ancients. Light in bad places. |
 
 ---
 
-*"The story has just begun..."*
+## The Current Situation
+
+**Ten sessions recorded.**
+
+The party has traveled from Phandalin to the cursed depths of **Whisperwood Forest**, to the ancient rose-quartz dragon **Nythraxil** on Stonehell Isle, to the planar city of **Sharn** in Eberron.
+
+There, beneath a million towers, in ruins of the **Dhakaani Empire**, they stabilized a ley anchor that had been cracking for millennia.
+
+The Circle Mage escaped. Left only a sigil burned into stone.
+
+Skid's eyes glow now. He can feel the pulse of the leylines like a second heartbeat.
+
+The Maw Frame still rises in the Astralglades. More anchors need protection. And somewhere in the dark, the Slanted Circle prepares their next move.
 
 ---
 
-<small>This site is automatically built and deployed via GitHub Actions CI/CD.</small>
+## Navigation
+
+- **[The Sessions](/sessions)** — Chronological records. Some nights were victories. Some were barely survivals.
+- **[The Index](/reference)** — Names. Places. Things that hunt us. Cross-reference everything.
+
+---
+
+> *"If the pulse breaks, the world will bleed."*
+>
+> — inscription recovered from Dhakaani ruins, depth unknown
+
+---
+
+*These records update as events unfold. Check back. Stay careful. The ley remembers what you forget.*
