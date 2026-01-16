@@ -133,7 +133,7 @@ Cribben joined the party at the very beginning of their adventure in Phandalin, 
 During the battle in the skeletal ossuary, Cribben initially transformed into a rat but then used his Thorn Whip to incapacitate enemies and allow the party to gain the upper hand.
 
 ### Session 4 - The Night Hag's Curse
-When the Night Hag cursed the party in Whisperwood Forest, the curse affected Cribben differently than the others. While the rest of the party suffered wisdom penalties that the Dryad Erinthin later lifted, Cribben was unwillingly transmuted into a toad and hopped off into the forest, never to be seen again.
+When the Night Hag cursed the party in Whisperwood Forest, the curse affected Cribben differently than the others. While the rest of the party suffered wisdom penalties that the Dryad Erinthin later lifted, Cribben was unwillingly [transmuted into something else](/toad)... and hopped off into the forest, never to be seen again.
 
 ## Current Status
 
