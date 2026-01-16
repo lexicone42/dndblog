@@ -114,6 +114,9 @@ jobs:
         env:
           SITE_URL: https://example.com
 
+      # Link validation is included in the build script (pnpm check-links)
+      # This ensures all internal links point to existing pages
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v6
         with:
