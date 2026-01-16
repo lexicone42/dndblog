@@ -40,4 +40,6 @@ test-results/
 
 # Claude Code
 .claude/
-CLAUDE_SESSION_STATE.md
+
+# Serena
+.serena/
