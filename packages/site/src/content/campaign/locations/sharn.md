@@ -63,3 +63,24 @@ The Lightning Rail connects Sharn to distant lands, serving as a major transport
 - Lightning Rail terminal
 - Site of the Dragonshard shipment interception
 - Location of Harlix and Veyra's exposure
+
+### Sky Market (Dava Gate)
+- Floating platforms connected by rope bridges and arcane lifts
+- Upper city marketplace with merchants from across Khorvaire
+- Notable shops include:
+  - **Copperspar's Curious Contraptions**: Gnomish devices
+  - **The Laughing Chimera**: Tavern across three platforms
+  - **Crystal Spiral**: Dragonshard trading
+  - **Smoke & Mirrors**: Illusion magic vendor
+  - **The Floating Trinket**: Lux's shop (appears where needed)
+
+### Skyway Hall
+- House Cannith research facility in the Skyway district
+- Suite 47: Arvell d'Cannith's office
+- Site of Slanted Circle attack and regulator plans theft
+
+### Thalen's Well
+- Within Verdant Hollow
+- Pool connected to the ley network beneath Sharn
+- Named for ancient druid who merged with the water table
+- Drinking grants +5 max HP (Enclave blessing)
