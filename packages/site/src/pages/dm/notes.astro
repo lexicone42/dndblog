@@ -60,17 +60,39 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
     (function() {
       var STORAGE_KEY = 'dm-notes-draft';
       var TITLE_KEY = 'dm-notes-title';
+      var COGNITO_AUTH_KEY = 'dndblog-cognito-auth';
       var editor = null;
       var saveTimeout = null;
       var turndownService = null;
 
+      function getAuthState() {
+        var cognitoAuth = localStorage.getItem(COGNITO_AUTH_KEY);
+        if (cognitoAuth) {
+          try {
+            var auth = JSON.parse(cognitoAuth);
+            if (auth.roles && auth.roles.isDm) {
+              if (auth.expiresAt && auth.expiresAt < Date.now()) {
+                localStorage.removeItem(COGNITO_AUTH_KEY);
+                return null;
+              }
+              return { isDm: true, accessToken: auth.accessToken };
+            }
+          } catch (e) {
+            localStorage.removeItem(COGNITO_AUTH_KEY);
+          }
+        }
+        return null;
+      }
+
+      function getAuthHeaders() {
+        var auth = getAuthState();
+        if (!auth) return {};
+        return { 'Authorization': 'Bearer ' + auth.accessToken };
+      }
+
       function getToken() {
-        // Check localStorage first (set by DM dashboard)
-        var storedToken = localStorage.getItem('dm-token');
-        if (storedToken) return storedToken;
-        // Fall back to URL query param for backwards compatibility
-        var params = new URLSearchParams(window.location.search);
-        return params.get('token');
+        var auth = getAuthState();
+        return auth ? auth.accessToken : null;
       }
 
       function getApiUrl() {
@@ -213,7 +235,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           var urlResponse = await fetch(apiUrl + '/upload-url?filename=' + encodeURIComponent(filename), {
             method: 'GET',
             headers: {
-              'X-DM-Token': token
+              ...getAuthHeaders()
             }
           });
 
@@ -285,7 +307,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-DM-Token': token
+              ...getAuthHeaders()
             },
             body: JSON.stringify({ content: content })
           });
@@ -440,16 +462,38 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
   <script is:inline>
     (function() {
       var NOTES_CACHE_KEY = 'dm-notes-cache';
+      var COGNITO_AUTH_KEY = 'dndblog-cognito-auth';
       var allNotes = [];
       var currentNoteKey = null;
 
+      function getAuthState() {
+        var cognitoAuth = localStorage.getItem(COGNITO_AUTH_KEY);
+        if (cognitoAuth) {
+          try {
+            var auth = JSON.parse(cognitoAuth);
+            if (auth.roles && auth.roles.isDm) {
+              if (auth.expiresAt && auth.expiresAt < Date.now()) {
+                localStorage.removeItem(COGNITO_AUTH_KEY);
+                return null;
+              }
+              return { isDm: true, accessToken: auth.accessToken };
+            }
+          } catch (e) {
+            localStorage.removeItem(COGNITO_AUTH_KEY);
+          }
+        }
+        return null;
+      }
+
+      function getAuthHeaders() {
+        var auth = getAuthState();
+        if (!auth) return {};
+        return { 'Authorization': 'Bearer ' + auth.accessToken };
+      }
+
       function getToken() {
-        // Check localStorage first (set by DM dashboard)
-        var storedToken = localStorage.getItem('dm-token');
-        if (storedToken) return storedToken;
-        // Fall back to URL query param for backwards compatibility
-        var params = new URLSearchParams(window.location.search);
-        return params.get('token');
+        var auth = getAuthState();
+        return auth ? auth.accessToken : null;
       }
 
       function getApiUrl() {
@@ -543,7 +587,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
         try {
           var response = await fetch(apiUrl + '/notes', {
-            headers: { 'X-DM-Token': token }
+            headers: { ...getAuthHeaders() }
           });
 
           if (!response.ok) throw new Error('Failed to load notes');
@@ -643,7 +687,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
         try {
           var response = await fetch(apiUrl + '/notes/' + encodeURIComponent(key), {
-            headers: { 'X-DM-Token': token }
+            headers: { ...getAuthHeaders() }
           });
 
           if (!response.ok) throw new Error('Failed to load note');
@@ -694,7 +738,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         var apiUrl = getApiUrl();
 
         fetch(apiUrl + '/notes/' + encodeURIComponent(currentNoteKey), {
-          headers: { 'X-DM-Token': token }
+          headers: { ...getAuthHeaders() }
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -731,7 +775,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         try {
           var response = await fetch(apiUrl + '/notes/' + encodeURIComponent(currentNoteKey), {
             method: 'DELETE',
-            headers: { 'X-DM-Token': token }
+            headers: { ...getAuthHeaders() }
           });
 
           if (!response.ok) throw new Error('Failed to delete note');

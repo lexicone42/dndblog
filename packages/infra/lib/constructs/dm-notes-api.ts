@@ -476,7 +476,7 @@ exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -487,25 +487,35 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Get token from header
-    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
+    // Validate DM auth - support both token and Cognito JWT
+    let isDmAuthorized = false;
 
-    if (!providedToken) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Missing authentication token' }),
-      };
+    // Try DM token auth first
+    const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
+    if (providedToken) {
+      const validToken = await getToken();
+      if (providedToken === validToken) {
+        isDmAuthorized = true;
+      }
     }
 
-    // Validate token
-    const validToken = await getToken();
-    if (providedToken !== validToken) {
-      return {
-        statusCode: 403,
-        headers,
-        body: JSON.stringify({ error: 'Invalid token' }),
-      };
+    // Try Cognito JWT if token auth didn't work
+    if (!isDmAuthorized) {
+      const authHeader = event.headers?.authorization || event.headers?.Authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const jwt = authHeader.substring(7);
+        const result = await validateCognitoToken(jwt);
+        if (result.valid && result.payload) {
+          const groups = result.payload['cognito:groups'] || [];
+          if (groups.includes('dm')) {
+            isDmAuthorized = true;
+          }
+        }
+      }
+    }
+
+    if (!isDmAuthorized) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required' }) };
     }
 
     // Generate filename with timestamp
@@ -633,7 +643,7 @@ exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -643,14 +653,30 @@ exports.handler = async (event) => {
   }
 
   try {
+    // Validate DM auth - support both token and Cognito JWT
+    let isDmAuthorized = false;
     const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (!providedToken) {
-      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Missing authentication token' }) };
+    if (providedToken) {
+      const validToken = await getToken();
+      if (providedToken === validToken) {
+        isDmAuthorized = true;
+      }
     }
-
-    const validToken = await getToken();
-    if (providedToken !== validToken) {
-      return { statusCode: 403, headers, body: JSON.stringify({ error: 'Invalid token' }) };
+    if (!isDmAuthorized) {
+      const authHeader = event.headers?.authorization || event.headers?.Authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const jwt = authHeader.substring(7);
+        const result = await validateCognitoToken(jwt);
+        if (result.valid && result.payload) {
+          const groups = result.payload['cognito:groups'] || [];
+          if (groups.includes('dm')) {
+            isDmAuthorized = true;
+          }
+        }
+      }
+    }
+    if (!isDmAuthorized) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required' }) };
     }
 
     // Check feature flag
@@ -1076,7 +1102,7 @@ exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
     'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -1086,14 +1112,30 @@ exports.handler = async (event) => {
   }
 
   try {
+    // Validate DM auth - support both token and Cognito JWT
+    let isDmAuthorized = false;
     const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (!providedToken) {
-      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Missing authentication token' }) };
+    if (providedToken) {
+      const validToken = await getToken();
+      if (providedToken === validToken) {
+        isDmAuthorized = true;
+      }
     }
-
-    const validToken = await getToken();
-    if (providedToken !== validToken) {
-      return { statusCode: 403, headers, body: JSON.stringify({ error: 'Invalid token' }) };
+    if (!isDmAuthorized) {
+      const authHeader = event.headers?.authorization || event.headers?.Authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const jwt = authHeader.substring(7);
+        const result = await validateCognitoToken(jwt);
+        if (result.valid && result.payload) {
+          const groups = result.payload['cognito:groups'] || [];
+          if (groups.includes('dm')) {
+            isDmAuthorized = true;
+          }
+        }
+      }
+    }
+    if (!isDmAuthorized) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required' }) };
     }
 
     const method = event.requestContext?.http?.method;
@@ -1405,7 +1447,7 @@ exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -1415,14 +1457,30 @@ exports.handler = async (event) => {
   }
 
   try {
+    // Validate DM auth - support both token and Cognito JWT
+    let isDmAuthorized = false;
     const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (!providedToken) {
-      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Missing authentication token' }) };
+    if (providedToken) {
+      const validToken = await getToken();
+      if (providedToken === validToken) {
+        isDmAuthorized = true;
+      }
     }
-
-    const validToken = await getToken();
-    if (providedToken !== validToken) {
-      return { statusCode: 403, headers, body: JSON.stringify({ error: 'Invalid token' }) };
+    if (!isDmAuthorized) {
+      const authHeader = event.headers?.authorization || event.headers?.Authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const jwt = authHeader.substring(7);
+        const result = await validateCognitoToken(jwt);
+        if (result.valid && result.payload) {
+          const groups = result.payload['cognito:groups'] || [];
+          if (groups.includes('dm')) {
+            isDmAuthorized = true;
+          }
+        }
+      }
+    }
+    if (!isDmAuthorized) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required' }) };
     }
 
     const body = JSON.parse(event.body || '{}');
@@ -1851,7 +1909,7 @@ exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -1861,14 +1919,30 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Validate token
+    // Validate DM auth - support both token and Cognito JWT
+    let isDmAuthorized = false;
     const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (!providedToken) {
-      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Missing authentication token' }) };
+    if (providedToken) {
+      const validToken = await getToken();
+      if (providedToken === validToken) {
+        isDmAuthorized = true;
+      }
     }
-    const validToken = await getToken();
-    if (providedToken !== validToken) {
-      return { statusCode: 403, headers, body: JSON.stringify({ error: 'Invalid token' }) };
+    if (!isDmAuthorized) {
+      const authHeader = event.headers?.authorization || event.headers?.Authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const jwt = authHeader.substring(7);
+        const result = await validateCognitoToken(jwt);
+        if (result.valid && result.payload) {
+          const groups = result.payload['cognito:groups'] || [];
+          if (groups.includes('dm')) {
+            isDmAuthorized = true;
+          }
+        }
+      }
+    }
+    if (!isDmAuthorized) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required' }) };
     }
 
     const method = event.requestContext?.http?.method;
@@ -2683,7 +2757,7 @@ exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -2694,29 +2768,43 @@ exports.handler = async (event) => {
   }
 
   try {
+    // Validate DM auth - support both token and Cognito JWT
+    let isDmAuthorized = false;
+    let authMethod = 'none';
     const providedToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-
-    if (!providedToken) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ valid: false, error: 'Missing DM token' }),
-      };
+    if (providedToken) {
+      const validToken = await getDmToken();
+      if (providedToken === validToken) {
+        isDmAuthorized = true;
+        authMethod = 'token';
+      }
     }
-
-    const validToken = await getDmToken();
-    if (providedToken !== validToken) {
+    if (!isDmAuthorized) {
+      const authHeader = event.headers?.authorization || event.headers?.Authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const jwt = authHeader.substring(7);
+        const result = await validateCognitoToken(jwt);
+        if (result.valid && result.payload) {
+          const groups = result.payload['cognito:groups'] || [];
+          if (groups.includes('dm')) {
+            isDmAuthorized = true;
+            authMethod = 'cognito';
+          }
+        }
+      }
+    }
+    if (!isDmAuthorized) {
       return {
         statusCode: 401,
         headers,
-        body: JSON.stringify({ valid: false, error: 'Invalid DM token' }),
+        body: JSON.stringify({ valid: false, error: 'DM access required' }),
       };
     }
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ valid: true }),
+      body: JSON.stringify({ valid: true, authMethod }),
     };
 
   } catch (error) {
@@ -3167,7 +3255,7 @@ exports.handler = async (event) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -3177,12 +3265,30 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Validate DM token
+    // Validate DM auth - support both token and Cognito JWT
+    let isDmAuthorized = false;
     const dmToken = event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    const validDmToken = await getDmToken();
-
-    if (dmToken !== validDmToken) {
-      return { statusCode: 403, headers, body: JSON.stringify({ error: 'Invalid DM token' }) };
+    if (dmToken) {
+      const validDmToken = await getDmToken();
+      if (dmToken === validDmToken) {
+        isDmAuthorized = true;
+      }
+    }
+    if (!isDmAuthorized) {
+      const authHeader = event.headers?.authorization || event.headers?.Authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const jwt = authHeader.substring(7);
+        const result = await validateCognitoToken(jwt);
+        if (result.valid && result.payload) {
+          const groups = result.payload['cognito:groups'] || [];
+          if (groups.includes('dm')) {
+            isDmAuthorized = true;
+          }
+        }
+      }
+    }
+    if (!isDmAuthorized) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required' }) };
     }
 
     // List and delete all session state files

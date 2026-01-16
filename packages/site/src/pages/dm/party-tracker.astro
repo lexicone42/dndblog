@@ -86,27 +86,15 @@ const partyMembers: PartyMember[] = characters
           </svg>
         </div>
         <h1 class="auth-title">Party Tracker</h1>
-        <p class="auth-description">Enter your DM token to view party status.</p>
-        <form id="auth-form" class="auth-form">
-          <label for="dm-token" class="visually-hidden">DM Token</label>
-          <input
-            type="password"
-            id="dm-token"
-            class="auth-input"
-            placeholder="Enter DM token..."
-            autocomplete="off"
-            required
-          />
-          <button type="submit" class="auth-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-              <polyline points="10 17 15 12 10 7"></polyline>
-              <line x1="15" y1="12" x2="3" y2="12"></line>
-            </svg>
-            Enter
-          </button>
-        </form>
-        <p id="auth-error" class="auth-error" style="display: none;"></p>
+        <p class="auth-description">Sign in with your DM account to view party status.</p>
+        <button id="cognito-login-btn" class="auth-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          Sign in with Account
+        </button>
+        <p id="auth-error" class="auth-error" style="display: none;">Access denied. DM role required.</p>
       </div>
     </div>
 
@@ -264,7 +252,7 @@ const partyMembers: PartyMember[] = characters
 
 <script is:inline define:vars={{ apiUrl, wsUrl, partyMembers }}>
 (function() {
-  var TOKEN_KEY = 'dm-token';
+  var COGNITO_AUTH_KEY = 'dndblog-cognito-auth';
   var API_URL = apiUrl;
   var WS_URL = wsUrl;
   var REFRESH_INTERVAL = 60000; // 60 seconds (reduced - WebSocket is primary)
@@ -274,16 +262,50 @@ const partyMembers: PartyMember[] = characters
   var ws = null;
   var wsReconnectTimer = null;
 
+  // Auth helpers
+  function getAuthState() {
+    var cognitoAuth = localStorage.getItem(COGNITO_AUTH_KEY);
+    if (cognitoAuth) {
+      try {
+        var auth = JSON.parse(cognitoAuth);
+        if (auth.roles && auth.roles.isDm) {
+          if (auth.expiresAt && auth.expiresAt < Date.now()) {
+            localStorage.removeItem(COGNITO_AUTH_KEY);
+            return null;
+          }
+          return { isDm: true, accessToken: auth.accessToken };
+        }
+      } catch (e) {
+        localStorage.removeItem(COGNITO_AUTH_KEY);
+      }
+    }
+    return null;
+  }
+
+  function getAuthHeaders() {
+    var auth = getAuthState();
+    if (!auth) return {};
+    return { 'Authorization': 'Bearer ' + auth.accessToken };
+  }
+
+  function getLoginUrl() {
+    var clientId = '3fcqll16v2fv44o0u4ecjgpcai';
+    var domain = 'chronicles-mawframe.auth.us-east-1.amazoncognito.com';
+    var callbackUrl = encodeURIComponent(window.location.origin + '/auth/callback');
+    var state = encodeURIComponent('/dm/party-tracker');
+    return 'https://' + domain + '/login?client_id=' + clientId +
+      '&response_type=code&scope=openid+email+profile&redirect_uri=' + callbackUrl + '&state=' + state;
+  }
+
   // DOM elements
   var authGate = document.getElementById('auth-gate');
   var trackerContent = document.getElementById('tracker-content');
-  var authForm = document.getElementById('auth-form');
   var authError = document.getElementById('auth-error');
-  var tokenInput = document.getElementById('dm-token');
   var refreshBtn = document.getElementById('refresh-btn');
   var refreshTime = document.querySelector('.refresh-time');
   var connectionStatus = document.getElementById('connection-status');
   var endSessionBtn = document.getElementById('end-session-btn');
+  var cognitoLoginBtn = document.getElementById('cognito-login-btn');
 
   // ============================================
   // WebSocket Connection
@@ -295,8 +317,8 @@ const partyMembers: PartyMember[] = characters
       return;
     }
 
-    var token = localStorage.getItem(TOKEN_KEY);
-    if (!token) return;
+    var auth = getAuthState();
+    if (!auth) return;
 
     // Close existing connection
     if (ws) {
@@ -304,7 +326,7 @@ const partyMembers: PartyMember[] = characters
     }
 
     try {
-      ws = new WebSocket(WS_URL + '?token=' + encodeURIComponent(token));
+      ws = new WebSocket(WS_URL + '?token=' + encodeURIComponent(auth.accessToken));
 
       ws.onopen = function() {
         console.log('WebSocket connected');
@@ -398,8 +420,8 @@ const partyMembers: PartyMember[] = characters
   // ============================================
 
   async function endSession() {
-    var token = localStorage.getItem(TOKEN_KEY);
-    if (!token || !API_URL) return;
+    var auth = getAuthState();
+    if (!auth || !API_URL) return;
 
     if (!confirm('End the session? This will clear all player session state.')) {
       return;
@@ -410,7 +432,7 @@ const partyMembers: PartyMember[] = characters
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-DM-Token': token,
+          ...getAuthHeaders()
         },
       });
 
@@ -437,37 +459,13 @@ const partyMembers: PartyMember[] = characters
   // Authentication
   // ============================================
 
-  async function validateToken(token) {
-    if (!API_URL) return false;
-
-    try {
-      var response = await fetch(API_URL + '/validate-dm-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-DM-Token': token,
-        },
-      });
-      return response.ok;
-    } catch (error) {
-      console.error('Token validation error:', error);
-      return false;
-    }
-  }
-
-  async function checkAuth() {
-    var token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
-      var isValid = await validateToken(token);
-      if (isValid) {
-        showTracker();
-        loadDrafts();
-        startAutoRefresh();
-        connectWebSocket();
-      } else {
-        localStorage.removeItem(TOKEN_KEY);
-        showAuthGate();
-      }
+  function checkAuth() {
+    var auth = getAuthState();
+    if (auth && auth.isDm) {
+      showTracker();
+      loadDrafts();
+      startAutoRefresh();
+      connectWebSocket();
     }
   }
 
@@ -481,33 +479,15 @@ const partyMembers: PartyMember[] = characters
     trackerContent.style.display = 'none';
   }
 
-  authForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    var token = tokenInput.value.trim();
-
-    if (token) {
-      authError.style.display = 'none';
-      var isValid = await validateToken(token);
-
-      if (isValid) {
-        localStorage.setItem(TOKEN_KEY, token);
-        showTracker();
-        loadDrafts();
-        startAutoRefresh();
-        connectWebSocket();
-      } else {
-        authError.textContent = 'Invalid token. Please try again.';
-        authError.style.display = 'block';
-      }
-    }
+  cognitoLoginBtn.addEventListener('click', function() {
+    window.location.href = getLoginUrl();
   });
 
   document.getElementById('logout-btn').addEventListener('click', function() {
     stopAutoRefresh();
     disconnectWebSocket();
-    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(COGNITO_AUTH_KEY);
     showAuthGate();
-    tokenInput.value = '';
   });
 
   // ============================================
@@ -556,15 +536,13 @@ const partyMembers: PartyMember[] = characters
   // ============================================
 
   async function loadDrafts() {
-    var token = localStorage.getItem(TOKEN_KEY);
-    if (!token || !API_URL) return;
+    var auth = getAuthState();
+    if (!auth || !API_URL) return;
 
     try {
       var response = await fetch(API_URL + '/player/drafts', {
         method: 'GET',
-        headers: {
-          'X-DM-Token': token,
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {

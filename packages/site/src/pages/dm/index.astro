@@ -25,26 +25,16 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           </svg>
         </div>
         <h1 class="auth-title">DM Access Required</h1>
-        <p class="auth-description">Enter your DM token to access campaign management tools.</p>
-        <form id="auth-form" class="auth-form">
-          <label for="dm-token" class="visually-hidden">DM Token</label>
-          <input
-            type="password"
-            id="dm-token"
-            class="auth-input"
-            placeholder="Enter DM token..."
-            autocomplete="off"
-            required
-          />
-          <button type="submit" class="auth-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-            Unlock
-          </button>
-        </form>
-        <p id="auth-error" class="auth-error" style="display: none;">Invalid token. Please try again.</p>
+        <p class="auth-description">Sign in with your DM account to access campaign management tools.</p>
+
+        <button id="cognito-login-btn" class="auth-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          Sign in with Account
+        </button>
+        <p id="auth-error" class="auth-error" style="display: none;">Access denied. DM role required.</p>
       </div>
     </div>
 
@@ -168,19 +158,42 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
 <script is:inline define:vars={{ apiUrl }}>
   (function() {
-    var TOKEN_KEY = 'dm-token';
+    var COGNITO_AUTH_KEY = 'dndblog-cognito-auth';
     var API_URL = apiUrl;
     var authGate = document.getElementById('auth-gate');
     var dashboardContent = document.getElementById('dashboard-content');
-    var authForm = document.getElementById('auth-form');
     var authError = document.getElementById('auth-error');
-    var tokenInput = document.getElementById('dm-token');
     var logoutBtn = document.getElementById('logout-btn');
     var draftsList = document.getElementById('drafts-list');
+    var cognitoLoginBtn = document.getElementById('cognito-login-btn');
+
+    // Get Cognito auth state - check for DM role
+    function getAuthState() {
+      var cognitoAuth = localStorage.getItem(COGNITO_AUTH_KEY);
+      if (cognitoAuth) {
+        try {
+          var auth = JSON.parse(cognitoAuth);
+          // Check if user has DM role
+          if (auth.roles && auth.roles.isDm) {
+            return { isDm: true, accessToken: auth.accessToken, email: auth.email };
+          }
+        } catch (e) {
+          localStorage.removeItem(COGNITO_AUTH_KEY);
+        }
+      }
+      return null;
+    }
+
+    // Get headers for API calls
+    function getAuthHeaders() {
+      var auth = getAuthState();
+      if (!auth) return {};
+      return { 'Authorization': 'Bearer ' + auth.accessToken };
+    }
 
     function checkAuth() {
-      var token = localStorage.getItem(TOKEN_KEY);
-      if (token) {
+      var auth = getAuthState();
+      if (auth && auth.isDm) {
         showDashboard();
         loadPendingDrafts();
       }
@@ -196,9 +209,19 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       dashboardContent.style.display = 'none';
     }
 
+    // Build Cognito login URL
+    function getLoginUrl() {
+      var clientId = '3fcqll16v2fv44o0u4ecjgpcai';
+      var domain = 'chronicles-mawframe.auth.us-east-1.amazoncognito.com';
+      var callbackUrl = encodeURIComponent(window.location.origin + '/auth/callback');
+      var state = encodeURIComponent('/dm');
+      return 'https://' + domain + '/login?client_id=' + clientId +
+        '&response_type=code&scope=openid+email+profile&redirect_uri=' + callbackUrl + '&state=' + state;
+    }
+
     async function loadPendingDrafts() {
-      var token = localStorage.getItem(TOKEN_KEY);
-      if (!token || !API_URL) {
+      var auth = getAuthState();
+      if (!auth || !API_URL) {
         renderNoDrafts();
         return;
       }
@@ -206,9 +229,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       try {
         var response = await fetch(API_URL + '/player/drafts', {
           method: 'GET',
-          headers: {
-            'X-DM-Token': token,
-          },
+          headers: getAuthHeaders(),
         });
 
         if (!response.ok) {
@@ -326,8 +347,8 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
     }
 
     async function handleApprove(slug, card) {
-      var token = localStorage.getItem(TOKEN_KEY);
-      if (!token || !API_URL) return;
+      var auth = getAuthState();
+      if (!auth || !API_URL) return;
 
       // Disable buttons while processing
       var buttons = card.querySelectorAll('.draft-btn');
@@ -339,9 +360,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       try {
         var response = await fetch(API_URL + '/player/drafts/' + encodeURIComponent(slug) + '/approve', {
           method: 'POST',
-          headers: {
-            'X-DM-Token': token,
-          },
+          headers: getAuthHeaders(),
         });
 
         var data = await response.json();
@@ -385,8 +404,8 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         return;
       }
 
-      var token = localStorage.getItem(TOKEN_KEY);
-      if (!token || !API_URL) return;
+      var auth = getAuthState();
+      if (!auth || !API_URL) return;
 
       var buttons = card.querySelectorAll('.draft-btn');
       buttons.forEach(function(btn) { btn.disabled = true; });
@@ -397,9 +416,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       try {
         var response = await fetch(API_URL + '/player/drafts/' + encodeURIComponent(slug) + '/reject', {
           method: 'POST',
-          headers: {
-            'X-DM-Token': token,
-          },
+          headers: getAuthHeaders(),
         });
 
         var data = await response.json();
@@ -428,24 +445,14 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       }
     }
 
-    authForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      var token = tokenInput.value.trim();
-
-      if (token) {
-        // Store token and show dashboard
-        // Token validation happens when accessing actual API endpoints
-        localStorage.setItem(TOKEN_KEY, token);
-        authError.style.display = 'none';
-        showDashboard();
-        loadPendingDrafts();
-      }
+    // Cognito login button handler
+    cognitoLoginBtn.addEventListener('click', function() {
+      window.location.href = getLoginUrl();
     });
 
     logoutBtn.addEventListener('click', function() {
-      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(COGNITO_AUTH_KEY);
       showAuthGate();
-      tokenInput.value = '';
     });
 
     // Check auth on load

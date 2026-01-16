@@ -349,14 +349,36 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       var filterBranch = '';
       var filterType = '';
       var filterSearch = '';
+      var COGNITO_AUTH_KEY = 'dndblog-cognito-auth';
+
+      function getAuthState() {
+        var cognitoAuth = localStorage.getItem(COGNITO_AUTH_KEY);
+        if (cognitoAuth) {
+          try {
+            var auth = JSON.parse(cognitoAuth);
+            if (auth.roles && auth.roles.isDm) {
+              if (auth.expiresAt && auth.expiresAt < Date.now()) {
+                localStorage.removeItem(COGNITO_AUTH_KEY);
+                return null;
+              }
+              return { isDm: true, accessToken: auth.accessToken };
+            }
+          } catch (e) {
+            localStorage.removeItem(COGNITO_AUTH_KEY);
+          }
+        }
+        return null;
+      }
+
+      function getAuthHeaders() {
+        var auth = getAuthState();
+        if (!auth) return {};
+        return { 'Authorization': 'Bearer ' + auth.accessToken };
+      }
 
       function getToken() {
-        // Check localStorage first (set by DM dashboard)
-        var storedToken = localStorage.getItem('dm-token');
-        if (storedToken) return storedToken;
-        // Fall back to URL query param for backwards compatibility
-        var params = new URLSearchParams(window.location.search);
-        return params.get('token');
+        var auth = getAuthState();
+        return auth ? auth.accessToken : null;
       }
 
       function getApiUrl() {
@@ -428,7 +450,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
 
         try {
           var response = await fetch(apiUrl + '/staging/branches', {
-            headers: { 'X-DM-Token': token }
+            headers: getAuthHeaders()
           });
 
           if (!response.ok) throw new Error('Failed to load branches');
@@ -620,7 +642,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           // First ensure we have branches
           if (allBranches.length === 0) {
             var branchResponse = await fetch(apiUrl + '/staging/branches', {
-              headers: { 'X-DM-Token': token }
+              headers: getAuthHeaders()
             });
             if (branchResponse.ok) {
               var branchData = await branchResponse.json();
@@ -631,7 +653,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
           // Fetch entities from all branches in parallel
           var entityPromises = allBranches.map(function(branch) {
             return fetch(apiUrl + '/staging/branches/' + encodeURIComponent(branch.name), {
-              headers: { 'X-DM-Token': token }
+              headers: getAuthHeaders()
             }).then(function(r) { return r.json(); })
               .then(function(data) {
                 // Add branch name to each entity
@@ -782,7 +804,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
-              'X-DM-Token': token
+              ...getAuthHeaders()
             },
             body: JSON.stringify({ frontmatter: formData })
           });
@@ -1157,7 +1179,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
-              'X-DM-Token': token
+              ...getAuthHeaders()
             },
             body: JSON.stringify({ frontmatter: formData })
           });
@@ -1200,7 +1222,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-DM-Token': token
+              ...getAuthHeaders()
             },
             body: JSON.stringify({ name: name, displayName: displayName, description: description })
           });
@@ -1237,7 +1259,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         try {
           var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(branchName), {
             method: 'DELETE',
-            headers: { 'X-DM-Token': token }
+            headers: getAuthHeaders()
           });
 
           if (!response.ok) throw new Error('Failed to delete branch');
@@ -1414,7 +1436,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-DM-Token': token
+              ...getAuthHeaders()
             },
             body: JSON.stringify({
               entityType: entityType,
@@ -1554,7 +1576,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                'X-DM-Token': token
+                ...getAuthHeaders()
               },
               body: JSON.stringify(updatedEntity)
             }
@@ -1605,7 +1627,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             '/' + encodeURIComponent(deleteTarget.slug),
             {
               method: 'DELETE',
-              headers: { 'X-DM-Token': token }
+              headers: getAuthHeaders()
             }
           );
 
@@ -1860,7 +1882,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-DM-Token': token
+              ...getAuthHeaders()
             },
             body: JSON.stringify({ input: input, hint: hint })
           });
@@ -1954,7 +1976,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-DM-Token': token
+              ...getAuthHeaders()
             },
             body: JSON.stringify(entityData)
           });
@@ -2138,7 +2160,7 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         try {
           var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(branchName) + '/publish', {
             method: 'POST',
-            headers: { 'X-DM-Token': token }
+            headers: getAuthHeaders()
           });
 
           if (!response.ok) {
