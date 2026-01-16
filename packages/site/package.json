@@ -7,7 +7,8 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "vitest run && astro check && astro build && pagefind --site dist && pnpm check-links",
+    "build": "vitest run && pnpm validate-entities && astro check && astro build && pagefind --site dist && pnpm check-links",
+    "validate-entities": "npx tsx scripts/validate-entities.ts",
     "check-links": "npx tsx scripts/check-links.ts",
     "preview": "astro preview",
     "astro": "astro",
@@ -35,6 +36,7 @@
     "pagefind": "^1.4.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
-    "vitest": "^4.0.17"
+    "vitest": "^4.0.17",
+    "yaml": "^2.7.0"
   }
 }
