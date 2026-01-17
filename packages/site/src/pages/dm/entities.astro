@@ -1071,6 +1071,22 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             form.appendChild(relSection);
           }
 
+          // Backstory/Content section (read-only, content escaped via escapeHtml)
+          var markdownBody = entity.markdown || extractMarkdownBody(entity.fullContent);
+          if (markdownBody) {
+            var backstorySection = document.createElement('div');
+            backstorySection.className = 'entity-form-backstory';
+            var backstoryHeader = document.createElement('h4');
+            backstoryHeader.textContent = 'Backstory & Details';
+            backstorySection.appendChild(backstoryHeader);
+            var backstoryContent = document.createElement('div');
+            backstoryContent.className = 'entity-form-backstory__content';
+            // Content is safe: renderMarkdownHtml uses escapeHtml for all user text
+            backstoryContent.innerHTML = renderMarkdownHtml(markdownBody);
+            backstorySection.appendChild(backstoryContent);
+            form.appendChild(backstorySection);
+          }
+
           // Action buttons
           var actions = document.createElement('div');
           actions.className = 'entity-card__actions';
@@ -1662,6 +1678,56 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
         return div.innerHTML;
       }
 
+      // Extract markdown body from fullContent (after frontmatter)
+      function extractMarkdownBody(fullContent) {
+        if (!fullContent) return '';
+        // Find the closing --- of frontmatter
+        var parts = fullContent.split(/^---\s*$/m);
+        // parts[0] is empty (before first ---), parts[1] is frontmatter, parts[2] is body
+        if (parts.length >= 3) {
+          return parts.slice(2).join('---').trim();
+        }
+        return '';
+      }
+
+      // Render markdown body as HTML for read-only display
+      function renderMarkdownHtml(markdown) {
+        if (!markdown) return '';
+        var htmlLines = [];
+        var inList = false;
+        markdown.split('\n').forEach(function(line) {
+          var trimmed = line.trim();
+          if (!trimmed) {
+            if (inList) { htmlLines.push('</ul>'); inList = false; }
+            return;
+          }
+          if (trimmed.startsWith('# ')) return; // Skip h1
+          if (trimmed.startsWith('## ')) {
+            if (inList) { htmlLines.push('</ul>'); inList = false; }
+            htmlLines.push('<h4 class="md-section">' + escapeHtml(trimmed.substring(3)) + '</h4>');
+            return;
+          }
+          if (trimmed.startsWith('### ')) {
+            if (inList) { htmlLines.push('</ul>'); inList = false; }
+            htmlLines.push('<h5 class="md-subsection">' + escapeHtml(trimmed.substring(4)) + '</h5>');
+            return;
+          }
+          if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+            if (!inList) { htmlLines.push('<ul class="md-list">'); inList = true; }
+            var itemText = escapeHtml(trimmed.substring(2));
+            itemText = itemText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            htmlLines.push('<li>' + itemText + '</li>');
+            return;
+          }
+          if (inList) { htmlLines.push('</ul>'); inList = false; }
+          var paraText = escapeHtml(trimmed);
+          paraText = paraText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+          htmlLines.push('<p>' + paraText + '</p>');
+        });
+        if (inList) htmlLines.push('</ul>');
+        return htmlLines.join('');
+      }
+
       function showGeneratorLoading(show) {
         document.getElementById('generator-loading').style.display = show ? 'flex' : 'none';
       }
@@ -1969,7 +2035,8 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
             subtype: currentResult.frontmatter?.subtype || null,
             description: currentResult.frontmatter?.description || '',
             frontmatter: currentResult.frontmatter,
-            fullContent: document.getElementById('yaml-editor').value
+            fullContent: document.getElementById('yaml-editor').value,
+            markdown: currentResult.markdown || ''
           };
 
           var response = await fetch(apiUrl + '/staging/branches/' + encodeURIComponent(targetBranch) + '/entities', {
@@ -2967,6 +3034,81 @@ const apiUrl = import.meta.env.PUBLIC_DM_NOTES_API_URL || '';
       color: var(--color-gold);
       position: absolute;
       left: -20px;
+    }
+
+    /* Backstory section (read-only) */
+    .entity-form-backstory {
+      margin-top: var(--space-lg);
+      padding: var(--space-md);
+      background: rgba(75, 0, 130, 0.05);
+      border: 1px solid rgba(75, 0, 130, 0.2);
+      border-radius: var(--radius-md);
+    }
+
+    .entity-form-backstory h4 {
+      font-family: var(--font-display);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-purple, #8b5cf6);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 0 0 var(--space-md);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .entity-form-backstory h4::before {
+      content: '📜';
+    }
+
+    .entity-form-backstory__content {
+      color: var(--color-text-secondary);
+      font-size: var(--text-sm);
+      line-height: 1.6;
+    }
+
+    .entity-form-backstory__content .md-section {
+      font-family: var(--font-display);
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--color-text);
+      margin: var(--space-md) 0 var(--space-sm);
+    }
+
+    .entity-form-backstory__content .md-section:first-child {
+      margin-top: 0;
+    }
+
+    .entity-form-backstory__content .md-subsection {
+      font-family: var(--font-display);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text);
+      margin: var(--space-sm) 0 var(--space-xs);
+    }
+
+    .entity-form-backstory__content p {
+      margin: 0 0 var(--space-sm);
+    }
+
+    .entity-form-backstory__content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .entity-form-backstory__content .md-list {
+      margin: var(--space-xs) 0;
+      padding-left: var(--space-lg);
+      list-style: disc;
+    }
+
+    .entity-form-backstory__content .md-list li {
+      margin-bottom: var(--space-xs);
+    }
+
+    .entity-form-backstory__content strong {
+      color: var(--color-text);
+      font-weight: 600;
     }
 
     /* Action buttons */
