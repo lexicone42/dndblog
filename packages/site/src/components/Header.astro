@@ -3,6 +3,7 @@ const currentPath = Astro.url.pathname;
 
 const navLinks = [
   { href: '/', label: 'Home' },
+  { href: '/party', label: 'Party' },
   { href: '/campaign', label: 'Campaign' },
   { href: '/sessions', label: 'Sessions' },
   { href: '/reference', label: 'Reference' },
@@ -11,7 +12,6 @@ const navLinks = [
 // Role-based nav links (shown conditionally via client-side JS)
 const roleNavLinks = {
   dm: { href: '/dm', label: 'DM' },
-  player: { href: '/party', label: 'Party' },
 };
 
 function isActive(href: string): boolean {
@@ -49,15 +49,6 @@ function isActive(href: string): boolean {
             aria-current={isActive(roleNavLinks.dm.href) ? 'page' : undefined}
           >
             {roleNavLinks.dm.label}
-          </a>
-        </li>
-        <li id="nav-player" class="header__nav-role" style="display: none;">
-          <a
-            href={roleNavLinks.player.href}
-            class:list={['header__nav-link', 'header__nav-link--player', { 'header__nav-link--active': isActive(roleNavLinks.player.href) }]}
-            aria-current={isActive(roleNavLinks.player.href) ? 'page' : undefined}
-          >
-            {roleNavLinks.player.label}
           </a>
         </li>
       </ul>
@@ -189,10 +180,6 @@ function isActive(href: string): boolean {
     background-color: rgba(var(--color-gold-rgb, 201, 162, 39), 0.1);
   }
 
-  .header__nav-link--player {
-    color: var(--color-accent);
-  }
-
   .header__search {
     display: flex;
     align-items: center;
@@ -312,11 +299,10 @@ function isActive(href: string): boolean {
 </style>
 
 <script>
-  // Role-based navigation visibility
+  // Role-based navigation visibility (DM tab only)
   (function() {
     const COGNITO_AUTH_KEY = 'dndblog-cognito-auth';
     const dmNav = document.getElementById('nav-dm');
-    const playerNav = document.getElementById('nav-player');
 
     function getAuthRoles() {
       // Check Cognito auth
@@ -327,14 +313,14 @@ function isActive(href: string): boolean {
           // Check token expiration if available
           if (auth.expiresAt && auth.expiresAt < Date.now()) {
             localStorage.removeItem(COGNITO_AUTH_KEY);
-            return { isDm: false, isPlayer: false };
+            return { isDm: false };
           }
-          return auth.roles || { isDm: false, isPlayer: false };
+          return auth.roles || { isDm: false };
         } catch {
-          return { isDm: false, isPlayer: false };
+          return { isDm: false };
         }
       }
-      return { isDm: false, isPlayer: false };
+      return { isDm: false };
     }
 
     function updateRoleNav() {
@@ -342,9 +328,6 @@ function isActive(href: string): boolean {
 
       if (dmNav) {
         dmNav.style.display = roles.isDm ? '' : 'none';
-      }
-      if (playerNav) {
-        playerNav.style.display = roles.isPlayer ? '' : 'none';
       }
     }
 
