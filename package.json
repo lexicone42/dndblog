@@ -21,6 +21,15 @@
     "lint-staged": "^15.0.0"
   },
   "lint-staged": {
+    "packages/site/src/**/*.{ts,tsx,astro}": [
+      "bash -c 'pnpm --filter @dndblog/site typecheck'"
+    ],
+    "packages/site/src/**/*.test.ts": [
+      "bash -c 'pnpm --filter @dndblog/site test --run --passWithNoTests'"
+    ],
+    "packages/infra/**/*.ts": [
+      "bash -c 'pnpm --filter @dndblog/infra typecheck'"
+    ],
     "*": "node scripts/check-forbidden-files.js"
   },
   "engines": {
