@@ -43,7 +43,7 @@
   /* Layout */
   --content-width: 65ch;
   --wide-width: 80rem;
-  --header-height: 4rem;
+  --header-height: 3rem;
 
   /* Transitions */
   --transition-fast: 150ms ease;
