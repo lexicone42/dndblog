@@ -183,6 +183,21 @@ const nextMissionTeaser = {
           <span class="divider-line"></span>
         </div>
 
+        <!-- DM Mode Toggle (shown if user has DM role) -->
+        <div id="dm-mode-toggle" class="dm-mode-toggle" style="display: none;">
+          <label class="toggle-label">
+            <span class="toggle-text">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              Dungeon Master Mode
+            </span>
+            <input type="checkbox" id="dm-mode-checkbox" class="toggle-input" />
+            <span class="toggle-switch"></span>
+          </label>
+          <p class="toggle-hint">Show DM tools and command center</p>
+        </div>
+
         <!-- Passkey Registration - Arcane Binding -->
         <div id="passkey-section" class="arcane-binding" style="display: none;">
           <div class="arcane-binding__rune"></div>
@@ -240,12 +255,32 @@ const nextMissionTeaser = {
 
 <script define:vars={{ characterMap }}>
   const COGNITO_AUTH_KEY = 'dndblog-cognito-auth';
+  const DM_MODE_KEY = 'dndblog-dm-mode-enabled';
 
   // Character name lookup
   const characters = characterMap;
 
   function getCharacterName(slug) {
     return characters[slug]?.name || slug;
+  }
+
+  function isDmModeEnabled() {
+    return localStorage.getItem(DM_MODE_KEY) === 'true';
+  }
+
+  function setDmModeEnabled(enabled) {
+    localStorage.setItem(DM_MODE_KEY, enabled ? 'true' : 'false');
+  }
+
+  function updateDmSectionVisibility(isDm) {
+    const dmSection = document.getElementById('dm-section');
+    const dmModeCheckbox = document.getElementById('dm-mode-checkbox');
+
+    if (isDm && isDmModeEnabled()) {
+      dmSection.style.display = 'block';
+    } else {
+      dmSection.style.display = 'none';
+    }
   }
 
   function checkAuth() {
@@ -280,9 +315,19 @@ const nextMissionTeaser = {
       const userName = auth.email?.split('@')[0] || 'Adventurer';
       document.getElementById('user-name').textContent = userName;
 
-      // Show DM section if DM
+      // Show DM toggle and section if user has DM role
       if (auth.roles?.isDm) {
-        document.getElementById('dm-section').style.display = 'block';
+        const dmModeToggle = document.getElementById('dm-mode-toggle');
+        const dmModeCheckbox = document.getElementById('dm-mode-checkbox');
+
+        // Show the toggle
+        dmModeToggle.style.display = 'block';
+
+        // Set checkbox state from localStorage
+        dmModeCheckbox.checked = isDmModeEnabled();
+
+        // Update DM section visibility based on toggle state
+        updateDmSectionVisibility(true);
       }
 
       // Show player section if has character
@@ -302,6 +347,13 @@ const nextMissionTeaser = {
       unauthState.style.display = 'flex';
     }
   }
+
+  // DM Mode toggle handler
+  document.getElementById('dm-mode-checkbox')?.addEventListener('change', (e) => {
+    const checkbox = e.target;
+    setDmModeEnabled(checkbox.checked);
+    updateDmSectionVisibility(true);
+  });
 
   // Sign out handler
   document.getElementById('sign-out-btn')?.addEventListener('click', () => {
@@ -1089,6 +1141,88 @@ const nextMissionTeaser = {
     height: 8px;
     border: 1px solid var(--color-border);
     transform: rotate(45deg);
+  }
+
+  /* DM Mode Toggle */
+  .dm-mode-toggle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-md);
+    background: rgba(var(--color-gold-rgb, 201, 162, 39), 0.05);
+    border: 1px solid rgba(var(--color-gold-rgb, 201, 162, 39), 0.2);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-text {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    color: var(--color-gold);
+    letter-spacing: 0.02em;
+  }
+
+  .toggle-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+  }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background: var(--color-text-muted);
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+
+  .toggle-input:checked + .toggle-switch {
+    background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-light) 100%);
+    border-color: var(--color-gold);
+  }
+
+  .toggle-input:checked + .toggle-switch::after {
+    transform: translateX(20px);
+    background: var(--color-bg);
+  }
+
+  .toggle-input:focus-visible + .toggle-switch {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+
+  .toggle-hint {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin: 0;
+    text-align: center;
   }
 
   /* Arcane Binding - Passkey Section */
