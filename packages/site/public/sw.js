@@ -1,11 +1,12 @@
 // Service Worker for Rudiger's Evocation of Events
-const CACHE_NAME = 'evocation-v2';
+const CACHE_NAME = 'evocation-v3';
 const OFFLINE_URL = '/offline.html';
 
 // Assets to cache on install - critical paths for offline experience
 const PRECACHE_ASSETS = [
   '/',
   '/offline.html',
+  '/me/',
   '/reference/',
   '/campaign/characters/',
   '/favicon.svg',

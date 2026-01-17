@@ -1,8 +1,7 @@
 ---
 /**
- * The Adventurer's Tavern - Personal landing page after login
+ * Personal dashboard after login
  * Shows role-appropriate navigation based on Cognito auth
- * Now with 100% more D&D flavor!
  */
 
 import BaseLayout from '@layouts/BaseLayout.astro';
@@ -14,37 +13,12 @@ const characterMap = Object.fromEntries(
   allCharacters.map((c: typeof allCharacters[0]) => [c.id, c.data])
 );
 
-// Random tavern greetings for authenticated users
-const tavernGreetings = [
-  "Roll for initiative... just kidding!",
-  "The bartender slides you a drink.",
-  "A bard in the corner plays your theme song.",
-  "You sense no traps. Probably.",
-  "Your passive perception notices nothing suspicious.",
-  "The tavern cat regards you with mild contempt.",
-  "Someone in the back is definitely cheating at cards.",
-  "You rolled a nat 20 on entering this page!",
-];
-
-// Random titles for the DM
-const dmTitles = [
-  "Master of Dungeons",
-  "Keeper of Secrets",
-  "Weaver of Fate",
-  "Herald of TPKs",
-  "Architect of Doom",
-  "Dice Goblin Supreme",
-];
-
 // Next mission story teaser - update this before each session!
 const nextMissionTeaser = {
-  title: "Into the Eldeen Reaches",
-  summary: "The druidic circle awaits in the heart of the Eldeen Reaches. Ancient secrets about the Maw Frame lie buried beneath roots older than memory—but the forest remembers those who trespass, and something has been watching since you crossed the border.",
-  date: "Session 11 • Tomorrow",
+  title: "The Circle Closes",
+  summary: "The Slanted Circle has the regulator plans, and the Ley Maw grows with each passing hour. Somewhere in Sharn's shadows, agents prepare a ritual that could tear the city apart—or open a door to something far worse.",
+  date: "Session 11 • Soon",
 };
-
-const randomGreeting = tavernGreetings[Math.floor(Math.random() * tavernGreetings.length)];
-const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
 ---
 
 <BaseLayout
@@ -55,34 +29,30 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
     <!-- Loading state while checking auth -->
     <div id="loading-state" class="dashboard-state">
       <div class="loading-spinner"></div>
-      <p class="loading-text">Rolling for perception...</p>
+      <p class="loading-text">Loading...</p>
     </div>
 
     <!-- Not authenticated state -->
     <div id="unauthenticated-state" class="dashboard-state" style="display: none;">
       <div class="auth-prompt">
-        <div class="tavern-sign">🍺 The Weary Wanderer Inn 🍺</div>
-        <h1>Hail, Stranger!</h1>
-        <p class="flavor-text">The innkeeper eyes you suspiciously from behind the bar.</p>
-        <p>"We don't serve anonymous travelers here. Show us who you are, and perhaps we'll let you see the good stuff."</p>
+        <h1>Welcome, Traveler</h1>
+        <p>Sign in to access your campaign dashboard.</p>
         <button id="sign-in-btn" class="btn btn-primary btn-large">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
             <polyline points="10 17 15 12 10 7"></polyline>
             <line x1="15" y1="12" x2="3" y2="12"></line>
           </svg>
-          Present Your Credentials
+          Sign In
         </button>
-        <p class="small-note">(a.k.a. Sign In)</p>
       </div>
     </div>
 
     <!-- Authenticated state -->
     <div id="authenticated-state" class="dashboard-state" style="display: none;">
       <header class="dashboard-header">
-        <div class="tavern-welcome">🎲 Welcome to the Tavern 🎲</div>
-        <h1 class="dashboard-title">Well met, <span id="user-name">Adventurer</span>!</h1>
-        <p class="dashboard-subtitle" id="random-greeting">{randomGreeting}</p>
+        <div class="tavern-welcome">Welcome back</div>
+        <h1 class="dashboard-title"><span id="user-name">Adventurer</span></h1>
       </header>
 
       <!-- Next Mission Teaser -->
@@ -95,18 +65,12 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
       <div class="dashboard-grid">
         <!-- Player Section (shown if has character) -->
         <div id="player-section" class="dashboard-section" style="display: none;">
-          <h2 class="section-title">
-            <span class="section-icon">⚔️</span>
-            Your Hero's Journey
-          </h2>
+          <h2 class="section-title">Your Character</h2>
 
           <a id="session-tracker-link" href="#" class="action-card action-card--primary">
-            <div class="action-icon">
-              <span class="emoji-icon">📜</span>
-            </div>
             <div class="action-content">
-              <h3 class="action-title">Adventure Log</h3>
-              <p class="action-description">Track your HP, spell slots, conditions, and try not to die. Again.</p>
+              <h3 class="action-title">Session Tracker</h3>
+              <p class="action-description">Track HP, spell slots, and conditions during play.</p>
               <span id="character-name-badge" class="character-badge"></span>
             </div>
             <div class="action-arrow">
@@ -119,41 +83,28 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
 
         <!-- DM Section (shown if DM) -->
         <div id="dm-section" class="dashboard-section dashboard-section--dm" style="display: none;">
-          <h2 class="section-title section-title--dm">
-            <span class="section-icon">👑</span>
-            <span>{randomDmTitle}</span>
-          </h2>
-          <p class="dm-flavor-text">The players suspect nothing. Probably.</p>
+          <h2 class="section-title">DM Tools</h2>
 
           <div class="action-grid">
             <a href="/dm" class="action-card action-card--dm">
-              <div class="action-icon">
-                <span class="emoji-icon">🗺️</span>
-              </div>
               <div class="action-content">
-                <h3 class="action-title">Command Center</h3>
-                <p class="action-description">Session notes, AI minion, and plans for "totally balanced" encounters.</p>
+                <h3 class="action-title">Session Notes</h3>
+                <p class="action-description">Write, review, and publish session content.</p>
               </div>
             </a>
 
             <a href="/dm/party-tracker" class="action-card action-card--dm">
-              <div class="action-icon">
-                <span class="emoji-icon">👁️</span>
-              </div>
               <div class="action-content">
-                <h3 class="action-title">Scrying Pool</h3>
-                <p class="action-description">See who's about to die— err, view live party status.</p>
-                <span class="live-badge">🔴 Live</span>
+                <h3 class="action-title">Party Tracker</h3>
+                <p class="action-description">View live party status during sessions.</p>
+                <span class="live-badge">Live</span>
               </div>
             </a>
 
             <a href="/dm/entities" class="action-card action-card--dm">
-              <div class="action-icon">
-                <span class="emoji-icon">✨</span>
-              </div>
               <div class="action-content">
-                <h3 class="action-title">Creation Forge</h3>
-                <p class="action-description">Breathe life into NPCs, items, and places (or take it away).</p>
+                <h3 class="action-title">Entity Editor</h3>
+                <p class="action-description">Create and edit NPCs, items, and locations.</p>
               </div>
             </a>
           </div>
@@ -161,29 +112,20 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
 
         <!-- Always visible: Party resources -->
         <div class="dashboard-section">
-          <h2 class="section-title">
-            <span class="section-icon">📚</span>
-            The Adventurer's Guild
-          </h2>
+          <h2 class="section-title">Campaign Resources</h2>
 
           <div class="action-grid">
             <a href="/party" class="action-card">
-              <div class="action-icon">
-                <span class="emoji-icon">🛡️</span>
-              </div>
               <div class="action-content">
-                <h3 class="action-title">Fellowship Hall</h3>
-                <p class="action-description">Meet the party, learn combos, and pretend you read the rules.</p>
+                <h3 class="action-title">Party</h3>
+                <p class="action-description">View party members and their abilities.</p>
               </div>
             </a>
 
             <a href="/reference" class="action-card">
-              <div class="action-icon">
-                <span class="emoji-icon">🌍</span>
-              </div>
               <div class="action-content">
                 <h3 class="action-title">World Compendium</h3>
-                <p class="action-description">Everything we've discovered (and somehow not forgotten).</p>
+                <p class="action-description">Locations, factions, and lore from the campaign.</p>
               </div>
             </a>
           </div>
@@ -192,11 +134,7 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
 
       <!-- Account section -->
       <div class="account-section">
-        <button id="sign-out-btn" class="btn btn-secondary">
-          <span class="btn-emoji">🚪</span>
-          Leave the Tavern
-        </button>
-        <p class="tavern-farewell">May your dice roll true!</p>
+        <button id="sign-out-btn" class="btn btn-secondary">Sign Out</button>
       </div>
     </div>
   </div>
@@ -321,6 +259,15 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: var(--space-md);
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .loading-spinner {
+      animation: none;
+      border-top-color: var(--color-gold);
+      border-right-color: var(--color-gold);
+    }
   }
 
   .loading-text {
@@ -339,18 +286,6 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
     max-width: 500px;
   }
 
-  .tavern-sign {
-    font-family: var(--font-display);
-    font-size: var(--text-lg);
-    color: var(--color-gold);
-    margin-bottom: var(--space-lg);
-    padding: var(--space-sm) var(--space-lg);
-    background: var(--color-bg-secondary);
-    border: 2px solid var(--color-gold);
-    border-radius: var(--radius-md);
-    display: inline-block;
-  }
-
   .auth-prompt h1 {
     font-family: var(--font-display);
     font-size: var(--text-3xl);
@@ -363,18 +298,6 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
     margin: 0 0 var(--space-md);
     font-size: var(--text-base);
     line-height: 1.6;
-  }
-
-  .flavor-text {
-    font-style: italic;
-    color: var(--color-text-muted) !important;
-    font-size: var(--text-sm) !important;
-  }
-
-  .small-note {
-    font-size: var(--text-sm) !important;
-    color: var(--color-text-muted) !important;
-    margin-top: var(--space-sm) !important;
   }
 
   /* Buttons */
@@ -418,6 +341,11 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
     color: var(--color-text);
   }
 
+  .btn:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+
   /* Dashboard header */
   .dashboard-header {
     text-align: center;
@@ -442,12 +370,6 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
 
   .dashboard-title span {
     color: var(--color-gold);
-  }
-
-  .dashboard-subtitle {
-    color: var(--color-text-secondary);
-    margin: 0;
-    font-style: italic;
   }
 
   /* Mission teaser */
@@ -508,21 +430,6 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
     margin: 0 0 var(--space-md);
   }
 
-  .section-icon {
-    font-size: var(--text-xl);
-  }
-
-  .section-title--dm {
-    color: var(--color-gold);
-  }
-
-  .dm-flavor-text {
-    font-style: italic;
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
-    margin: calc(-1 * var(--space-xs)) 0 var(--space-md) 0;
-  }
-
   .dashboard-section--dm {
     border-color: var(--color-gold);
     background: linear-gradient(135deg, var(--color-bg-secondary) 0%, rgba(var(--color-gold-rgb, 201, 162, 39), 0.05) 100%);
@@ -554,6 +461,11 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
     box-shadow: var(--shadow-md);
   }
 
+  .action-card:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+
   .action-card--primary {
     background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-bg-secondary) 100%);
     border: 2px solid var(--color-accent);
@@ -566,43 +478,11 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
 
   .action-card--dm {
     border-color: var(--color-gold);
-    border-width: 1px;
   }
 
   .action-card--dm:hover {
     border-color: var(--color-gold);
     box-shadow: 0 4px 20px rgba(var(--color-gold-rgb, 201, 162, 39), 0.2);
-  }
-
-  .action-icon {
-    flex-shrink: 0;
-    width: 56px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--color-bg-tertiary);
-    border-radius: var(--radius-md);
-    color: var(--color-text-muted);
-  }
-
-  .emoji-icon {
-    font-size: 28px;
-    line-height: 1;
-  }
-
-  .action-card--primary .action-icon {
-    background: var(--color-accent);
-    color: white;
-  }
-
-  .action-card--dm .action-icon {
-    background: var(--color-gold);
-    color: var(--color-bg);
-  }
-
-  .btn-emoji {
-    font-size: 16px;
   }
 
   .action-content {
@@ -668,13 +548,6 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
     flex-direction: column;
     align-items: center;
     gap: var(--space-sm);
-  }
-
-  .tavern-farewell {
-    font-style: italic;
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
-    margin: 0;
   }
 
   @media (max-width: 640px) {
