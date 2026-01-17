@@ -173,16 +173,14 @@ test.describe('Post-deployment smoke tests', () => {
       await expect(page.getByText('The Party')).toBeVisible();
     });
 
-    test('Navigation hides DM/Player links when not authenticated', async ({ page }) => {
+    test('Navigation hides DM link when not authenticated', async ({ page }) => {
       await page.goto('/');
 
-      // DM and Player nav links should be hidden (display: none)
+      // DM nav link should be hidden (display: none)
       const dmNav = page.locator('#nav-dm');
-      const playerNav = page.locator('#nav-player');
 
-      // They exist in DOM but are hidden
+      // It exists in DOM but is hidden
       await expect(dmNav).toHaveCSS('display', 'none');
-      await expect(playerNav).toHaveCSS('display', 'none');
     });
 
     test('Navigation shows DM link when Cognito auth has DM role', async ({ page }) => {
