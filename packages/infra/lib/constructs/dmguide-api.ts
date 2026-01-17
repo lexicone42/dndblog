@@ -2086,7 +2086,7 @@ const { ApiGatewayManagementApiClient, PostToConnectionCommand } = require('@aws
 
 const s3Client = new S3Client({});
 
-\${authHelperCode}
+${authHelperCode}
 
 // WebSocket broadcast helper - sends updates to all connected DM dashboards
 async function broadcastUpdate(action, character, data = {}) {
@@ -2306,7 +2306,7 @@ const { ApiGatewayManagementApiClient, PostToConnectionCommand } = require('@aws
 
 const s3Client = new S3Client({});
 
-\${authHelperCode}
+${authHelperCode}
 
 // Broadcast to all connected DM dashboards
 async function broadcastToAll(action, data = {}) {
