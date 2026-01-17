@@ -253,7 +253,7 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
       const characterSlug = auth.characterSlug;
       if (characterSlug) {
         document.getElementById('player-section').style.display = 'block';
-        document.getElementById('session-tracker-link').href = `/campaign/session/${characterSlug}`;
+        document.getElementById('session-tracker-link').href = `/campaign`;
         document.getElementById('character-name-badge').textContent = getCharacterName(characterSlug);
       }
 
