@@ -25,77 +25,14 @@ const activeParty = allCharacters
       <p class="dashboard-subtitle">Party resources and character tools</p>
     </header>
 
-    <!-- Active Party Section -->
-    <section class="party-section">
-      <h2 class="section-title">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-          <circle cx="9" cy="7" r="4"></circle>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-        The Party
-      </h2>
-
-      {activeParty.length > 0 ? (
-        <div class="party-grid">
-          {activeParty.map((character: typeof activeParty[0]) => (
-            <div class="character-card">
-              <a href={`/campaign/characters/${character.id}`} class="character-card-link">
-                <div class="character-header">
-                  <h3 class="character-name">{character.data.name}</h3>
-                  {character.data.level && (
-                    <span class="character-level">Lvl {character.data.level}</span>
-                  )}
-                </div>
-
-                <div class="character-info">
-                  {character.data.race && (
-                    <span class="character-tag">{character.data.race}</span>
-                  )}
-                  {character.data.class && (
-                    <span class="character-tag character-tag--class">
-                      {character.data.class}
-                      {character.data.subclass && ` (${character.data.subclass})`}
-                    </span>
-                  )}
-                </div>
-
-                {character.data.player && (
-                  <div class="character-player">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    <span>{character.data.player}</span>
-                  </div>
-                )}
-
-                {character.data.description && (
-                  <p class="character-description">
-                    {character.data.description.slice(0, 100)}...
-                  </p>
-                )}
-              </a>
-
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div class="empty-state">
-          <p>No active party members found.</p>
-        </div>
-      )}
-    </section>
-
-    <!-- Player Tools -->
+    <!-- Player Guides - Helpful resources for players -->
     <section class="tools-section">
       <h2 class="section-title">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
         </svg>
-        Player Tools
+        Player Guides
       </h2>
 
       <div class="tools-grid">
@@ -176,6 +113,69 @@ const activeParty = allCharacters
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- Active Party Section -->
+    <section class="party-section">
+      <h2 class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        The Party
+      </h2>
+
+      {activeParty.length > 0 ? (
+        <div class="party-grid">
+          {activeParty.map((character: typeof activeParty[0]) => (
+            <div class="character-card">
+              <a href={`/campaign/characters/${character.id}`} class="character-card-link">
+                <div class="character-header">
+                  <h3 class="character-name">{character.data.name}</h3>
+                  {character.data.level && (
+                    <span class="character-level">Lvl {character.data.level}</span>
+                  )}
+                </div>
+
+                <div class="character-info">
+                  {character.data.race && (
+                    <span class="character-tag">{character.data.race}</span>
+                  )}
+                  {character.data.class && (
+                    <span class="character-tag character-tag--class">
+                      {character.data.class}
+                      {character.data.subclass && ` (${character.data.subclass})`}
+                    </span>
+                  )}
+                </div>
+
+                {character.data.player && (
+                  <div class="character-player">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>{character.data.player}</span>
+                  </div>
+                )}
+
+                {character.data.description && (
+                  <p class="character-description">
+                    {character.data.description.slice(0, 100)}...
+                  </p>
+                )}
+              </a>
+
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div class="empty-state">
+          <p>No active party members found.</p>
+        </div>
+      )}
     </section>
   </div>
 </BaseLayout>
