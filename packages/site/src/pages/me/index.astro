@@ -1,7 +1,8 @@
 ---
 /**
- * Unified Dashboard - Personal landing page after login
+ * The Adventurer's Tavern - Personal landing page after login
  * Shows role-appropriate navigation based on Cognito auth
+ * Now with 100% more D&D flavor!
  */
 
 import BaseLayout from '@layouts/BaseLayout.astro';
@@ -12,66 +13,86 @@ const allCharacters = await getCollection('characters');
 const characterMap = Object.fromEntries(
   allCharacters.map((c: typeof allCharacters[0]) => [c.id, c.data])
 );
+
+// Random tavern greetings for authenticated users
+const tavernGreetings = [
+  "Roll for initiative... just kidding!",
+  "The bartender slides you a drink.",
+  "A bard in the corner plays your theme song.",
+  "You sense no traps. Probably.",
+  "Your passive perception notices nothing suspicious.",
+  "The tavern cat regards you with mild contempt.",
+  "Someone in the back is definitely cheating at cards.",
+  "You rolled a nat 20 on entering this page!",
+];
+
+// Random titles for the DM
+const dmTitles = [
+  "Master of Dungeons",
+  "Keeper of Secrets",
+  "Weaver of Fate",
+  "Herald of TPKs",
+  "Architect of Doom",
+  "Dice Goblin Supreme",
+];
+
+const randomGreeting = tavernGreetings[Math.floor(Math.random() * tavernGreetings.length)];
+const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
 ---
 
 <BaseLayout
-  title="My Dashboard - Rudiger's Evocation of Events"
-  description="Your personal dashboard for the campaign."
+  title="The Tavern - Rudiger's Evocation of Events"
+  description="Your cozy corner of the campaign."
 >
   <div class="dashboard">
     <!-- Loading state while checking auth -->
     <div id="loading-state" class="dashboard-state">
       <div class="loading-spinner"></div>
-      <p>Checking authentication...</p>
+      <p class="loading-text">Rolling for perception...</p>
     </div>
 
     <!-- Not authenticated state -->
     <div id="unauthenticated-state" class="dashboard-state" style="display: none;">
       <div class="auth-prompt">
-        <h1>Welcome, Adventurer</h1>
-        <p>Sign in to access your character tools and campaign resources.</p>
-        <a href="/auth/login" class="btn btn-primary btn-large">
+        <div class="tavern-sign">🍺 The Weary Wanderer Inn 🍺</div>
+        <h1>Hail, Stranger!</h1>
+        <p class="flavor-text">The innkeeper eyes you suspiciously from behind the bar.</p>
+        <p>"We don't serve anonymous travelers here. Show us who you are, and perhaps we'll let you see the good stuff."</p>
+        <button id="sign-in-btn" class="btn btn-primary btn-large">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
             <polyline points="10 17 15 12 10 7"></polyline>
             <line x1="15" y1="12" x2="3" y2="12"></line>
           </svg>
-          Sign In
-        </a>
+          Present Your Credentials
+        </button>
+        <p class="small-note">(a.k.a. Sign In)</p>
       </div>
     </div>
 
     <!-- Authenticated state -->
     <div id="authenticated-state" class="dashboard-state" style="display: none;">
       <header class="dashboard-header">
-        <h1 class="dashboard-title">Welcome back, <span id="user-name">Adventurer</span></h1>
-        <p class="dashboard-subtitle">What would you like to do?</p>
+        <div class="tavern-welcome">🎲 Welcome to the Tavern 🎲</div>
+        <h1 class="dashboard-title">Well met, <span id="user-name">Adventurer</span>!</h1>
+        <p class="dashboard-subtitle" id="random-greeting">{randomGreeting}</p>
       </header>
 
       <div class="dashboard-grid">
         <!-- Player Section (shown if has character) -->
         <div id="player-section" class="dashboard-section" style="display: none;">
           <h2 class="section-title">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-            Your Character
+            <span class="section-icon">⚔️</span>
+            Your Hero's Journey
           </h2>
 
           <a id="session-tracker-link" href="#" class="action-card action-card--primary">
             <div class="action-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
-              </svg>
+              <span class="emoji-icon">📜</span>
             </div>
             <div class="action-content">
-              <h3 class="action-title">Session Tracker</h3>
-              <p class="action-description">Track HP, spell slots, conditions, and more during play.</p>
+              <h3 class="action-title">Adventure Log</h3>
+              <p class="action-description">Track your HP, spell slots, conditions, and try not to die. Again.</p>
               <span id="character-name-badge" class="character-badge"></span>
             </div>
             <div class="action-arrow">
@@ -83,54 +104,42 @@ const characterMap = Object.fromEntries(
         </div>
 
         <!-- DM Section (shown if DM) -->
-        <div id="dm-section" class="dashboard-section" style="display: none;">
-          <h2 class="section-title">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-            </svg>
-            Dungeon Master
+        <div id="dm-section" class="dashboard-section dashboard-section--dm" style="display: none;">
+          <h2 class="section-title section-title--dm">
+            <span class="section-icon">👑</span>
+            <span>{randomDmTitle}</span>
           </h2>
+          <p class="dm-flavor-text">The players suspect nothing. Probably.</p>
 
           <div class="action-grid">
             <a href="/dm" class="action-card action-card--dm">
               <div class="action-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="3" y1="9" x2="21" y2="9"></line>
-                  <line x1="9" y1="21" x2="9" y2="9"></line>
-                </svg>
+                <span class="emoji-icon">🗺️</span>
               </div>
               <div class="action-content">
-                <h3 class="action-title">DM Dashboard</h3>
-                <p class="action-description">Session notes, AI review, and campaign management.</p>
+                <h3 class="action-title">Command Center</h3>
+                <p class="action-description">Session notes, AI minion, and plans for "totally balanced" encounters.</p>
               </div>
             </a>
 
             <a href="/dm/party-tracker" class="action-card action-card--dm">
               <div class="action-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
+                <span class="emoji-icon">👁️</span>
               </div>
               <div class="action-content">
-                <h3 class="action-title">Party Tracker</h3>
-                <p class="action-description">Live view of all player HP, conditions, and spell slots.</p>
-                <span class="live-badge">Live Updates</span>
+                <h3 class="action-title">Scrying Pool</h3>
+                <p class="action-description">See who's about to die— err, view live party status.</p>
+                <span class="live-badge">🔴 Live</span>
               </div>
             </a>
 
             <a href="/dm/entities" class="action-card action-card--dm">
               <div class="action-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"></path>
-                </svg>
+                <span class="emoji-icon">✨</span>
               </div>
               <div class="action-content">
-                <h3 class="action-title">Entity Editor</h3>
-                <p class="action-description">Create and edit characters, items, and locations.</p>
+                <h3 class="action-title">Creation Forge</h3>
+                <p class="action-description">Breathe life into NPCs, items, and places (or take it away).</p>
               </div>
             </a>
           </div>
@@ -139,40 +148,28 @@ const characterMap = Object.fromEntries(
         <!-- Always visible: Party resources -->
         <div class="dashboard-section">
           <h2 class="section-title">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            </svg>
-            Party Resources
+            <span class="section-icon">📚</span>
+            The Adventurer's Guild
           </h2>
 
           <div class="action-grid">
             <a href="/party" class="action-card">
               <div class="action-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
+                <span class="emoji-icon">🛡️</span>
               </div>
               <div class="action-content">
-                <h3 class="action-title">Party Hub</h3>
-                <p class="action-description">Guides, synergies, and party information.</p>
+                <h3 class="action-title">Fellowship Hall</h3>
+                <p class="action-description">Meet the party, learn combos, and pretend you read the rules.</p>
               </div>
             </a>
 
             <a href="/campaign" class="action-card">
               <div class="action-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="2" y1="12" x2="22" y2="12"></line>
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                </svg>
+                <span class="emoji-icon">🌍</span>
               </div>
               <div class="action-content">
-                <h3 class="action-title">Campaign</h3>
-                <p class="action-description">Characters, locations, items, and lore.</p>
+                <h3 class="action-title">World Compendium</h3>
+                <p class="action-description">Everything we've discovered (and somehow not forgotten).</p>
               </div>
             </a>
           </div>
@@ -182,17 +179,28 @@ const characterMap = Object.fromEntries(
       <!-- Account section -->
       <div class="account-section">
         <button id="sign-out-btn" class="btn btn-secondary">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
-          </svg>
-          Sign Out
+          <span class="btn-emoji">🚪</span>
+          Leave the Tavern
         </button>
+        <p class="tavern-farewell">May your dice roll true!</p>
       </div>
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  import { getLoginUrl } from '@lib/auth';
+
+  // Sign-in button handler
+  document.getElementById('sign-in-btn')?.addEventListener('click', () => {
+    const loginUrl = getLoginUrl('/me');
+    if (loginUrl && loginUrl !== '#') {
+      window.location.href = loginUrl;
+    } else {
+      alert('Single sign-on is not available. Please contact the DM.');
+    }
+  });
+</script>
 
 <script define:vars={{ characterMap }}>
   const COGNITO_AUTH_KEY = 'dndblog-cognito-auth';
@@ -295,10 +303,15 @@ const characterMap = Object.fromEntries(
     width: 40px;
     height: 40px;
     border: 3px solid var(--color-border);
-    border-top-color: var(--color-accent);
+    border-top-color: var(--color-gold);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: var(--space-md);
+  }
+
+  .loading-text {
+    font-style: italic;
+    color: var(--color-text-muted);
   }
 
   @keyframes spin {
@@ -309,6 +322,19 @@ const characterMap = Object.fromEntries(
   .auth-prompt {
     text-align: center;
     padding: var(--space-2xl);
+    max-width: 500px;
+  }
+
+  .tavern-sign {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin-bottom: var(--space-lg);
+    padding: var(--space-sm) var(--space-lg);
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-gold);
+    border-radius: var(--radius-md);
+    display: inline-block;
   }
 
   .auth-prompt h1 {
@@ -320,8 +346,21 @@ const characterMap = Object.fromEntries(
 
   .auth-prompt p {
     color: var(--color-text-secondary);
-    margin: 0 0 var(--space-xl);
-    font-size: var(--text-lg);
+    margin: 0 0 var(--space-md);
+    font-size: var(--text-base);
+    line-height: 1.6;
+  }
+
+  .flavor-text {
+    font-style: italic;
+    color: var(--color-text-muted) !important;
+    font-size: var(--text-sm) !important;
+  }
+
+  .small-note {
+    font-size: var(--text-sm) !important;
+    color: var(--color-text-muted) !important;
+    margin-top: var(--space-sm) !important;
   }
 
   /* Buttons */
@@ -371,11 +410,20 @@ const characterMap = Object.fromEntries(
     margin-bottom: var(--space-2xl);
   }
 
+  .tavern-welcome {
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    color: var(--color-gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: var(--space-sm);
+  }
+
   .dashboard-title {
     font-family: var(--font-display);
     font-size: var(--text-2xl);
     color: var(--color-text);
-    margin: 0 0 var(--space-xs);
+    margin: 0 0 var(--space-sm);
   }
 
   .dashboard-title span {
@@ -385,6 +433,7 @@ const characterMap = Object.fromEntries(
   .dashboard-subtitle {
     color: var(--color-text-secondary);
     margin: 0;
+    font-style: italic;
   }
 
   /* Dashboard grid */
@@ -409,6 +458,26 @@ const characterMap = Object.fromEntries(
     font-size: var(--text-lg);
     color: var(--color-gold);
     margin: 0 0 var(--space-md);
+  }
+
+  .section-icon {
+    font-size: var(--text-xl);
+  }
+
+  .section-title--dm {
+    color: var(--color-gold);
+  }
+
+  .dm-flavor-text {
+    font-style: italic;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: calc(-1 * var(--space-xs)) 0 var(--space-md) 0;
+  }
+
+  .dashboard-section--dm {
+    border-color: var(--color-gold);
+    background: linear-gradient(135deg, var(--color-bg-secondary) 0%, rgba(var(--color-gold-rgb, 201, 162, 39), 0.05) 100%);
   }
 
   /* Action cards */
@@ -469,6 +538,11 @@ const characterMap = Object.fromEntries(
     color: var(--color-text-muted);
   }
 
+  .emoji-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+
   .action-card--primary .action-icon {
     background: var(--color-accent);
     color: white;
@@ -477,6 +551,10 @@ const characterMap = Object.fromEntries(
   .action-card--dm .action-icon {
     background: var(--color-gold);
     color: var(--color-bg);
+  }
+
+  .btn-emoji {
+    font-size: 16px;
   }
 
   .action-content {
@@ -539,7 +617,16 @@ const characterMap = Object.fromEntries(
     padding-top: var(--space-lg);
     border-top: 1px solid var(--color-border);
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .tavern-farewell {
+    font-style: italic;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: 0;
   }
 
   @media (max-width: 640px) {
