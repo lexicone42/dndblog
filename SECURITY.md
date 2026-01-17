@@ -11,7 +11,7 @@
 If you discover a security vulnerability in this project, please report it responsibly:
 
 1. **Do NOT open a public issue** for security vulnerabilities
-2. Contact **Rudiger** (the site maintainer) or use GitHub's private vulnerability reporting feature
+2. Contact **Rudiger** (site keeper) or use GitHub's private vulnerability reporting
 3. Include as much detail as possible:
    - Description of the vulnerability
    - Steps to reproduce
