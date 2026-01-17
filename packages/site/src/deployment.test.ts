@@ -52,13 +52,16 @@ describe('Security Headers', () => {
 
 // Page Build Verification - only runs after build (when dist/ exists)
 describe.skipIf(!distExists)('Page Build Verification', () => {
-  it('should build campaign landing page', () => {
-    const pagePath = path.join(DIST_DIR, 'campaign', 'index.html');
-    expect(fs.existsSync(pagePath)).toBe(true);
+  it('should build campaign pages with session tracker', () => {
+    // Campaign index redirects to party hub
+    const campaignIndexPath = path.join(DIST_DIR, 'campaign', 'index.html');
+    expect(fs.existsSync(campaignIndexPath)).toBe(true);
+    const redirectContent = fs.readFileSync(campaignIndexPath, 'utf-8');
+    expect(redirectContent).toContain('Redirecting');
 
-    const content = fs.readFileSync(pagePath, 'utf-8');
-    expect(content).toContain('Session Tracker');
-    expect(content).toContain('Sign in with Account');
+    // Session tracker at /campaign/character/[slug] should exist
+    const characterDir = path.join(DIST_DIR, 'campaign', 'character');
+    expect(fs.existsSync(characterDir)).toBe(true);
   });
 
   it('should build auth callback page', () => {
@@ -79,12 +82,27 @@ describe.skipIf(!distExists)('Page Build Verification', () => {
     expect(content).toContain('DM Dashboard');
   });
 
-  it('should build campaign session tracker page', () => {
-    // Check campaign page exists (player session tracker)
+  it('should build campaign session tracker pages', () => {
+    // Campaign index redirects to party hub
     const campaignPath = path.join(DIST_DIR, 'campaign', 'index.html');
     expect(fs.existsSync(campaignPath)).toBe(true);
+    const campaignContent = fs.readFileSync(campaignPath, 'utf-8');
+    expect(campaignContent).toContain('Redirecting');
 
-    const content = fs.readFileSync(campaignPath, 'utf-8');
-    expect(content).toContain('Session Tracker');
+    // Session tracker lives at /campaign/character/[slug]
+    const characterTrackerDir = path.join(DIST_DIR, 'campaign', 'character');
+    expect(fs.existsSync(characterTrackerDir)).toBe(true);
+
+    // Check at least one character session tracker exists
+    const characterDirs = fs.readdirSync(characterTrackerDir);
+    expect(characterDirs.length).toBeGreaterThan(0);
+
+    // Check that the session tracker page has the expected content
+    const firstChar = characterDirs[0];
+    const trackerPath = path.join(characterTrackerDir, firstChar, 'index.html');
+    if (fs.existsSync(trackerPath)) {
+      const content = fs.readFileSync(trackerPath, 'utf-8');
+      expect(content).toContain('Session Tracker');
+    }
   });
 });

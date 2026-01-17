@@ -1156,15 +1156,17 @@ const pageTitle = targetCharacter
 
         if (response.ok) {
           const data = await response.json();
-          if (data.sessionData) {
+          // API returns data directly (not wrapped in sessionData)
+          // Check if we got actual session data by looking for combat or conditions
+          if (data.combat || data.conditions || data.spellSlots) {
             sessionState = {
-              hp: data.sessionData.combat?.hp ?? currentCharacter.currentHp,
-              tempHp: data.sessionData.combat?.tempHp ?? 0,
-              deathSaves: data.sessionData.deathSaves ?? { successes: 0, failures: 0 },
-              conditions: data.sessionData.conditions ?? [],
-              spellSlots: data.sessionData.spellSlots ?? [],
-              features: data.sessionData.features ?? [],
-              concentration: data.sessionData.concentration ?? null,
+              hp: data.combat?.hp ?? currentCharacter.currentHp,
+              tempHp: data.combat?.tempHp ?? 0,
+              deathSaves: data.deathSaves ?? { successes: 0, failures: 0 },
+              conditions: data.conditions ?? [],
+              spellSlots: data.spellSlots ?? [],
+              features: data.features ?? [],
+              concentration: data.concentration ?? null,
             };
           } else {
             // No saved state, use defaults

@@ -180,6 +180,17 @@ const partyMembers: PartyMember[] = characters
               </div>
             </div>
 
+            <!-- Concentration (shown when active) -->
+            <div class="concentration-section" style="display: none;">
+              <span class="conc-indicator">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span class="conc-spell-name"></span>
+              </span>
+            </div>
+
             <!-- Conditions -->
             <div class="conditions-section">
               <div class="conditions-list">
@@ -700,10 +711,26 @@ const partyMembers: PartyMember[] = characters
       } else {
         conditions.forEach(function(condition) {
           var tag = document.createElement('span');
-          tag.className = 'condition-tag' + (condition.beneficial ? ' condition-tag--beneficial' : '');
-          tag.textContent = condition.name;
+          // Support both string conditions and object conditions
+          var conditionName = typeof condition === 'string' ? condition : condition.name;
+          var isBeneficial = typeof condition === 'object' && condition.beneficial;
+          tag.className = 'condition-tag' + (isBeneficial ? ' condition-tag--beneficial' : '');
+          tag.textContent = conditionName;
           conditionsList.appendChild(tag);
         });
+      }
+
+      // Update concentration
+      var concSection = card.querySelector('.concentration-section');
+      if (concSection) {
+        var concSpell = draft ? draft.concentration : null;
+        if (concSpell) {
+          concSection.style.display = 'block';
+          var concSpellName = concSection.querySelector('.conc-spell-name');
+          if (concSpellName) concSpellName.textContent = concSpell;
+        } else {
+          concSection.style.display = 'none';
+        }
       }
 
       // Update spell slots
@@ -812,10 +839,26 @@ const partyMembers: PartyMember[] = characters
     } else {
       conditions.forEach(function(condition) {
         var tag = document.createElement('span');
-        tag.className = 'condition-tag' + (condition.beneficial ? ' condition-tag--beneficial' : '');
-        tag.textContent = condition.name;
+        // Support both string conditions and object conditions
+        var conditionName = typeof condition === 'string' ? condition : condition.name;
+        var isBeneficial = typeof condition === 'object' && condition.beneficial;
+        tag.className = 'condition-tag' + (isBeneficial ? ' condition-tag--beneficial' : '');
+        tag.textContent = conditionName;
         conditionsList.appendChild(tag);
       });
+    }
+
+    // Update concentration
+    var concSection = card.querySelector('.concentration-section');
+    if (concSection) {
+      var concSpell = sessionData.concentration;
+      if (concSpell) {
+        concSection.style.display = 'block';
+        var concSpellName = concSection.querySelector('.conc-spell-name');
+        if (concSpellName) concSpellName.textContent = concSpell;
+      } else {
+        concSection.style.display = 'none';
+      }
     }
 
     // Update spell slots
@@ -905,6 +948,12 @@ const partyMembers: PartyMember[] = characters
       noConditions.className = 'no-conditions';
       noConditions.textContent = 'No conditions';
       conditionsList.appendChild(noConditions);
+
+      // Hide concentration
+      var concSection = card.querySelector('.concentration-section');
+      if (concSection) {
+        concSection.style.display = 'none';
+      }
 
       // Reset spell slots
       var spellSlotsSection = card.querySelector('.spell-slots-section');
@@ -1417,6 +1466,36 @@ const partyMembers: PartyMember[] = characters
   .death-pips--failure .pip.pip--filled {
     background: var(--color-error);
     border-color: var(--color-error);
+  }
+
+  /* Concentration Indicator */
+  .concentration-section {
+    padding: var(--space-xs) 0;
+  }
+
+  .conc-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 3px 10px;
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    border-radius: var(--radius-md);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    color: #a855f7;
+  }
+
+  .conc-indicator svg {
+    color: #a855f7;
+    opacity: 0.8;
+  }
+
+  .conc-spell-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* Conditions */
