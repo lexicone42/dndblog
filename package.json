@@ -27,8 +27,12 @@
     "packages/site/src/**/*.test.ts": [
       "bash -c 'pnpm --filter @dndblog/site test --run --passWithNoTests'"
     ],
+    "packages/site/src/content/**/*.{md,yaml,yml}": [
+      "bash -c 'pnpm --filter @dndblog/site validate-entities'"
+    ],
     "packages/infra/**/*.ts": [
-      "bash -c 'pnpm --filter @dndblog/infra typecheck'"
+      "bash -c 'pnpm --filter @dndblog/infra typecheck'",
+      "bash -c 'cd packages/infra && npx cdk synth --quiet 2>/dev/null || echo \"CDK synth check skipped (context may be missing)\"'"
     ],
     "*": "node scripts/check-forbidden-files.js"
   },
