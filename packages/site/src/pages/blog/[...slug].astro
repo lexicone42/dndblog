@@ -508,26 +508,6 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-US', {
     }
   }
 
-  /* Entity links in prose - subtle styling for reading flow */
-  :global(.session-content a[href^="/campaign/"]) {
-    color: var(--color-text);
-    text-decoration: none;
-    font-weight: 600;
-    border-bottom: 1px dotted var(--color-text-muted);
-    transition: all var(--transition-fast);
-  }
-
-  :global(.session-content a[href^="/campaign/"]:hover) {
-    color: var(--color-accent);
-    border-bottom-color: var(--color-accent);
-    border-bottom-style: solid;
-  }
-
-  /* Bold entity links (the **[Name](link)** pattern) - even more subtle */
-  :global(.session-content strong a[href^="/campaign/"]) {
-    font-weight: inherit;
-  }
-
   /* Session entities section */
   .session-entities {
     background: var(--color-bg-secondary);

@@ -92,41 +92,54 @@ const processedContent = processContent(content || '', entityLookup);
 <div class="session-content prose" set:html={processedContent} />
 
 <style>
+  /* Entity links - subtle by default for reading flow */
   .session-content :global(.entity-link) {
-    color: var(--color-accent);
+    color: var(--color-text);
     text-decoration: none;
     font-weight: 600;
-    border-bottom: 1px dotted var(--color-accent);
+    border-bottom: 1px dotted var(--color-text-muted);
     transition: all var(--transition-fast);
   }
 
   .session-content :global(.entity-link:hover) {
     border-bottom-style: solid;
-    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
-    border-radius: var(--radius-sm);
-    padding: 0 2px;
-    margin: 0 -2px;
+    border-bottom-color: currentColor;
   }
 
-  /* Entity type color coding */
-  .session-content :global(.entity-link[data-entity-type="character"]) {
+  /* Entity type colors shown on hover */
+  .session-content :global(.entity-link[data-entity-type="character"]:hover) {
     color: var(--color-accent);
   }
 
-  .session-content :global(.entity-link[data-entity-type="location"]) {
+  .session-content :global(.entity-link[data-entity-type="location"]:hover) {
     color: var(--color-success);
   }
 
-  .session-content :global(.entity-link[data-entity-type="enemy"]) {
+  .session-content :global(.entity-link[data-entity-type="enemy"]:hover) {
     color: var(--color-error);
   }
 
-  .session-content :global(.entity-link[data-entity-type="faction"]) {
+  .session-content :global(.entity-link[data-entity-type="faction"]:hover) {
     color: var(--color-warning);
   }
 
-  .session-content :global(.entity-link[data-entity-type="item"]) {
+  .session-content :global(.entity-link[data-entity-type="item"]:hover) {
     color: var(--color-gold);
+  }
+
+  /* Manual entity links (not auto-linked) - same subtle treatment */
+  .session-content :global(a[href^="/campaign/"]:not(.entity-link)) {
+    color: var(--color-text);
+    text-decoration: none;
+    font-weight: 600;
+    border-bottom: 1px dotted var(--color-text-muted);
+    transition: all var(--transition-fast);
+  }
+
+  .session-content :global(a[href^="/campaign/"]:not(.entity-link):hover) {
+    color: var(--color-accent);
+    border-bottom-style: solid;
+    border-bottom-color: var(--color-accent);
   }
 
   /* Status variations */
