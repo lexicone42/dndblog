@@ -241,10 +241,11 @@ describe('CSP Coverage Analysis', () => {
 
 describe('CSP Directive Completeness', () => {
   test('script-src includes all known CDN hosts used in the project', () => {
-    // Known CDNs used in the project
+    // Known CDNs used in the project (from /dm/notes.astro):
+    // - unpkg.com: EasyMDE, Turndown
+    // - cdnjs.cloudflare.com: marked, highlight.js, DOMPurify
     const requiredHosts = [
       'https://unpkg.com',
-      'https://cdn.jsdelivr.net',
       'https://cdnjs.cloudflare.com',
     ];
 
@@ -265,11 +266,12 @@ describe('CSP Directive Completeness', () => {
   });
 
   test('style-src includes all known CDN hosts used in the project', () => {
+    // Known CDNs used in the project (from /dm/notes.astro):
+    // - unpkg.com: EasyMDE styles
+    // - cdnjs.cloudflare.com: highlight.js themes
     const requiredHosts = [
       'https://unpkg.com',
-      'https://cdn.jsdelivr.net',
       'https://cdnjs.cloudflare.com',
-      'https://fonts.googleapis.com',
     ];
 
     const styleSrc = CSP_DIRECTIVES['style-src'];

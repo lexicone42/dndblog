@@ -24,41 +24,34 @@ export const CSP_DIRECTIVES: Record<string, string[]> = {
   // JavaScript sources
   // - 'unsafe-inline': Required for Astro's scoped styles and inline scripts
   // - 'wasm-unsafe-eval': Required for Pagefind search (WebAssembly)
-  // - CDN sources: For EasyMDE, marked, highlight.js, dompurify and other libraries
+  // - unpkg.com: EasyMDE, Turndown (used in /dm/notes.astro)
+  // - cdnjs.cloudflare.com: marked, highlight.js, DOMPurify (used in /dm/notes.astro)
   'script-src': [
     "'self'",
     "'unsafe-inline'",
     "'wasm-unsafe-eval'",
     'https://unpkg.com',
-    'https://cdn.jsdelivr.net',
     'https://cdnjs.cloudflare.com',
   ],
 
   // Stylesheet sources
   // - 'unsafe-inline': Required for Astro's scoped styles
-  // - CDN sources: For external fonts and libraries
+  // - unpkg.com: EasyMDE styles (used in /dm/notes.astro)
+  // - cdnjs.cloudflare.com: highlight.js themes (used in /dm/notes.astro)
   'style-src': [
     "'self'",
     "'unsafe-inline'",
     'https://unpkg.com',
-    'https://cdn.jsdelivr.net',
-    'https://fonts.googleapis.com',
-    'https://maxcdn.bootstrapcdn.com',
     'https://cdnjs.cloudflare.com',
   ],
 
   // Image sources - allow self, data URIs, and any HTTPS
   'img-src': ["'self'", 'data:', 'https:'],
 
-  // Font sources - multiple CDNs for Font Awesome and Google Fonts
+  // Font sources - self-hosted fonts only (no external CDNs currently used)
   'font-src': [
     "'self'",
     'data:',
-    'https://fonts.gstatic.com',
-    'https://maxcdn.bootstrapcdn.com',
-    'https://cdnjs.cloudflare.com',
-    'https://cdn.jsdelivr.net',
-    'https://use.fontawesome.com',
   ],
 
   // API connections - self, AWS API Gateway, S3 for uploads, Cognito for auth, WebSocket for real-time
