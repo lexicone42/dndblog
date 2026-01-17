@@ -339,7 +339,7 @@ const nextMissionTeaser = {
       const characterSlug = auth.characterSlug;
       if (characterSlug) {
         document.getElementById('player-section').style.display = 'block';
-        document.getElementById('session-tracker-link').href = `/campaign`;
+        document.getElementById('session-tracker-link').href = `/campaign/character/${characterSlug}`;
         document.getElementById('character-name-badge').textContent = getCharacterName(characterSlug);
       }
 
