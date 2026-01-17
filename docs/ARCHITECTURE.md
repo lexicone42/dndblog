@@ -42,14 +42,14 @@ The platform is designed as a modular system that can evolve from a simple stati
 | **ACM** | SSL certificates | DNS-validated, auto-renewal |
 | **IAM** | GitHub Actions auth | OIDC federation, least privilege |
 
-### DM Notes API Components
+### DM Guide API Components
 
 | Service | Purpose | Configuration |
 |---------|---------|---------------|
 | **API Gateway** | HTTP API | CORS, rate limiting (5 req/s) |
-| **Lambda** | API handlers | Node.js 20, 3 functions |
-| **S3** | Notes storage | dm-notes/ prefix, token auth |
-| **SSM** | Token storage | SecureString parameter |
+| **Lambda** | API handlers | Node.js 20, JWT validation |
+| **S3** | Notes storage | dm-notes/ prefix |
+| **Cognito** | Authentication | User Pool with dm/player groups |
 | **Bedrock** | AI review | Claude model for notes review |
 | **CloudWatch** | Monitoring | Alarms + dashboard |
 
@@ -191,15 +191,19 @@ interface BlogPost {
 - **Least privilege** - Role assumption per-run
 - **Security** - No credentials stored in GitHub
 
-## Future Phase 2 Architecture
+## Authentication Architecture
 
-See [PHASE2-DESIGN.md](PHASE2-DESIGN.md) for the planned evolution including:
+The platform uses AWS Cognito for authentication:
 
-- **Cognito** - User authentication with invite-only registration
-- **API Gateway + Lambda** - RESTful API for notes
-- **DynamoDB** - Single-table design for campaign data
-- **KMS** - Encryption for private content
-- **Claude API** - AI-powered summarization
+- **User Pool**: `chronicles-mawframe` with hosted UI
+- **Groups**: `dm` and `player` for role-based access
+- **Custom attributes**: `custom:characterSlug` for player character assignment
+- **Passkey support**: WebAuthn/FIDO2 for passwordless login (30-day sessions)
+- **OAuth flow**: Authorization code grant with PKCE
+
+All API endpoints validate JWTs against the Cognito User Pool. Group membership determines access:
+- DM endpoints require `dm` group membership
+- Player endpoints require `player` group membership
 
 ## Performance Considerations
 

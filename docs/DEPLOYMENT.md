@@ -105,42 +105,51 @@ aws cloudfront create-invalidation \
   --paths "/*"
 ```
 
-### DM Notes API Setup
+### User Management (Cognito)
 
-After deploying `DmNotesStack`, configure the authentication tokens:
+After deploying `AuthStack` and `DmNotesStack`, add users via the AWS Console or CLI:
 
 ```bash
-# Set the DM notes token (replace with your secret)
-aws ssm put-parameter \
-  --name "/dndblog/dm-notes-token" \
-  --value "your-secret-token-here" \
-  --type SecureString \
-  --overwrite
+# Create a DM user
+aws cognito-idp admin-create-user \
+  --user-pool-id us-east-1_XXXXXX \
+  --username dm@example.com \
+  --user-attributes Name=email,Value=dm@example.com Name=email_verified,Value=true
 
+# Add to DM group
+aws cognito-idp admin-add-user-to-group \
+  --user-pool-id us-east-1_XXXXXX \
+  --username dm@example.com \
+  --group-name dm
+
+# Create a player user with character assignment
+aws cognito-idp admin-create-user \
+  --user-pool-id us-east-1_XXXXXX \
+  --username player@example.com \
+  --user-attributes \
+    Name=email,Value=player@example.com \
+    Name=email_verified,Value=true \
+    Name=custom:characterSlug,Value=rudiger
+
+# Add to player group
+aws cognito-idp admin-add-user-to-group \
+  --user-pool-id us-east-1_XXXXXX \
+  --username player@example.com \
+  --group-name player
+```
+
+**Groups:**
+- `dm` - Full access to DM dashboard, entity staging, draft approval
+- `player` - Access to session tracker, character drafts
+
+### AI Review Setup (Optional)
+
+```bash
 # Optionally enable/disable AI review
 aws ssm put-parameter \
   --name "/dndblog/ai-review-enabled" \
   --value "true" \
   --type String \
-  --overwrite
-```
-
-### Player Token Setup (Per-Character)
-
-Each player gets a unique token tied to their character:
-
-```bash
-# Set per-character token (one per player)
-aws ssm put-parameter \
-  --name "/dndblog/player-token/rudiger" \
-  --value "rudigers-secret-token" \
-  --type SecureString \
-  --overwrite
-
-aws ssm put-parameter \
-  --name "/dndblog/player-token/accoa" \
-  --value "accoas-secret-token" \
-  --type SecureString \
   --overwrite
 ```
 
