@@ -24,11 +24,9 @@ const currentYear = new Date().getFullYear();
 <style>
   .footer {
     border-top: 1px solid var(--color-border);
-    height: var(--header-height);
+    padding: var(--space-sm) 0;
     margin-top: auto;
     background-color: var(--color-bg-secondary);
-    display: flex;
-    align-items: center;
   }
 
   .footer__container {
@@ -36,42 +34,42 @@ const currentYear = new Date().getFullYear();
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
     width: 100%;
   }
 
   .footer__copyright {
-    color: var(--color-text-secondary);
-    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
     margin: 0;
     font-family: var(--font-serif);
   }
 
   .footer__nav {
     display: flex;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
     align-items: center;
   }
 
   .footer__separator {
-    color: var(--color-gold);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
   }
 
   .footer__link {
-    color: var(--color-text-secondary);
+    color: var(--color-text-muted);
     text-decoration: none;
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     transition: color var(--transition-fast);
   }
 
   .footer__link:hover {
     color: var(--color-gold);
-    text-decoration: underline;
   }
 
   .footer__tagline {
     color: var(--color-text-muted);
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     font-style: italic;
   }
 
