@@ -25,7 +25,7 @@
       "bash -c 'pnpm --filter @dndblog/site typecheck'"
     ],
     "packages/site/src/**/*.test.ts": [
-      "bash -c 'pnpm --filter @dndblog/site test --run --passWithNoTests'"
+      "bash -c 'pnpm --filter @dndblog/site test'"
     ],
     "packages/site/src/content/**/*.{md,yaml,yml}": [
       "bash -c 'pnpm --filter @dndblog/site validate-entities'"
