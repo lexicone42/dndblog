@@ -10,7 +10,7 @@ import { getCollection } from 'astro:content';
 // Get all characters for mapping slugs to names
 const allCharacters = await getCollection('characters');
 const characterMap = Object.fromEntries(
-  allCharacters.map(c => [c.id, c.data])
+  allCharacters.map((c: typeof allCharacters[0]) => [c.id, c.data])
 );
 ---
 
