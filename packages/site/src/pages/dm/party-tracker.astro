@@ -150,8 +150,8 @@ const partyMembers: PartyMember[] = characters
                   {member.subclass && ` (${member.subclass})`}
                 </span>
               </div>
-              <div class="draft-status" data-status="none">
-                <span class="status-badge status-badge--none">No draft</span>
+              <div class="session-status" data-status="synced">
+                <span class="status-badge status-badge--synced">Synced</span>
               </div>
             </div>
 
@@ -236,7 +236,7 @@ const partyMembers: PartyMember[] = characters
       </div>
 
       <footer class="tracker-footer">
-        <span class="auto-refresh-note">Auto-refreshes every 30 seconds</span>
+        <span class="auto-refresh-note">Live updates via WebSocket</span>
         <button id="logout-btn" class="logout-btn">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -632,14 +632,14 @@ const partyMembers: PartyMember[] = characters
 
       var draft = draftMap[member.slug];
 
-      // Update draft status badge
+      // Update session status badge
       var statusBadge = card.querySelector('.status-badge');
       if (draft) {
-        statusBadge.className = 'status-badge status-badge--draft';
-        statusBadge.textContent = 'Has draft';
+        statusBadge.className = 'status-badge status-badge--active';
+        statusBadge.textContent = 'Active';
       } else {
-        statusBadge.className = 'status-badge status-badge--none';
-        statusBadge.textContent = 'No draft';
+        statusBadge.className = 'status-badge status-badge--synced';
+        statusBadge.textContent = 'Synced';
       }
 
       // Update HP
@@ -751,7 +751,7 @@ const partyMembers: PartyMember[] = characters
 
     // Update status badge
     var statusBadge = card.querySelector('.status-badge');
-    statusBadge.className = 'status-badge status-badge--draft';
+    statusBadge.className = 'status-badge status-badge--active';
     statusBadge.textContent = 'Active';
 
     // Update HP
@@ -848,11 +848,21 @@ const partyMembers: PartyMember[] = characters
       });
     }
 
-    // Visual flash to indicate update
+    // Visual highlight to indicate update - subtle glow that fades
     card.classList.add('card-updated');
+
+    // Also highlight the HP value specifically
+    var hpValueEl = card.querySelector('.hp-value');
+    if (hpValueEl) {
+      hpValueEl.classList.add('value-updated');
+    }
+
     setTimeout(function() {
       card.classList.remove('card-updated');
-    }, 1000);
+      if (hpValueEl) {
+        hpValueEl.classList.remove('value-updated');
+      }
+    }, 2000);
   }
 
   // ============================================
@@ -866,8 +876,8 @@ const partyMembers: PartyMember[] = characters
 
       // Reset status badge
       var statusBadge = card.querySelector('.status-badge');
-      statusBadge.className = 'status-badge status-badge--none';
-      statusBadge.textContent = 'No draft';
+      statusBadge.className = 'status-badge status-badge--synced';
+      statusBadge.textContent = 'Synced';
 
       // Reset HP to baseline
       var hpValue = card.querySelector('.hp-value');
@@ -1155,17 +1165,35 @@ const partyMembers: PartyMember[] = characters
     color: white;
   }
 
-  /* Card update animation */
+  /* Card update animation - subtle highlight that fades */
   .card-updated {
-    animation: card-flash 1s ease-out;
+    animation: card-highlight 2s ease-out;
   }
 
-  @keyframes card-flash {
+  @keyframes card-highlight {
     0% {
-      box-shadow: 0 0 0 2px var(--color-accent);
+      background: rgba(var(--color-gold-rgb, 212, 175, 55), 0.15);
+      box-shadow: inset 0 0 0 1px rgba(var(--color-gold-rgb, 212, 175, 55), 0.4);
     }
     100% {
+      background: var(--color-bg-secondary);
       box-shadow: none;
+    }
+  }
+
+  /* Also highlight specific changed values */
+  .value-updated {
+    animation: value-flash 1.5s ease-out;
+  }
+
+  @keyframes value-flash {
+    0% {
+      color: var(--color-gold);
+      text-shadow: 0 0 8px rgba(var(--color-gold-rgb, 212, 175, 55), 0.6);
+    }
+    100% {
+      color: inherit;
+      text-shadow: none;
     }
   }
 
@@ -1260,13 +1288,13 @@ const partyMembers: PartyMember[] = characters
     text-transform: uppercase;
   }
 
-  .status-badge--none {
+  .status-badge--synced {
     background: var(--color-bg-tertiary);
     color: var(--color-text-muted);
   }
 
-  .status-badge--draft {
-    background: var(--color-info, #3b82f6);
+  .status-badge--active {
+    background: var(--color-success, #10b981);
     color: white;
   }
 
