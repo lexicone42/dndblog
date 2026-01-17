@@ -16,12 +16,37 @@ interface PartyFeature {
   max: number;
   current?: number;
   recharge: string;
+  description?: string;
 }
 
 interface SpellSlot {
   level: number;
   max: number;
   current?: number;
+}
+
+interface AbilityScores {
+  str: number;
+  dex: number;
+  con: number;
+  int: number;
+  wis: number;
+  cha: number;
+}
+
+interface Skill {
+  name: string;
+  proficient: boolean;
+  expertise?: boolean;
+  bonus: number;
+}
+
+interface Spellcasting {
+  ability: string;
+  spellSaveDC: number;
+  spellAttackBonus: number;
+  cantrips: string[];
+  preparedSpells: string[];
 }
 
 interface PartyMember {
@@ -33,6 +58,17 @@ interface PartyMember {
   race?: string;
   maxHp: number;
   currentHp: number;
+  ac: number;
+  proficiencyBonus: number;
+  abilityScores: AbilityScores;
+  savingThrows: Record<string, boolean>;
+  skills: Skill[];
+  senses: {
+    passivePerception: number;
+    passiveInvestigation?: number;
+    passiveInsight?: number;
+  };
+  spellcasting: Spellcasting | null;
   features: PartyFeature[];
   spellSlots: SpellSlot[];
   player?: string;
@@ -53,10 +89,33 @@ const partyMembers: PartyMember[] = characters
     player: c.data.player,
     maxHp: c.data.combat?.maxHp ?? 10,
     currentHp: c.data.combat?.hp ?? c.data.combat?.maxHp ?? 10,
+    ac: c.data.combat?.ac ?? 10,
+    proficiencyBonus: c.data.combat?.proficiencyBonus ?? 2,
+    abilityScores: c.data.abilityScores ?? { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+    savingThrows: c.data.savingThrows ?? {},
+    skills: (c.data.skills || []).map((s: { name: string; proficient?: boolean; expertise?: boolean; bonus?: number }) => ({
+      name: s.name,
+      proficient: s.proficient ?? false,
+      expertise: s.expertise ?? false,
+      bonus: s.bonus ?? 0,
+    })),
+    senses: {
+      passivePerception: c.data.senses?.passivePerception ?? 10,
+      passiveInvestigation: c.data.senses?.passiveInvestigation,
+      passiveInsight: c.data.senses?.passiveInsight,
+    },
+    spellcasting: c.data.spellcasting ? {
+      ability: c.data.spellcasting.ability ?? 'int',
+      spellSaveDC: c.data.spellcasting.spellSaveDC ?? 10,
+      spellAttackBonus: c.data.spellcasting.spellAttackBonus ?? 0,
+      cantrips: c.data.spellcasting.cantrips ?? [],
+      preparedSpells: c.data.spellcasting.preparedSpells ?? [],
+    } : null,
     features: (c.data.features || [])
       .filter((f: { uses?: unknown }) => f.uses)
-      .map((f: { name: string; uses: { current?: number; max?: number; recharge?: string } }) => ({
+      .map((f: { name: string; description?: string; uses: { current?: number; max?: number; recharge?: string } }) => ({
         name: f.name,
+        description: f.description,
         max: f.uses?.max ?? 0,
         current: f.uses?.current ?? f.uses?.max ?? 0,
         recharge: f.uses?.recharge ?? 'long-rest',
@@ -158,39 +217,94 @@ const dndConditions = [
 
       <!-- Session Tracker Content -->
       <div id="tracker-content" class="tracker-content" style="display: none;">
-        <!-- HP Section -->
-        <div class="tracker-card hp-card">
-          <div class="card-header">
-            <h2 class="card-title">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-              </svg>
-              Hit Points
-            </h2>
-          </div>
-          <div class="hp-display">
-            <div class="hp-main">
-              <input type="number" id="current-hp" class="hp-input" min="0" />
-              <span class="hp-separator">/</span>
-              <span id="max-hp" class="hp-max">0</span>
+
+        <!-- Compact Combat Dashboard -->
+        <div class="combat-dashboard">
+          <!-- HP Block -->
+          <div class="stat-block stat-block--hp">
+            <div class="stat-label">HP</div>
+            <div class="hp-inline">
+              <input type="number" id="current-hp" class="hp-input-compact" min="0" />
+              <span class="hp-sep">/</span>
+              <span id="max-hp" class="hp-max-compact">0</span>
             </div>
-            <div class="hp-bar-container">
-              <div id="hp-bar" class="hp-bar">
-                <div id="hp-bar-fill" class="hp-bar-fill"></div>
-              </div>
+            <div id="hp-bar" class="hp-bar-mini">
+              <div id="hp-bar-fill" class="hp-bar-fill-mini"></div>
             </div>
           </div>
-          <div class="hp-controls">
-            <div class="temp-hp">
-              <label for="temp-hp">Temp HP:</label>
-              <input type="number" id="temp-hp" class="temp-hp-input" min="0" value="0" />
-            </div>
-            <div class="hp-quick-actions">
-              <button class="hp-btn hp-btn--damage" data-delta="-5">-5</button>
-              <button class="hp-btn hp-btn--damage" data-delta="-1">-1</button>
-              <button class="hp-btn hp-btn--heal" data-delta="+1">+1</button>
-              <button class="hp-btn hp-btn--heal" data-delta="+5">+5</button>
-            </div>
+
+          <!-- AC Block -->
+          <div class="stat-block stat-block--ac">
+            <div class="stat-label">AC</div>
+            <div id="ac-value" class="stat-value">10</div>
+          </div>
+
+          <!-- Spell Save DC (if caster) -->
+          <div id="spell-dc-block" class="stat-block stat-block--dc" style="display: none;">
+            <div class="stat-label">Spell DC</div>
+            <div id="spell-dc-value" class="stat-value">10</div>
+          </div>
+
+          <!-- Concentration Tracker -->
+          <div id="concentration-block" class="stat-block stat-block--conc" style="display: none;">
+            <div class="stat-label">Conc.</div>
+            <button id="concentration-btn" class="conc-btn" title="Click to clear concentration">
+              <span id="conc-spell-name" class="conc-spell">—</span>
+            </button>
+          </div>
+
+          <!-- Proficiency Bonus -->
+          <div class="stat-block stat-block--prof">
+            <div class="stat-label">Prof</div>
+            <div id="prof-value" class="stat-value">+2</div>
+          </div>
+        </div>
+
+        <!-- HP Quick Actions & Temp HP Row -->
+        <div class="hp-actions-row">
+          <div class="temp-hp">
+            <span class="temp-label">Temp HP:</span>
+            <input type="number" id="temp-hp" class="temp-hp-input" min="0" value="0" />
+          </div>
+          <div class="hp-quick-actions">
+            <button class="hp-btn hp-btn--damage" data-delta="-5">-5</button>
+            <button class="hp-btn hp-btn--damage" data-delta="-1">-1</button>
+            <button class="hp-btn hp-btn--heal" data-delta="+1">+1</button>
+            <button class="hp-btn hp-btn--heal" data-delta="+5">+5</button>
+          </div>
+        </div>
+
+        <!-- Ability Scores -->
+        <div class="abilities-row">
+          <div class="ability" data-ability="str">
+            <div class="ability-name">STR</div>
+            <div id="str-mod" class="ability-mod">+0</div>
+            <div id="str-score" class="ability-score">10</div>
+          </div>
+          <div class="ability" data-ability="dex">
+            <div class="ability-name">DEX</div>
+            <div id="dex-mod" class="ability-mod">+0</div>
+            <div id="dex-score" class="ability-score">10</div>
+          </div>
+          <div class="ability" data-ability="con">
+            <div class="ability-name">CON</div>
+            <div id="con-mod" class="ability-mod">+0</div>
+            <div id="con-score" class="ability-score">10</div>
+          </div>
+          <div class="ability" data-ability="int">
+            <div class="ability-name">INT</div>
+            <div id="int-mod" class="ability-mod">+0</div>
+            <div id="int-score" class="ability-score">10</div>
+          </div>
+          <div class="ability" data-ability="wis">
+            <div class="ability-name">WIS</div>
+            <div id="wis-mod" class="ability-mod">+0</div>
+            <div id="wis-score" class="ability-score">10</div>
+          </div>
+          <div class="ability" data-ability="cha">
+            <div class="ability-name">CHA</div>
+            <div id="cha-mod" class="ability-mod">+0</div>
+            <div id="cha-score" class="ability-score">10</div>
           </div>
         </div>
 
@@ -251,18 +365,59 @@ const dndConditions = [
           </div>
         </div>
 
-        <!-- Spell Slots Section (if character has spells) -->
-        <div id="spell-slots-card" class="tracker-card spell-slots-card" style="display: none;">
-          <div class="card-header">
-            <h2 class="card-title">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-              </svg>
-              Spell Slots
-            </h2>
+        <!-- Spellcasting Section (if character has spells) -->
+        <div id="spellcasting-section" class="spellcasting-section" style="display: none;">
+          <!-- Spell Slots with Rest Dropdown -->
+          <div class="tracker-card spell-slots-card">
+            <div class="card-header card-header--with-action">
+              <h2 class="card-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                Spell Slots
+              </h2>
+              <select id="rest-select" class="rest-select">
+                <option value="">Recover...</option>
+                <option value="short">Short Rest</option>
+                <option value="long">Long Rest</option>
+              </select>
+            </div>
+            <div id="spell-slots-grid" class="spell-slots-grid">
+              <!-- Populated by JavaScript using safe DOM methods -->
+            </div>
           </div>
-          <div id="spell-slots-grid" class="spell-slots-grid">
-            <!-- Populated by JavaScript using safe DOM methods -->
+
+          <!-- Cantrips -->
+          <div id="cantrips-card" class="tracker-card cantrips-card" style="display: none;">
+            <div class="card-header collapsible-header" data-collapse="cantrips">
+              <h2 class="card-title card-title--small">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                </svg>
+                Cantrips
+                <span class="collapse-arrow">▼</span>
+              </h2>
+            </div>
+            <div id="cantrips-list" class="spell-list">
+              <!-- Populated by JavaScript -->
+            </div>
+          </div>
+
+          <!-- Prepared Spells -->
+          <div id="prepared-spells-card" class="tracker-card prepared-spells-card" style="display: none;">
+            <div class="card-header collapsible-header" data-collapse="prepared">
+              <h2 class="card-title card-title--small">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                Prepared Spells
+                <span class="collapse-arrow">▼</span>
+              </h2>
+            </div>
+            <div id="prepared-spells-list" class="spell-list">
+              <!-- Populated by JavaScript -->
+            </div>
           </div>
         </div>
 
@@ -333,6 +488,7 @@ const dndConditions = [
     conditions: [] as string[],
     spellSlots: [] as { level: number; current: number }[],
     features: [] as { name: string; current: number }[],
+    concentration: null as string | null, // Currently concentrating spell
   };
   let saveTimeout: number | null = null;
 
@@ -350,12 +506,30 @@ const dndConditions = [
   const trackerContent = document.getElementById('tracker-content');
   const saveStatus = document.getElementById('save-status');
 
+  // Compact Dashboard Elements
+  const acValue = document.getElementById('ac-value');
+  const spellDcBlock = document.getElementById('spell-dc-block');
+  const spellDcValue = document.getElementById('spell-dc-value');
+  const profValue = document.getElementById('prof-value');
+  const concentrationBlock = document.getElementById('concentration-block');
+  const concentrationBtn = document.getElementById('concentration-btn');
+  const concSpellName = document.getElementById('conc-spell-name');
+
   // HP Elements
   const currentHpInput = document.getElementById('current-hp') as HTMLInputElement;
   const maxHpSpan = document.getElementById('max-hp');
   const tempHpInput = document.getElementById('temp-hp') as HTMLInputElement;
   const hpBar = document.getElementById('hp-bar');
   const hpBarFill = document.getElementById('hp-bar-fill');
+
+  // Spellcasting Elements
+  const spellcastingSection = document.getElementById('spellcasting-section');
+  const cantripsCard = document.getElementById('cantrips-card');
+  const cantripsList = document.getElementById('cantrips-list');
+  const preparedSpellsCard = document.getElementById('prepared-spells-card');
+  const preparedSpellsList = document.getElementById('prepared-spells-list');
+  const restSelect = document.getElementById('rest-select') as HTMLSelectElement;
+  const spellSlotsGrid = document.getElementById('spell-slots-grid');
 
   // Death Saves Elements
   const deathSavesCard = document.getElementById('death-saves-card');
@@ -367,9 +541,7 @@ const dndConditions = [
   const activeConditions = document.getElementById('active-conditions');
   const conditionBtns = document.querySelectorAll('.condition-btn');
 
-  // Spell Slots & Features
-  const spellSlotsCard = document.getElementById('spell-slots-card');
-  const spellSlotsGrid = document.getElementById('spell-slots-grid');
+  // Features
   const featuresCard = document.getElementById('features-card');
   const featuresGrid = document.getElementById('features-grid');
 
@@ -474,15 +646,130 @@ const dndConditions = [
     });
   }
 
-  function updateSpellSlotsDisplay() {
-    if (!spellSlotsCard || !spellSlotsGrid || !currentCharacter) return;
+  function updateCombatDashboard() {
+    if (!currentCharacter) return;
 
-    if (currentCharacter.spellSlots.length === 0) {
-      spellSlotsCard.style.display = 'none';
+    // Update AC
+    if (acValue) acValue.textContent = String(currentCharacter.ac);
+
+    // Update Proficiency Bonus
+    if (profValue) profValue.textContent = `+${currentCharacter.proficiencyBonus}`;
+
+    // Update Spell DC (show if character has spellcasting)
+    if (currentCharacter.spellcasting) {
+      if (spellDcBlock) spellDcBlock.style.display = 'flex';
+      if (spellDcValue) spellDcValue.textContent = String(currentCharacter.spellcasting.spellSaveDC);
+      if (concentrationBlock) concentrationBlock.style.display = 'flex';
+    } else {
+      if (spellDcBlock) spellDcBlock.style.display = 'none';
+      if (concentrationBlock) concentrationBlock.style.display = 'none';
+    }
+
+    updateConcentrationDisplay();
+  }
+
+  function updateConcentrationDisplay() {
+    if (!concSpellName) return;
+
+    if (sessionState.concentration) {
+      concSpellName.textContent = sessionState.concentration;
+      if (concentrationBtn) concentrationBtn.classList.add('conc-btn--active');
+    } else {
+      concSpellName.textContent = '—';
+      if (concentrationBtn) concentrationBtn.classList.remove('conc-btn--active');
+    }
+  }
+
+  function updateAbilityScoresDisplay() {
+    if (!currentCharacter) return;
+
+    const abilities = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const;
+    abilities.forEach(ability => {
+      const score = currentCharacter.abilityScores[ability];
+      const mod = Math.floor((score - 10) / 2);
+      const modStr = mod >= 0 ? `+${mod}` : String(mod);
+
+      const modEl = document.getElementById(`${ability}-mod`);
+      const scoreEl = document.getElementById(`${ability}-score`);
+      if (modEl) modEl.textContent = modStr;
+      if (scoreEl) scoreEl.textContent = String(score);
+    });
+  }
+
+  function updateSpellListsDisplay() {
+    if (!currentCharacter || !currentCharacter.spellcasting) {
+      if (spellcastingSection) spellcastingSection.style.display = 'none';
       return;
     }
 
-    spellSlotsCard.style.display = 'block';
+    if (spellcastingSection) spellcastingSection.style.display = 'block';
+
+    // Cantrips
+    const cantrips = currentCharacter.spellcasting.cantrips || [];
+    if (cantrips.length > 0 && cantripsCard && cantripsList) {
+      cantripsCard.style.display = 'block';
+      cantripsList.replaceChildren();
+
+      cantrips.forEach((spell: string) => {
+        const spellEl = document.createElement('div');
+        spellEl.className = 'spell-item spell-item--cantrip';
+        spellEl.textContent = spell;
+        cantripsList.appendChild(spellEl);
+      });
+    }
+
+    // Prepared Spells
+    const prepared = currentCharacter.spellcasting.preparedSpells || [];
+    if (prepared.length > 0 && preparedSpellsCard && preparedSpellsList) {
+      preparedSpellsCard.style.display = 'block';
+      preparedSpellsList.replaceChildren();
+
+      prepared.forEach((spell: string) => {
+        const spellEl = document.createElement('button');
+        spellEl.className = 'spell-item spell-item--prepared';
+        if (sessionState.concentration === spell) {
+          spellEl.classList.add('spell-item--concentrating');
+        }
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'spell-name';
+        nameSpan.textContent = spell;
+        spellEl.appendChild(nameSpan);
+
+        // Add concentration marker button (C icon)
+        const concBtn = document.createElement('span');
+        concBtn.className = 'spell-conc-marker';
+        concBtn.textContent = 'C';
+        concBtn.title = 'Set concentration';
+        spellEl.appendChild(concBtn);
+
+        spellEl.addEventListener('click', () => {
+          // Toggle concentration on this spell
+          if (sessionState.concentration === spell) {
+            setConcentration(null);
+          } else {
+            setConcentration(spell);
+          }
+        });
+
+        preparedSpellsList.appendChild(spellEl);
+      });
+    }
+  }
+
+  function setConcentration(spell: string | null) {
+    sessionState.concentration = spell;
+    updateConcentrationDisplay();
+    updateSpellListsDisplay();
+    scheduleSave();
+  }
+
+  function updateSpellSlotsDisplay() {
+    if (!spellSlotsGrid || !currentCharacter) return;
+
+    if (currentCharacter.spellSlots.length === 0) {
+      return;
+    }
 
     // Clear and rebuild using safe DOM methods
     spellSlotsGrid.replaceChildren();
@@ -569,9 +856,52 @@ const dndConditions = [
 
   function setHp(newHp: number) {
     if (!currentCharacter) return;
+    const previousHp = sessionState.hp;
     sessionState.hp = Math.max(0, Math.min(currentCharacter.maxHp, newHp));
+
+    // Auto-clear concentration at 0 HP
+    if (sessionState.hp <= 0 && previousHp > 0 && sessionState.concentration) {
+      setConcentration(null);
+    }
+
+    // Show concentration check reminder when taking damage
+    if (newHp < previousHp && sessionState.concentration && sessionState.hp > 0) {
+      const damage = previousHp - sessionState.hp;
+      const dcValue = Math.max(10, Math.floor(damage / 2));
+      const conMod = Math.floor((currentCharacter.abilityScores.con - 10) / 2);
+      const conModStr = conMod >= 0 ? `+${conMod}` : String(conMod);
+      showConcentrationReminder(dcValue, conModStr);
+    }
+
     updateHpDisplay();
     scheduleSave();
+  }
+
+  function showConcentrationReminder(dc: number, conMod: string) {
+    // Create a brief toast notification using safe DOM methods
+    const existing = document.querySelector('.conc-reminder');
+    if (existing) existing.remove();
+
+    const reminder = document.createElement('div');
+    reminder.className = 'conc-reminder';
+
+    const strong = document.createElement('strong');
+    strong.textContent = 'Concentration Check!';
+    reminder.appendChild(strong);
+
+    const text = document.createTextNode(` DC ${dc} (CON save ${conMod})`);
+    reminder.appendChild(text);
+
+    document.body.appendChild(reminder);
+
+    // Animate in
+    setTimeout(() => reminder.classList.add('conc-reminder--visible'), 10);
+
+    // Remove after 4 seconds
+    setTimeout(() => {
+      reminder.classList.remove('conc-reminder--visible');
+      setTimeout(() => reminder.remove(), 300);
+    }, 4000);
   }
 
   function setTempHp(newTempHp: number) {
@@ -690,15 +1020,28 @@ const dndConditions = [
       sessionState.features[index] = { name: feature.name, current: feature.max };
     });
 
-    // Clear conditions (optional - could keep some)
+    // Clear conditions and concentration
     sessionState.conditions = [];
+    sessionState.concentration = null;
 
     updateHpDisplay();
     updateDeathSavesDisplay();
     updateConditionsDisplay();
     updateSpellSlotsDisplay();
     updateFeaturesDisplay();
+    updateConcentrationDisplay();
+    updateSpellListsDisplay();
     scheduleSave();
+  }
+
+  function handleRestFromDropdown(restType: string) {
+    if (restType === 'short') {
+      handleShortRest();
+    } else if (restType === 'long') {
+      handleLongRest();
+    }
+    // Reset dropdown
+    if (restSelect) restSelect.value = '';
   }
 
   // ============================================
@@ -739,6 +1082,7 @@ const dndConditions = [
           conditions: sessionState.conditions,
           spellSlots: sessionState.spellSlots,
           features: sessionState.features,
+          concentration: sessionState.concentration,
         }),
       });
 
@@ -772,6 +1116,7 @@ const dndConditions = [
             conditions: data.sessionData.conditions ?? [],
             spellSlots: data.sessionData.spellSlots ?? [],
             features: data.sessionData.features ?? [],
+            concentration: data.sessionData.concentration ?? null,
           };
         } else {
           // No saved state, use defaults
@@ -782,6 +1127,8 @@ const dndConditions = [
         updateDeathSavesDisplay();
         updateConditionsDisplay();
         updateSpellSlotsDisplay();
+        updateSpellListsDisplay();
+        updateConcentrationDisplay();
         updateFeaturesDisplay();
       }
     } catch (error) {
@@ -792,6 +1139,8 @@ const dndConditions = [
       updateDeathSavesDisplay();
       updateConditionsDisplay();
       updateSpellSlotsDisplay();
+      updateSpellListsDisplay();
+      updateConcentrationDisplay();
       updateFeaturesDisplay();
     }
   }
@@ -805,6 +1154,7 @@ const dndConditions = [
       conditions: [],
       spellSlots: currentCharacter.spellSlots.map((s: { level: number; max: number; current?: number }) => ({ level: s.level, current: s.current ?? s.max })),
       features: currentCharacter.features.map((f: { name: string; max: number; current?: number }) => ({ name: f.name, current: f.current ?? f.max })),
+      concentration: null,
     };
   }
 
@@ -852,10 +1202,13 @@ const dndConditions = [
 
       // Initialize state and UI
       initializeDefaultState();
+      updateCombatDashboard();
+      updateAbilityScoresDisplay();
       updateHpDisplay();
       updateDeathSavesDisplay();
       updateConditionsDisplay();
       updateSpellSlotsDisplay();
+      updateSpellListsDisplay();
       updateFeaturesDisplay();
 
       // Load saved state from server
@@ -955,13 +1308,39 @@ const dndConditions = [
       });
     });
 
-    // Rest buttons
+    // Rest buttons (legacy)
     if (shortRestBtn) {
       shortRestBtn.addEventListener('click', handleShortRest);
     }
     if (longRestBtn) {
       longRestBtn.addEventListener('click', handleLongRest);
     }
+
+    // Rest dropdown
+    if (restSelect) {
+      restSelect.addEventListener('change', () => {
+        handleRestFromDropdown(restSelect.value);
+      });
+    }
+
+    // Concentration button - click to clear
+    if (concentrationBtn) {
+      concentrationBtn.addEventListener('click', () => {
+        if (sessionState.concentration) {
+          setConcentration(null);
+        }
+      });
+    }
+
+    // Collapsible headers
+    document.querySelectorAll('.collapsible-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const card = header.closest('.tracker-card');
+        if (card) {
+          card.classList.toggle('tracker-card--collapsed');
+        }
+      });
+    });
 
     // Auth change listener
     window.addEventListener('auth-change', () => {
@@ -1257,6 +1636,330 @@ const dndConditions = [
     font-size: var(--text-lg);
     color: var(--color-gold);
     margin: 0;
+  }
+
+  .card-title--small {
+    font-size: var(--text-base);
+  }
+
+  .card-header--with-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Collapsible Cards */
+  .collapsible-header {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .collapse-arrow {
+    margin-left: auto;
+    font-size: var(--text-xs);
+    transition: transform var(--transition-fast);
+  }
+
+  .tracker-card--collapsed .collapse-arrow {
+    transform: rotate(-90deg);
+  }
+
+  .tracker-card--collapsed .spell-list,
+  .tracker-card--collapsed .conditions-grid,
+  .tracker-card--collapsed .death-saves-grid,
+  .tracker-card--collapsed .active-conditions {
+    display: none;
+  }
+
+  /* Combat Dashboard */
+  .combat-dashboard {
+    display: flex;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-gold);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-md);
+  }
+
+  .stat-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    min-width: 60px;
+  }
+
+  .stat-block--hp {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .stat-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-xs);
+  }
+
+  .stat-value {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: var(--color-gold);
+  }
+
+  .hp-inline {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .hp-input-compact {
+    width: 50px;
+    padding: 2px 4px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--color-gold);
+    color: var(--color-text);
+    font-size: var(--text-xl);
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .hp-input-compact:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  .hp-sep {
+    color: var(--color-text-muted);
+  }
+
+  .hp-max-compact {
+    font-size: var(--text-lg);
+    color: var(--color-text-secondary);
+  }
+
+  .hp-bar-mini {
+    width: 100%;
+    height: 6px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-top: var(--space-xs);
+  }
+
+  .hp-bar-fill-mini {
+    height: 100%;
+    background: var(--color-success, #4CAF50);
+    transition: width var(--transition-fast);
+  }
+
+  .hp-bar-mini.hp-bar--warning .hp-bar-fill-mini {
+    background: var(--color-gold);
+  }
+
+  .hp-bar-mini.hp-bar--critical .hp-bar-fill-mini {
+    background: var(--color-accent);
+  }
+
+  .hp-bar-mini.hp-bar--dead .hp-bar-fill-mini {
+    background: #333;
+  }
+
+  /* Concentration */
+  .conc-btn {
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .conc-btn--active {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+  }
+
+  .conc-spell {
+    font-size: var(--text-xs);
+  }
+
+  /* HP Actions Row */
+  .hp-actions-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .temp-label {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  /* Ability Scores Row */
+  .abilities-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-lg);
+  }
+
+  .ability {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-sm);
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+  }
+
+  .ability-name {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-gold);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .ability-mod {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .ability-score {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  /* Rest Dropdown */
+  .rest-select {
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-bg);
+    border: 1px solid var(--color-gold);
+    border-radius: var(--radius-md);
+    color: var(--color-gold);
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  .rest-select:hover {
+    background: var(--color-gold);
+    color: var(--color-bg);
+  }
+
+  /* Spell Lists */
+  .spellcasting-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .spell-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .spell-item {
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+
+  .spell-item--cantrip {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+  }
+
+  .spell-item--prepared {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    transition: all var(--transition-fast);
+  }
+
+  .spell-item--prepared:hover {
+    border-color: var(--color-accent);
+  }
+
+  .spell-conc-marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background: var(--color-bg-tertiary);
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    opacity: 0.5;
+  }
+
+  .spell-item--prepared:hover .spell-conc-marker {
+    opacity: 1;
+    background: var(--color-accent);
+    color: white;
+  }
+
+  .spell-item--concentrating {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+  }
+
+  .spell-item--concentrating .spell-conc-marker {
+    opacity: 1;
+    background: white;
+    color: var(--color-accent);
+  }
+
+  /* Concentration Reminder Toast */
+  .conc-reminder {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-accent);
+    color: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    font-size: var(--text-base);
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .conc-reminder--visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
 
   /* HP Card */
@@ -1671,6 +2374,45 @@ const dndConditions = [
       justify-content: space-between;
     }
 
+    .combat-dashboard {
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+    }
+
+    .stat-block {
+      min-width: 50px;
+      padding: var(--space-xs) var(--space-sm);
+    }
+
+    .stat-block--hp {
+      flex-basis: 100%;
+      min-width: unset;
+    }
+
+    .stat-block--conc {
+      flex-basis: 100%;
+    }
+
+    .hp-actions-row {
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .abilities-row {
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+    }
+
+    .ability {
+      flex-basis: calc(33.33% - var(--space-xs));
+      min-width: 0;
+      padding: var(--space-xs);
+    }
+
+    .ability-mod {
+      font-size: var(--text-lg);
+    }
+
     .hp-controls {
       flex-direction: column;
       gap: var(--space-md);
@@ -1678,6 +2420,14 @@ const dndConditions = [
 
     .conditions-grid {
       grid-template-columns: repeat(3, 1fr);
+    }
+
+    .spell-list {
+      gap: var(--space-xs);
+    }
+
+    .spell-item {
+      font-size: var(--text-xs);
     }
 
     .rest-actions {
