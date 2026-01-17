@@ -3,6 +3,8 @@
  *
  * Validates entity data against Zod schemas from content-pipeline.
  * Used by the staging editor to validate entities before saving.
+ *
+ * Authentication: Requires valid Cognito JWT with 'dm' group membership.
  */
 
 import { z } from 'zod';
@@ -14,12 +16,6 @@ import {
   itemSchema,
 } from '@dndblog/content-pipeline/src/schemas/campaign.js';
 
-// AWS SDK types - available at runtime via Lambda
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { SSMClient, GetParameterCommand } = require('@aws-sdk/client-ssm');
-
-const ssmClient = new SSMClient({});
-
 // Map entity types to their Zod schemas
 const schemas: Record<string, z.ZodSchema> = {
   character: characterSchema,
@@ -29,28 +25,95 @@ const schemas: Record<string, z.ZodSchema> = {
   item: itemSchema,
 };
 
-// Token caching
-let cachedToken = '';
-let tokenExpiry = 0;
+// ==========================================================================
+// JWT Validation (Cognito)
+// ==========================================================================
 
-async function getToken(): Promise<string> {
-  const now = Date.now();
-  if (cachedToken && now < tokenExpiry) {
-    return cachedToken;
+interface JwtPayload {
+  sub?: string;
+  iss?: string;
+  aud?: string;
+  exp?: number;
+  'cognito:groups'?: string[];
+}
+
+interface AuthResult {
+  valid: boolean;
+  error?: string;
+  roles?: {
+    isDm: boolean;
+    isPlayer: boolean;
+  };
+  userId?: string;
+}
+
+function decodeJwt(token: string): JwtPayload | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+    return payload;
+  } catch {
+    return null;
   }
-  const result = await ssmClient.send(
-    new GetParameterCommand({
-      Name: process.env.TOKEN_PARAMETER_NAME,
-      WithDecryption: true,
-    })
-  );
-  cachedToken = result.Parameter?.Value || '';
-  tokenExpiry = now + 5 * 60 * 1000; // Cache for 5 minutes
-  return cachedToken;
+}
+
+function validateAuth(event: LambdaEvent): AuthResult {
+  // Get Authorization header
+  const authHeader =
+    event.headers?.authorization || event.headers?.Authorization;
+
+  if (!authHeader) {
+    return { valid: false, error: 'Missing Authorization header' };
+  }
+
+  // Extract Bearer token
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  if (!match) {
+    return { valid: false, error: 'Invalid Authorization header format' };
+  }
+
+  const token = match[1];
+  const payload = decodeJwt(token);
+
+  if (!payload) {
+    return { valid: false, error: 'Invalid token format' };
+  }
+
+  // Check expiration
+  if (payload.exp && payload.exp * 1000 < Date.now()) {
+    return { valid: false, error: 'Token expired' };
+  }
+
+  // Check issuer matches our User Pool
+  const region = process.env.AWS_REGION || 'us-east-1';
+  const userPoolId = process.env.COGNITO_USER_POOL_ID;
+  const expectedIssuer = `https://cognito-idp.${region}.amazonaws.com/${userPoolId}`;
+
+  if (payload.iss !== expectedIssuer) {
+    return { valid: false, error: 'Invalid token issuer' };
+  }
+
+  // Check audience (client ID) for id_token
+  const clientId = process.env.COGNITO_CLIENT_ID;
+  if (payload.aud && payload.aud !== clientId) {
+    return { valid: false, error: 'Invalid token audience' };
+  }
+
+  // Extract roles from groups
+  const groups = payload['cognito:groups'] || [];
+  const isDm = groups.includes('dm');
+  const isPlayer = groups.includes('player');
+
+  return {
+    valid: true,
+    roles: { isDm, isPlayer },
+    userId: payload.sub,
+  };
 }
 
 // Get CORS origin (allows localhost for dev)
-function getCorsOrigin(event: { headers?: Record<string, string> }): string {
+function getCorsOrigin(event: LambdaEvent): string {
   const origin = event.headers?.origin || event.headers?.Origin || '';
   const allowed = process.env.ALLOWED_ORIGIN || '';
   if (origin.startsWith('http://localhost:')) {
@@ -89,7 +152,7 @@ export const handler = async (event: LambdaEvent) => {
   const corsOrigin = getCorsOrigin(event);
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type, X-DM-Token',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -100,23 +163,21 @@ export const handler = async (event: LambdaEvent) => {
   }
 
   try {
-    // Validate authentication
-    const providedToken =
-      event.headers?.['x-dm-token'] || event.headers?.['X-DM-Token'];
-    if (!providedToken) {
+    // Validate authentication - requires DM role
+    const auth = validateAuth(event);
+    if (!auth.valid) {
       return {
         statusCode: 401,
         headers,
-        body: JSON.stringify({ error: 'Missing authentication token' }),
+        body: JSON.stringify({ error: auth.error || 'Authentication failed' }),
       };
     }
 
-    const validToken = await getToken();
-    if (providedToken !== validToken) {
+    if (!auth.roles?.isDm) {
       return {
         statusCode: 403,
         headers,
-        body: JSON.stringify({ error: 'Invalid token' }),
+        body: JSON.stringify({ error: 'DM access required' }),
       };
     }
 
