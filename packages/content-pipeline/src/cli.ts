@@ -5,6 +5,8 @@ import { ingest, checkDuplicateSlugs } from './ingest.js';
 import { processContent, clearOutputDirectory } from './process.js';
 import { processScreenshots } from './screenshots.js';
 import { publish } from './publish.js';
+import { validateWorld, printValidationResult } from './validate-world.js';
+import { extractEntities, printExtractionResult, createMissingEntities } from './extract-entities.js';
 
 const program = new Command();
 
@@ -136,6 +138,77 @@ program
 
       if (!result.success) {
         process.exit(1);
+      }
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+/**
+ * Validate command: Check world consistency between blog posts and entities.
+ */
+program
+  .command('validate')
+  .description('Validate world consistency (pronouns, entity links, unlinked mentions)')
+  .option('-b, --blog <dir>', 'Blog posts directory', 'packages/site/src/content/blog')
+  .option('-c, --campaign <dir>', 'Campaign entities directory', 'packages/site/src/content/campaign')
+  .option('--strict', 'Fail on warnings too (not just errors)')
+  .action(async (options: { blog: string; campaign: string; strict?: boolean }) => {
+    try {
+      const result = validateWorld(options.blog, options.campaign);
+      printValidationResult(result);
+
+      if (!result.valid) {
+        process.exit(1);
+      }
+
+      if (options.strict && result.issues.length > 0) {
+        console.log('\n--strict mode: Failing due to warnings');
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+/**
+ * Extract command: Find missing entities mentioned in blog posts.
+ */
+program
+  .command('extract')
+  .description('Extract and create missing entities from blog posts')
+  .option('-b, --blog <dir>', 'Blog posts directory', 'packages/site/src/content/blog')
+  .option('-c, --campaign <dir>', 'Campaign entities directory', 'packages/site/src/content/campaign')
+  .option('--create', 'Actually create stub files for missing entities')
+  .option('--type <type>', 'Only extract entities of a specific type (character, location, faction, item, enemy)')
+  .action(async (options: { blog: string; campaign: string; create?: boolean; type?: string }) => {
+    try {
+      const result = extractEntities(options.blog, options.campaign);
+      printExtractionResult(result);
+
+      if (options.create && result.missing.length > 0) {
+        // Filter by type if specified
+        let toCreate = result.missing;
+        if (options.type) {
+          toCreate = result.missing.filter((e) => e.suggestedType === options.type);
+          console.log(`\nFiltered to ${toCreate.length} ${options.type} entities`);
+        }
+
+        console.log(`\nCreating ${toCreate.length} entity stubs...`);
+        const created = createMissingEntities(toCreate, options.campaign, false);
+
+        for (const item of created) {
+          if (item.created) {
+            console.log(`  ✓ Created: ${item.path}`);
+          } else {
+            console.log(`  - Skipped (exists): ${item.path}`);
+          }
+        }
+
+        console.log(`\nCreated ${created.filter((c) => c.created).length} stub files.`);
+        console.log('Review and edit the generated files to add proper descriptions.');
       }
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
