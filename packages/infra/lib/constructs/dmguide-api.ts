@@ -2203,8 +2203,10 @@ exports.handler = async (event) => {
     }
 
     // Get character slug from custom:characterSlug claim
+    // DMs can access any character's drafts, players can only access their own
     const authorizedSlug = auth.payload?.['custom:characterSlug'];
-    if (!authorizedSlug || authorizedSlug !== slug) {
+    const isDm = auth.roles?.isDm;
+    if (!isDm && (!authorizedSlug || authorizedSlug !== slug)) {
       return { statusCode: 403, headers, body: JSON.stringify({ error: 'Not authorized for this character' }) };
     }
 
