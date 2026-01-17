@@ -714,7 +714,7 @@ const dndConditions = [
 
     saveTimeout = window.setTimeout(() => {
       saveSessionState();
-    }, 1000); // Debounce saves by 1 second
+    }, 300); // Debounce saves by 300ms for faster DM updates
   }
 
   async function saveSessionState() {

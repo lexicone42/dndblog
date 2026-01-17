@@ -76,12 +76,12 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       
       await exchangeCodeForTokens(code);
 
-      // Success - redirect to return URL or campaign index
+      // Success - redirect to return URL or unified dashboard
       if (statusEl) statusEl.textContent = 'Success! Redirecting...';
-      
-      const returnUrl = state ? decodeURIComponent(state) : '/campaign';
+
+      const returnUrl = state ? decodeURIComponent(state) : '/me';
       // Validate return URL is relative (prevent open redirect)
-      const safeUrl = returnUrl.startsWith('/') ? returnUrl : '/campaign';
+      const safeUrl = returnUrl.startsWith('/') ? returnUrl : '/me';
       
       window.location.href = safeUrl;
     } catch (err) {
