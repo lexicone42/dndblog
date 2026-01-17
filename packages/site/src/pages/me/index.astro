@@ -36,6 +36,13 @@ const dmTitles = [
   "Dice Goblin Supreme",
 ];
 
+// Next mission story teaser - update this before each session!
+const nextMissionTeaser = {
+  title: "The Shadows Stir",
+  summary: "With the ley anchor stabilized beneath Sharn, the party must now travel to the Eldeen Reaches. Whispers speak of an ancient druidic circle that may hold answers about the Maw Frame's true purpose—but dark forces have already begun to move.",
+  date: "Session 10 • Coming Soon",
+};
+
 const randomGreeting = tavernGreetings[Math.floor(Math.random() * tavernGreetings.length)];
 const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
 ---
@@ -77,6 +84,13 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
         <h1 class="dashboard-title">Well met, <span id="user-name">Adventurer</span>!</h1>
         <p class="dashboard-subtitle" id="random-greeting">{randomGreeting}</p>
       </header>
+
+      <!-- Next Mission Teaser -->
+      <div class="mission-teaser">
+        <div class="mission-teaser__label">{nextMissionTeaser.date}</div>
+        <h2 class="mission-teaser__title">{nextMissionTeaser.title}</h2>
+        <p class="mission-teaser__summary">{nextMissionTeaser.summary}</p>
+      </div>
 
       <div class="dashboard-grid">
         <!-- Player Section (shown if has character) -->
@@ -433,6 +447,40 @@ const randomDmTitle = dmTitles[Math.floor(Math.random() * dmTitles.length)];
   .dashboard-subtitle {
     color: var(--color-text-secondary);
     margin: 0;
+    font-style: italic;
+  }
+
+  /* Mission teaser */
+  .mission-teaser {
+    background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-gold);
+    border-radius: var(--radius-md);
+    padding: var(--space-md) var(--space-lg);
+    margin-bottom: var(--space-xl);
+  }
+
+  .mission-teaser__label {
+    font-size: var(--text-xs);
+    color: var(--color-gold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-bottom: var(--space-xs);
+  }
+
+  .mission-teaser__title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-text);
+    margin: 0 0 var(--space-sm);
+  }
+
+  .mission-teaser__summary {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.6;
     font-style: italic;
   }
 
