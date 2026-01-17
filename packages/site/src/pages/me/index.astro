@@ -315,19 +315,24 @@ const nextMissionTeaser = {
       const userName = auth.email?.split('@')[0] || 'Adventurer';
       document.getElementById('user-name').textContent = userName;
 
-      // Show DM toggle and section if user has DM role
+      // Show DM section based on role and toggle state
       if (auth.roles?.isDm) {
         const dmModeToggle = document.getElementById('dm-mode-toggle');
         const dmModeCheckbox = document.getElementById('dm-mode-checkbox');
 
-        // Show the toggle
-        dmModeToggle.style.display = 'block';
+        // Rudiger (character assigned) gets the toggle option
+        // Other DMs (no character) always see DM tools
+        const isRudiger = auth.characterSlug === 'rudiger';
 
-        // Set checkbox state from localStorage
-        dmModeCheckbox.checked = isDmModeEnabled();
-
-        // Update DM section visibility based on toggle state
-        updateDmSectionVisibility(true);
+        if (isRudiger) {
+          // Show toggle for Rudiger to hide/show DM mode
+          dmModeToggle.style.display = 'block';
+          dmModeCheckbox.checked = isDmModeEnabled();
+          updateDmSectionVisibility(true);
+        } else {
+          // Other DMs always see the command center
+          document.getElementById('dm-section').style.display = 'block';
+        }
       }
 
       // Show player section if has character
