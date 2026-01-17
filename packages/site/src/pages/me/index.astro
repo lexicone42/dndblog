@@ -84,6 +84,31 @@ const nextMissionTeaser = {
         <p class="mission-teaser__summary">{nextMissionTeaser.summary}</p>
       </article>
 
+      <!-- DM Command Center (shown first if DM) -->
+      <section id="dm-section" class="dm-command-center" style="display: none;">
+        <a href="/dm" class="dm-hero-card">
+          <div class="dm-hero-card__glow"></div>
+          <div class="dm-hero-card__content">
+            <div class="dm-hero-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+            </div>
+            <div class="dm-hero-card__text">
+              <span class="dm-hero-card__label">Dungeon Master</span>
+              <h2 class="dm-hero-card__title">Command Center</h2>
+              <p class="dm-hero-card__description">Session notes, party status, and campaign tools</p>
+              <p class="dm-hero-card__flavor">Your worlds await, Architect of Fates</p>
+            </div>
+            <div class="dm-hero-card__arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </div>
+        </a>
+      </section>
+
       <div class="dashboard-grid">
         <!-- Player Section (shown if has character) -->
         <section id="player-section" class="dashboard-section" style="display: none;">
@@ -109,61 +134,6 @@ const nextMissionTeaser = {
               </svg>
             </div>
           </a>
-        </section>
-
-        <!-- DM Section (shown if DM) -->
-        <section id="dm-section" class="dashboard-section dashboard-section--dm" style="display: none;">
-          <h2 class="section-title section-title--dm">
-            <span class="section-title__text">Dungeon Master</span>
-          </h2>
-
-          <div class="action-grid">
-            <a href="/dm" class="action-card action-card--dm">
-              <div class="action-card__icon action-card__icon--dm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                  <line x1="10" y1="9" x2="8" y2="9"></line>
-                </svg>
-              </div>
-              <div class="action-content">
-                <h3 class="action-title">Session Notes</h3>
-                <p class="action-description">Write, review, and publish session content.</p>
-              </div>
-            </a>
-
-            <a href="/dm/party-tracker" class="action-card action-card--dm">
-              <div class="action-card__icon action-card__icon--dm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-              </div>
-              <div class="action-content">
-                <h3 class="action-title">Party Tracker</h3>
-                <p class="action-description">View live party status during sessions.</p>
-                <span class="live-badge">Live</span>
-              </div>
-            </a>
-
-            <a href="/dm/entities" class="action-card action-card--dm">
-              <div class="action-card__icon action-card__icon--dm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                  <polyline points="2 17 12 22 22 17"></polyline>
-                  <polyline points="2 12 12 17 22 12"></polyline>
-                </svg>
-              </div>
-              <div class="action-content">
-                <h3 class="action-title">Entity Editor</h3>
-                <p class="action-description">Create and edit NPCs, items, and locations.</p>
-              </div>
-            </a>
-          </div>
         </section>
 
         <!-- Always visible: Campaign resources -->
@@ -672,6 +642,151 @@ const nextMissionTeaser = {
     font-style: italic;
   }
 
+  /* DM Command Center - Hero section */
+  .dm-command-center {
+    margin-bottom: var(--space-xl);
+    animation: fadeIn 0.5s ease-out 0.15s backwards;
+  }
+
+  .dm-hero-card {
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    padding: var(--space-xl);
+    background: linear-gradient(
+      135deg,
+      var(--color-bg-secondary) 0%,
+      rgba(var(--color-gold-rgb, 201, 162, 39), 0.08) 50%,
+      var(--color-bg-secondary) 100%
+    );
+    border: 2px solid var(--color-gold);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: var(--color-text);
+    transition: all 0.3s ease;
+    box-shadow:
+      0 4px 20px rgba(var(--color-gold-rgb, 201, 162, 39), 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .dm-hero-card__glow {
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 200%;
+    background: radial-gradient(
+      circle,
+      rgba(var(--color-gold-rgb, 201, 162, 39), 0.1) 0%,
+      transparent 50%
+    );
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .dm-hero-card:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 8px 32px rgba(var(--color-gold-rgb, 201, 162, 39), 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border-color: var(--color-gold-light);
+  }
+
+  .dm-hero-card:hover .dm-hero-card__glow {
+    opacity: 1;
+  }
+
+  .dm-hero-card:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 3px;
+  }
+
+  .dm-hero-card__content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  .dm-hero-card__icon {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-light) 100%);
+    border-radius: var(--radius-md);
+    color: var(--color-bg);
+    box-shadow: 0 4px 12px rgba(var(--color-gold-rgb, 201, 162, 39), 0.3);
+    transition: transform 0.3s ease;
+  }
+
+  .dm-hero-card:hover .dm-hero-card__icon {
+    transform: scale(1.05);
+  }
+
+  .dm-hero-card__text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dm-hero-card__label {
+    display: inline-block;
+    font-size: var(--text-xs);
+    color: var(--color-gold);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    margin-bottom: var(--space-xs);
+  }
+
+  .dm-hero-card__title {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    color: var(--color-text);
+    margin: 0 0 var(--space-xs);
+    letter-spacing: 0.01em;
+    transition: color 0.2s ease;
+  }
+
+  .dm-hero-card:hover .dm-hero-card__title {
+    color: var(--color-gold);
+  }
+
+  .dm-hero-card__description {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .dm-hero-card__flavor {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--text-xs);
+    color: var(--color-gold);
+    margin: var(--space-xs) 0 0;
+    opacity: 0.8;
+    letter-spacing: 0.02em;
+  }
+
+  .dm-hero-card__arrow {
+    flex-shrink: 0;
+    color: var(--color-gold);
+    opacity: 0.6;
+    transition: all 0.3s ease;
+  }
+
+  .dm-hero-card:hover .dm-hero-card__arrow {
+    opacity: 1;
+    transform: translateX(6px);
+  }
+
   /* Dashboard grid */
   .dashboard-grid {
     display: flex;
@@ -948,6 +1063,28 @@ const nextMissionTeaser = {
 
     .mission-teaser {
       padding: var(--space-md);
+    }
+
+    .dm-hero-card {
+      padding: var(--space-md);
+    }
+
+    .dm-hero-card__icon {
+      width: 48px;
+      height: 48px;
+    }
+
+    .dm-hero-card__icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .dm-hero-card__title {
+      font-size: var(--text-xl);
+    }
+
+    .dm-hero-card__arrow {
+      display: none;
     }
 
     .action-grid {
