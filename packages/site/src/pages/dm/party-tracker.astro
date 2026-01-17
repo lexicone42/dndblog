@@ -308,15 +308,43 @@ const partyMembers: PartyMember[] = characters
   var cognitoLoginBtn = document.getElementById('cognito-login-btn');
 
   // ============================================
-  // WebSocket Connection
+  // WebSocket Connection (Ticket-Based Auth)
   // ============================================
+  //
+  // Security: Instead of passing long-lived JWTs in WebSocket query strings
+  // (which get logged and exposed), we use ticket-based auth:
+  // 1. POST /ws-ticket with JWT -> get short-lived (60s) ticket
+  // 2. Connect WebSocket with ?ticket=xxx
+  // 3. Ticket is single-use and consumed on connect
+  //
 
-  function connectWebSocket() {
-    if (!WS_URL) {
-      console.log('WebSocket URL not configured, using polling only');
-      return;
+  async function getWebSocketTicket() {
+    var auth = getAuthState();
+    if (!auth) return null;
+
+    try {
+      var response = await fetch(API_URL + '/ws-ticket', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + auth.accessToken,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        console.error('Failed to get WebSocket ticket:', response.status);
+        return null;
+      }
+
+      var data = await response.json();
+      return data;
+    } catch (e) {
+      console.error('Error getting WebSocket ticket:', e);
+      return null;
     }
+  }
 
+  async function connectWebSocket() {
     var auth = getAuthState();
     if (!auth) return;
 
@@ -325,8 +353,26 @@ const partyMembers: PartyMember[] = characters
       ws.close();
     }
 
+    // Get a fresh ticket for WebSocket auth
+    updateConnectionStatus('connecting');
+    var ticketData = await getWebSocketTicket();
+
+    if (!ticketData || !ticketData.ticket) {
+      console.log('Failed to get WebSocket ticket, using polling only');
+      updateConnectionStatus('disconnected');
+      return;
+    }
+
+    // Use the wsUrl from ticket response, or fall back to env var
+    var wsEndpoint = ticketData.wsUrl || WS_URL;
+    if (!wsEndpoint) {
+      console.log('WebSocket URL not available');
+      updateConnectionStatus('disconnected');
+      return;
+    }
+
     try {
-      ws = new WebSocket(WS_URL + '?token=' + encodeURIComponent(auth.accessToken));
+      ws = new WebSocket(wsEndpoint + '?ticket=' + encodeURIComponent(ticketData.ticket));
 
       ws.onopen = function() {
         console.log('WebSocket connected');
@@ -373,7 +419,7 @@ const partyMembers: PartyMember[] = characters
         updateConnectionStatus('disconnected');
         ws = null;
 
-        // Auto-reconnect after delay
+        // Auto-reconnect after delay (will get fresh ticket)
         if (!wsReconnectTimer) {
           wsReconnectTimer = setTimeout(function() {
             wsReconnectTimer = null;
@@ -410,9 +456,21 @@ const partyMembers: PartyMember[] = characters
     connectionStatus.className = 'connection-status connection-status--' + status;
     var text = connectionStatus.querySelector('.connection-text');
     if (text) {
-      text.textContent = status === 'connected' ? 'Live' : 'Disconnected';
+      if (status === 'connected') {
+        text.textContent = 'Live';
+      } else if (status === 'connecting') {
+        text.textContent = 'Connecting...';
+      } else {
+        text.textContent = 'Disconnected';
+      }
     }
-    connectionStatus.title = status === 'connected' ? 'WebSocket connected - receiving live updates' : 'WebSocket disconnected - using polling';
+
+    var titles = {
+      connected: 'WebSocket connected - receiving live updates',
+      connecting: 'Establishing WebSocket connection...',
+      disconnected: 'WebSocket disconnected - using polling'
+    };
+    connectionStatus.title = titles[status] || titles.disconnected;
   }
 
   // ============================================
@@ -1045,6 +1103,21 @@ const partyMembers: PartyMember[] = characters
     background: var(--color-success, #10b981);
     box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
     animation: pulse-connected 2s ease-in-out infinite;
+  }
+
+  .connection-status--connecting {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--color-warning, #f59e0b);
+  }
+
+  .connection-status--connecting .connection-dot {
+    background: var(--color-warning, #f59e0b);
+    animation: pulse-connecting 0.75s ease-in-out infinite;
+  }
+
+  @keyframes pulse-connecting {
+    0%, 100% { opacity: 0.4; transform: scale(0.9); }
+    50% { opacity: 1; transform: scale(1.1); }
   }
 
   .connection-status--disconnected {

@@ -52,9 +52,11 @@ export class DmGuideStack extends cdk.Stack {
       // WebSocket configuration for real-time updates
       webSocket: {
         connectionsTable: webSocketApi.connectionsTable,
+        ticketsTable: webSocketApi.ticketsTable,
         callbackUrl: webSocketApi.callbackUrl,
         apiId: webSocketApi.api.apiId,
         stageName: webSocketApi.stage.stageName,
+        wsUrl: webSocketApi.wsUrl,
       },
     });
 

@@ -106,6 +106,36 @@ const response = await fetch(`${API_URL}/player/drafts`, {
 
 ## API Endpoints
 
+### POST /ws-ticket
+
+Get a short-lived ticket for WebSocket authentication. This prevents exposing long-lived JWTs in WebSocket query strings (which get logged and can be exposed in browser history).
+
+**Request:**
+```bash
+curl -X POST "https://api.../ws-ticket" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Response:**
+```json
+{
+  "ticket": "a1b2c3d4e5f6...",
+  "expiresIn": 60,
+  "wsUrl": "wss://xyz.execute-api.us-east-1.amazonaws.com/prod"
+}
+```
+
+**Usage:**
+1. Call this endpoint with your Cognito JWT
+2. Use the returned ticket to connect to WebSocket: `wss://...?ticket=a1b2c3d4e5f6...`
+3. Tickets are single-use and expire after 60 seconds
+
+**Security:**
+- Tickets are 64-character random hex strings
+- Single-use: consumed on WebSocket connect
+- 60-second TTL: cannot be stored/replayed
+- Only DMs can request tickets (requires `dm` group membership)
+
 ### POST /upload-url
 
 Get a pre-signed S3 URL for uploading notes.

@@ -69,6 +69,12 @@ export class WebSocketApiConstruct extends Construct {
   public readonly connectionsTable: dynamodb.Table;
 
   /**
+   * DynamoDB table storing short-lived WebSocket tickets
+   * Tickets are single-use and expire after 60 seconds
+   */
+  public readonly ticketsTable: dynamodb.Table;
+
+  /**
    * The WebSocket endpoint URL (wss://)
    */
   public readonly wsUrl: string;
@@ -106,11 +112,44 @@ export class WebSocketApiConstruct extends Construct {
     });
 
     // ========================================================================
+    // DynamoDB Table for WebSocket Tickets
+    // ========================================================================
+    //
+    // Short-lived, single-use tickets that clients exchange for WebSocket
+    // connections. This prevents exposing long-lived JWTs in query strings.
+    //
+    // Each ticket is stored with:
+    // - ticketId (PK): Random 32-byte hex string
+    // - userId: The authenticated user's Cognito sub
+    // - role: 'dm' or 'player'
+    // - createdAt: ISO timestamp
+    // - ttl: Unix timestamp (60 seconds from creation)
+    //
+    // ========================================================================
+
+    this.ticketsTable = new dynamodb.Table(this, 'TicketsTable', {
+      tableName: 'DmLiveTickets',
+      partitionKey: {
+        name: 'ticketId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      timeToLiveAttribute: 'ttl',
+    });
+
+    // ========================================================================
     // Lambda: $connect Handler
     // ========================================================================
     //
-    // Validates the DM token from the query string and stores the connection
-    // in DynamoDB. Returns 401 if token is invalid.
+    // Validates WebSocket connection attempts using ticket-based auth.
+    // Tickets are short-lived (60s), single-use tokens obtained via REST API.
+    //
+    // Flow:
+    // 1. Client calls POST /ws-ticket with Cognito JWT
+    // 2. Server validates JWT and returns a 60-second ticket
+    // 3. Client connects to WebSocket with ?ticket=xxx
+    // 4. This handler validates and consumes the ticket
     //
     // ========================================================================
 
@@ -121,51 +160,50 @@ export class WebSocketApiConstruct extends Construct {
       memorySize: 256,
       environment: {
         CONNECTIONS_TABLE: this.connectionsTable.tableName,
+        TICKETS_TABLE: this.ticketsTable.tableName,
         COGNITO_USER_POOL_ID: props.cognitoAuth.userPoolId,
         COGNITO_CLIENT_ID: props.cognitoAuth.userPoolClientId,
       },
       code: lambda.Code.fromInline(`
-const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBClient, PutItemCommand, GetItemCommand, DeleteItemCommand } = require('@aws-sdk/client-dynamodb');
 
 const ddbClient = new DynamoDBClient({});
 
-// Decode and validate JWT
-function decodeJwt(token) {
-  try {
-    const [headerB64, payloadB64] = token.split('.');
-    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString());
-    return payload;
-  } catch (e) {
-    return null;
-  }
-}
-
-// Validate Cognito JWT and check DM role
-function validateCognitoToken(token) {
-  const payload = decodeJwt(token);
-  if (!payload) return { valid: false, error: 'Invalid token format' };
-
-  // Check expiration
-  if (payload.exp && payload.exp * 1000 < Date.now()) {
-    return { valid: false, error: 'Token expired' };
+// Validate a ticket (preferred method - single-use, short-lived)
+async function validateTicket(ticketId) {
+  if (!ticketId || ticketId.length < 32) {
+    return { valid: false, error: 'Invalid ticket format' };
   }
 
-  // Check issuer matches our User Pool
-  const expectedIssuer = 'https://cognito-idp.' + process.env.AWS_REGION + '.amazonaws.com/' + process.env.COGNITO_USER_POOL_ID;
-  if (payload.iss !== expectedIssuer) {
-    return { valid: false, error: 'Invalid issuer' };
+  // Get ticket from DynamoDB
+  const result = await ddbClient.send(new GetItemCommand({
+    TableName: process.env.TICKETS_TABLE,
+    Key: { ticketId: { S: ticketId } },
+  }));
+
+  if (!result.Item) {
+    return { valid: false, error: 'Ticket not found or expired' };
   }
 
-  // Check audience (client ID) - only for id_token, access_token uses client_id claim
-  if (payload.aud && payload.aud !== process.env.COGNITO_CLIENT_ID) {
-    return { valid: false, error: 'Invalid audience' };
+  // Check if ticket is expired (TTL is advisory, item might still exist briefly)
+  const ttl = parseInt(result.Item.ttl?.N || '0', 10);
+  if (ttl < Math.floor(Date.now() / 1000)) {
+    return { valid: false, error: 'Ticket expired' };
   }
 
-  // Check for DM role in groups
-  const groups = payload['cognito:groups'] || [];
-  const isDm = groups.includes('dm');
+  // Extract ticket data
+  const userId = result.Item.userId?.S || 'unknown';
+  const role = result.Item.role?.S || '';
+  const isDm = role === 'dm';
 
-  return { valid: true, payload, isDm };
+  // Delete ticket immediately (single-use)
+  await ddbClient.send(new DeleteItemCommand({
+    TableName: process.env.TICKETS_TABLE,
+    Key: { ticketId: { S: ticketId } },
+  }));
+
+  console.log('Ticket consumed:', ticketId.substring(0, 8) + '...');
+  return { valid: true, userId, isDm };
 }
 
 exports.handler = async (event) => {
@@ -173,17 +211,18 @@ exports.handler = async (event) => {
 
   const connectionId = event.requestContext.connectionId;
   const queryParams = event.queryStringParameters || {};
-  const token = queryParams.token;
+  const ticket = queryParams.ticket;
 
-  // Validate Cognito JWT
-  if (!token) {
-    console.log('No token provided');
-    return { statusCode: 401, body: 'Missing authentication token' };
+  // Require ticket for authentication
+  if (!ticket) {
+    console.log('No ticket provided');
+    return { statusCode: 401, body: 'Missing authentication ticket. Use POST /ws-ticket to obtain one.' };
   }
 
-  const result = validateCognitoToken(token);
+  // Validate and consume the ticket
+  const result = await validateTicket(ticket);
   if (!result.valid) {
-    console.log('Invalid token:', result.error);
+    console.log('Invalid ticket:', result.error);
     return { statusCode: 403, body: result.error };
   }
 
@@ -201,7 +240,7 @@ exports.handler = async (event) => {
       connectionId: { S: connectionId },
       connectedAt: { S: new Date().toISOString() },
       role: { S: 'dm' },
-      userId: { S: result.payload.sub || 'unknown' },
+      userId: { S: result.userId },
       ttl: { N: ttl.toString() },
     },
   }));
@@ -313,6 +352,8 @@ exports.handler = async (event) => {
     this.connectionsTable.grantReadWriteData(connectHandler);
     this.connectionsTable.grantReadWriteData(disconnectHandler);
     this.connectionsTable.grantReadData(defaultHandler);
+    // Tickets table: connect handler needs read+delete for ticket validation
+    this.ticketsTable.grantReadWriteData(connectHandler);
 
     // ========================================================================
     // WebSocket API
@@ -380,6 +421,12 @@ exports.handler = async (event) => {
       value: this.connectionsTable.tableName,
       description: 'DynamoDB table for WebSocket connections',
       exportName: 'DmLiveConnectionsTable',
+    });
+
+    new cdk.CfnOutput(this, 'TicketsTableName', {
+      value: this.ticketsTable.tableName,
+      description: 'DynamoDB table for WebSocket tickets (short-lived auth)',
+      exportName: 'DmLiveTicketsTable',
     });
   }
 

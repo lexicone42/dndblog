@@ -68,12 +68,16 @@ export interface DmGuideApiProps {
   webSocket?: {
     /** DynamoDB table storing active WebSocket connections */
     connectionsTable: dynamodb.ITable;
+    /** DynamoDB table storing short-lived WebSocket tickets */
+    ticketsTable: dynamodb.ITable;
     /** Callback URL for API Gateway Management API */
     callbackUrl: string;
     /** WebSocket API ID */
     apiId: string;
     /** WebSocket stage name */
     stageName: string;
+    /** WebSocket URL (wss://) */
+    wsUrl: string;
   };
 }
 
@@ -2455,6 +2459,135 @@ exports.handler = async (event) => {
         playerDraftFunction
       ),
     });
+
+    // ==========================================================================
+    // WebSocket Ticket Endpoint
+    // ==========================================================================
+    //
+    // Generates short-lived, single-use tickets for WebSocket authentication.
+    // This prevents exposing long-lived JWTs in WebSocket query strings.
+    //
+    // Flow:
+    // 1. Client sends POST /ws-ticket with Cognito JWT in Authorization header
+    // 2. Server validates JWT, generates random ticket, stores in DynamoDB
+    // 3. Client uses ticket to connect to WebSocket: wss://...?ticket=xxx
+    // 4. WebSocket $connect handler validates and consumes the ticket
+    //
+    // ==========================================================================
+
+    if (props.webSocket) {
+      const wsTicketFunction = new lambda.Function(this, 'WsTicketFunction', {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: 'index.handler',
+        timeout: cdk.Duration.seconds(10),
+        memorySize: 256,
+        environment: {
+          ALLOWED_ORIGIN: props.allowedOrigin,
+          TICKETS_TABLE: props.webSocket.ticketsTable.tableName,
+          WS_URL: props.webSocket.wsUrl,
+          ...authEnvironment,
+        },
+        code: lambda.Code.fromInline(`
+const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
+const crypto = require('crypto');
+
+const ddbClient = new DynamoDBClient({});
+
+${authHelperCode}
+
+exports.handler = async (event) => {
+  const corsOrigin = getCorsOrigin(event);
+  const headers = {
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+  };
+
+  // Handle CORS preflight
+  if (event.requestContext?.http?.method === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  try {
+    // Validate Cognito JWT - must be DM to get WebSocket ticket
+    const auth = await validateAuth(event);
+    if (!auth.valid) {
+      return { statusCode: 401, headers, body: JSON.stringify({ error: auth.error || 'Authentication required' }) };
+    }
+
+    if (!auth.roles?.isDm) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: 'DM access required for WebSocket' }) };
+    }
+
+    // Generate random ticket (32 bytes = 64 hex chars)
+    const ticketId = crypto.randomBytes(32).toString('hex');
+
+    // Store ticket with 60-second TTL
+    const ttl = Math.floor(Date.now() / 1000) + 60;
+
+    await ddbClient.send(new PutItemCommand({
+      TableName: process.env.TICKETS_TABLE,
+      Item: {
+        ticketId: { S: ticketId },
+        userId: { S: auth.userId || 'unknown' },
+        role: { S: 'dm' },
+        createdAt: { S: new Date().toISOString() },
+        ttl: { N: ttl.toString() },
+      },
+    }));
+
+    console.log('Ticket created for user:', auth.userId, 'expires:', ttl);
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        ticket: ticketId,
+        expiresIn: 60,
+        wsUrl: process.env.WS_URL,
+      }),
+    };
+
+  } catch (error) {
+    console.error('WS ticket error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Failed to generate ticket' }),
+    };
+  }
+};
+        `),
+      });
+
+      // Grant permission to write to tickets table
+      props.webSocket.ticketsTable.grantWriteData(wsTicketFunction);
+
+      // Add route
+      this.api.addRoutes({
+        path: '/ws-ticket',
+        methods: [apigateway.HttpMethod.POST, apigateway.HttpMethod.OPTIONS],
+        integration: new apigatewayIntegrations.HttpLambdaIntegration(
+          'WsTicketIntegration',
+          wsTicketFunction
+        ),
+      });
+
+      // WS Ticket Function Alarm
+      new cloudwatch.Alarm(this, 'WsTicketFunctionErrors', {
+        alarmName: `${cdk.Names.uniqueId(this)}-ws-ticket-errors`,
+        alarmDescription: 'WebSocket ticket function errors',
+        metric: wsTicketFunction.metricErrors({
+          statistic: 'Sum',
+          period: cdk.Duration.minutes(5),
+        }),
+        threshold: 1,
+        evaluationPeriods: 1,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+    }
 
     // Player Draft Function Alarm
     new cloudwatch.Alarm(this, 'PlayerDraftFunctionErrors', {
