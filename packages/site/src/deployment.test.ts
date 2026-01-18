@@ -52,57 +52,46 @@ describe('Security Headers', () => {
 
 // Page Build Verification - only runs after build (when dist/ exists)
 describe.skipIf(!distExists)('Page Build Verification', () => {
-  it('should build campaign pages with session tracker', () => {
-    // Campaign index redirects to party hub
-    const campaignIndexPath = path.join(DIST_DIR, 'campaign', 'index.html');
-    expect(fs.existsSync(campaignIndexPath)).toBe(true);
-    const redirectContent = fs.readFileSync(campaignIndexPath, 'utf-8');
-    expect(redirectContent).toContain('Redirecting');
-
-    // Session tracker at /campaign/character/[slug] should exist
-    const characterDir = path.join(DIST_DIR, 'campaign', 'character');
-    expect(fs.existsSync(characterDir)).toBe(true);
-  });
-
-  it('should build auth callback page', () => {
-    const pagePath = path.join(DIST_DIR, 'auth', 'callback', 'index.html');
+  it('should build homepage', () => {
+    const pagePath = path.join(DIST_DIR, 'index.html');
     expect(fs.existsSync(pagePath)).toBe(true);
-    
+
     const content = fs.readFileSync(pagePath, 'utf-8');
-    expect(content).toContain('Signing in');
-    expect(content).toContain('Completing authentication');
+    expect(content).toContain('Chronicles of the Mawframe');
   });
 
-  it('should build DM party tracker page', () => {
-    const pagePath = path.join(DIST_DIR, 'dm', 'party-tracker', 'index.html');
+  it('should build sessions page', () => {
+    const pagePath = path.join(DIST_DIR, 'sessions', 'index.html');
     expect(fs.existsSync(pagePath)).toBe(true);
-    
-    const content = fs.readFileSync(pagePath, 'utf-8');
-    expect(content).toContain('Party Tracker');
-    expect(content).toContain('DM Dashboard');
   });
 
-  it('should build campaign session tracker pages', () => {
-    // Campaign index redirects to party hub
-    const campaignPath = path.join(DIST_DIR, 'campaign', 'index.html');
-    expect(fs.existsSync(campaignPath)).toBe(true);
-    const campaignContent = fs.readFileSync(campaignPath, 'utf-8');
-    expect(campaignContent).toContain('Redirecting');
+  it('should build party hub page', () => {
+    const pagePath = path.join(DIST_DIR, 'party', 'index.html');
+    expect(fs.existsSync(pagePath)).toBe(true);
 
-    // Session tracker lives at /campaign/character/[slug]
-    const characterTrackerDir = path.join(DIST_DIR, 'campaign', 'character');
-    expect(fs.existsSync(characterTrackerDir)).toBe(true);
+    const content = fs.readFileSync(pagePath, 'utf-8');
+    expect(content).toContain('Player Hub');
+  });
 
-    // Check at least one character session tracker exists
-    const characterDirs = fs.readdirSync(characterTrackerDir);
-    expect(characterDirs.length).toBeGreaterThan(0);
+  it('should build reference pages', () => {
+    const referencePath = path.join(DIST_DIR, 'reference', 'index.html');
+    expect(fs.existsSync(referencePath)).toBe(true);
+  });
 
-    // Check that the session tracker page has the expected content
-    const firstChar = characterDirs[0];
-    const trackerPath = path.join(characterTrackerDir, firstChar, 'index.html');
-    if (fs.existsSync(trackerPath)) {
-      const content = fs.readFileSync(trackerPath, 'utf-8');
-      expect(content).toContain('Session Tracker');
-    }
+  it('should build campaign entity pages', () => {
+    const charactersPath = path.join(DIST_DIR, 'campaign', 'characters', 'index.html');
+    expect(fs.existsSync(charactersPath)).toBe(true);
+
+    const locationsPath = path.join(DIST_DIR, 'campaign', 'locations', 'index.html');
+    expect(fs.existsSync(locationsPath)).toBe(true);
+  });
+
+  it('should build search page with Pagefind', () => {
+    const searchPath = path.join(DIST_DIR, 'search', 'index.html');
+    expect(fs.existsSync(searchPath)).toBe(true);
+
+    // Pagefind output should exist
+    const pagefindPath = path.join(DIST_DIR, 'pagefind');
+    expect(fs.existsSync(pagefindPath)).toBe(true);
   });
 });

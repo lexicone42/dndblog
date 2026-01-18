@@ -2,32 +2,46 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Rudiger's Evocation of Events - Chronicles of the Mawframe">
+<BaseLayout title="Chronicles of the Mawframe - A D&D Campaign Archive">
   <div class="landing">
     <header class="landing__header">
       <h1 class="landing__title">Chronicles of the Mawframe</h1>
-      <p class="landing__subtitle">Recovered writings from the Astralglades Expedition</p>
+      <p class="landing__subtitle">A complete D&D campaign. Ten sessions. One impossible threat.</p>
     </header>
 
+    <section class="landing__intro">
+      <p>
+        What began as a simple investigation into bandit raids became something far darker.
+        Six adventurers uncovered an ancient cult, a resonance engine called the Maw Frame,
+        and a primordial entity that had been sealed since the Dawn Wars.
+      </p>
+      <p class="landing__hook">
+        This archive preserves every session, every character, and every secret they discovered.
+        <strong>Start from the beginning and experience the story unfold.</strong>
+      </p>
+    </section>
+
     <nav class="landing__nav">
-      <a href="/blog/welcome-to-the-adventure" class="nav-card">
-        <h2 class="nav-card__title">The Beginning</h2>
-        <p class="nav-card__description">Where the story starts — and where you should too</p>
+      <a href="/blog/welcome-to-the-adventure" class="nav-card nav-card--featured">
+        <span class="nav-card__badge">Start Here</span>
+        <h2 class="nav-card__title">Enter the Chronicle</h2>
+        <p class="nav-card__description">Meet the party, understand what they faced, and begin your journey through the campaign</p>
       </a>
 
       <a href="/sessions" class="nav-card">
-        <h2 class="nav-card__title">Session Logs</h2>
-        <p class="nav-card__description">Ten accounts of what we found in the dark</p>
+        <h2 class="nav-card__title">Session Archive</h2>
+        <p class="nav-card__description">Ten detailed session recaps — from Phandalin to the depths of Sharn</p>
       </a>
 
       <a href="/reference" class="nav-card">
         <h2 class="nav-card__title">Campaign Index</h2>
-        <p class="nav-card__description">Names, places, and things that haunt us</p>
+        <p class="nav-card__description">Characters, locations, items, and factions — everything catalogued</p>
       </a>
     </nav>
 
     <footer class="landing__footer">
-      <p class="footer-tagline">Knowledge is the only weapon that doesn't break.</p>
+      <p class="footer-tagline">"Knowledge is the only weapon that doesn't break."</p>
+      <p class="footer-meta">Crafted with care by the Dungeon Master</p>
     </footer>
   </div>
 </BaseLayout>
@@ -44,7 +58,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
   .landing__header {
     text-align: center;
-    margin-bottom: var(--space-2xl);
+    margin-bottom: var(--space-xl);
   }
 
   .landing__title {
@@ -57,10 +71,30 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
   .landing__subtitle {
     font-family: var(--font-serif);
-    font-size: var(--text-base);
-    color: var(--color-text-muted);
+    font-size: var(--text-lg);
+    color: var(--color-text-secondary);
     font-style: italic;
     margin: 0;
+  }
+
+  .landing__intro {
+    max-width: 640px;
+    text-align: center;
+    margin-bottom: var(--space-2xl);
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+  }
+
+  .landing__intro p {
+    margin: 0 0 var(--space-md);
+  }
+
+  .landing__intro p:last-child {
+    margin-bottom: 0;
+  }
+
+  .landing__hook {
+    color: var(--color-text);
   }
 
   .landing__nav {
@@ -82,9 +116,14 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     .nav-card {
       flex: 1;
     }
+
+    .nav-card--featured {
+      flex: 1.2;
+    }
   }
 
   .nav-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -96,6 +135,30 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     text-decoration: none;
     color: var(--color-text);
     transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+
+  .nav-card--featured {
+    border-color: var(--color-gold);
+    background: linear-gradient(
+      135deg,
+      var(--color-bg-secondary) 0%,
+      rgba(201, 162, 39, 0.05) 100%
+    );
+  }
+
+  .nav-card__badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-gold);
+    color: var(--color-bg);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .nav-card:hover {
@@ -132,15 +195,26 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
   .footer-tagline {
     font-family: var(--font-serif);
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     color: var(--color-text-muted);
     font-style: italic;
+    margin: 0 0 var(--space-xs);
+  }
+
+  .footer-meta {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
     margin: 0;
+    opacity: 0.7;
   }
 
   @media (max-width: 640px) {
     .landing {
       padding: var(--space-xl);
+    }
+
+    .landing__intro {
+      font-size: var(--text-sm);
     }
   }
 </style>

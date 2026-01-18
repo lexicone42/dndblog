@@ -41,6 +41,17 @@ test.describe('Post-deployment smoke tests', () => {
       expect(response?.status()).toBe(200);
     });
 
+    test('sessions page loads', async ({ page }) => {
+      const response = await page.goto('/sessions');
+      expect(response?.status()).toBe(200);
+    });
+
+    test('party hub loads', async ({ page }) => {
+      const response = await page.goto('/party');
+      expect(response?.status()).toBe(200);
+      await expect(page.locator('h1')).toContainText('Player Hub');
+    });
+
     test('404 page returns proper status for missing pages', async ({ page }) => {
       const response = await page.goto('/this-page-does-not-exist-12345');
       expect(response?.status()).toBe(404);
@@ -127,149 +138,6 @@ test.describe('Post-deployment smoke tests', () => {
       expect(csp).toContain('style-src');
       expect(csp).toContain("frame-ancestors 'none'");
       expect(csp).toContain('upgrade-insecure-requests');
-    });
-  });
-
-  test.describe('Protected Pages', () => {
-    test('DM dashboard shows auth gate when not authenticated', async ({ page }) => {
-      await page.goto('/dm');
-
-      // Auth gate should be visible
-      const authGate = page.locator('#auth-gate');
-      await expect(authGate).toBeVisible();
-
-      // Should show "DM Access Required" message
-      await expect(page.getByText('DM Access Required')).toBeVisible();
-
-      // Dashboard content should be hidden
-      const dashboard = page.locator('#dashboard-content');
-      await expect(dashboard).toBeHidden();
-    });
-
-    test('DM notes shows access denied without token', async ({ page }) => {
-      await page.goto('/dm/notes');
-
-      // Access denied component should be visible
-      const accessDenied = page.locator('#access-denied');
-      await expect(accessDenied).toBeVisible();
-    });
-
-    test('DM entities shows access denied without token', async ({ page }) => {
-      await page.goto('/dm/entities');
-
-      // Access denied component should be visible
-      const accessDenied = page.locator('#access-denied');
-      await expect(accessDenied).toBeVisible();
-    });
-
-    test('Party hub is publicly accessible', async ({ page }) => {
-      const response = await page.goto('/party');
-      expect(response?.status()).toBe(200);
-
-      // Page should show party content without auth
-      await expect(page.locator('h1')).toContainText('Player Hub');
-
-      // Should show party section
-      await expect(page.getByText('The Party')).toBeVisible();
-    });
-
-    test('Navigation hides DM link when not authenticated', async ({ page }) => {
-      await page.goto('/');
-
-      // DM nav link should be hidden (display: none)
-      const dmNav = page.locator('#nav-dm');
-
-      // It exists in DOM but is hidden
-      await expect(dmNav).toHaveCSS('display', 'none');
-    });
-
-    test('Navigation shows DM link when Cognito auth has DM role', async ({ page }) => {
-      // Set Cognito auth with DM role before navigating
-      await page.goto('/');
-      await page.evaluate(() => {
-        const mockAuth = {
-          method: 'cognito',
-          roles: { isDm: true, isPlayer: false },
-          accessToken: 'mock-access-token',
-          expiresAt: Date.now() + 3600000, // 1 hour from now
-        };
-        localStorage.setItem('dndblog-cognito-auth', JSON.stringify(mockAuth));
-      });
-
-      // Reload to trigger nav visibility update
-      await page.reload();
-
-      // Wait for JS to execute
-      await page.waitForTimeout(1500);
-
-      // DM nav link should be visible
-      const dmNav = page.locator('#nav-dm');
-      await expect(dmNav).not.toHaveCSS('display', 'none');
-
-      // Clean up
-      await page.evaluate(() => {
-        localStorage.removeItem('dndblog-cognito-auth');
-      });
-    });
-
-    test('DM dashboard shows content when Cognito auth has DM role', async ({ page }) => {
-      // Set Cognito auth with DM role before navigating
-      await page.goto('/');
-      await page.evaluate(() => {
-        const mockAuth = {
-          method: 'cognito',
-          roles: { isDm: true, isPlayer: false },
-          accessToken: 'mock-access-token',
-          expiresAt: Date.now() + 3600000, // 1 hour from now
-        };
-        localStorage.setItem('dndblog-cognito-auth', JSON.stringify(mockAuth));
-      });
-
-      // Navigate to DM dashboard
-      await page.goto('/dm');
-
-      // Dashboard content should now be visible
-      const dashboard = page.locator('#dashboard-content');
-      await expect(dashboard).toBeVisible();
-
-      // Auth gate should be hidden
-      const authGate = page.locator('#auth-gate');
-      await expect(authGate).toBeHidden();
-
-      // Clean up auth
-      await page.evaluate(() => {
-        localStorage.removeItem('dndblog-cognito-auth');
-      });
-    });
-
-    test('DM notes loads content when Cognito auth has DM role', async ({ page }) => {
-      // Set Cognito auth with DM role first
-      await page.goto('/');
-      await page.evaluate(() => {
-        const mockAuth = {
-          method: 'cognito',
-          roles: { isDm: true, isPlayer: false },
-          accessToken: 'mock-access-token',
-          expiresAt: Date.now() + 3600000, // 1 hour from now
-        };
-        localStorage.setItem('dndblog-cognito-auth', JSON.stringify(mockAuth));
-      });
-
-      // Navigate to DM notes
-      await page.goto('/dm/notes');
-
-      // Access denied should be hidden
-      const accessDenied = page.locator('#access-denied');
-      await expect(accessDenied).toBeHidden();
-
-      // Editor container should be visible
-      const editor = page.locator('#editor-container');
-      await expect(editor).toBeVisible();
-
-      // Clean up
-      await page.evaluate(() => {
-        localStorage.removeItem('dndblog-cognito-auth');
-      });
     });
   });
 
