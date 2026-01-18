@@ -9,11 +9,6 @@ const navLinks = [
   { href: '/reference', label: 'Reference' },
 ];
 
-// Role-based nav links (shown conditionally via client-side JS)
-const roleNavLinks = {
-  dm: { href: '/dm', label: 'DM' },
-};
-
 function isActive(href: string): boolean {
   if (href === '/') {
     return currentPath === '/';
@@ -43,16 +38,6 @@ function isActive(href: string): boolean {
             </a>
           </li>
         ))}
-        <!-- Role-based nav links (hidden by default, shown via JS) -->
-        <li id="nav-dm" class="header__nav-role" style="display: none;">
-          <a
-            href={roleNavLinks.dm.href}
-            class:list={['header__nav-link', 'header__nav-link--dm', { 'header__nav-link--active': isActive(roleNavLinks.dm.href) }]}
-            aria-current={isActive(roleNavLinks.dm.href) ? 'page' : undefined}
-          >
-            {roleNavLinks.dm.label}
-          </a>
-        </li>
       </ul>
     </nav>
 
@@ -67,41 +52,6 @@ function isActive(href: string): boolean {
           aria-label="Search the campaign"
         />
       </form>
-
-      <!-- Auth - after search -->
-      <div class="header__auth" id="auth-container">
-        <!-- Not logged in: Sign In link -->
-        <a href="/auth/login" class="header__login-btn" id="login-btn">
-          Sign In
-        </a>
-        <!-- Logged in: User dropdown (hidden by default) -->
-        <div class="header__user-menu" id="user-menu" style="display: none;">
-          <button class="header__user-btn" id="user-btn" type="button" aria-expanded="false" aria-haspopup="true">
-            <span class="header__user-avatar" id="user-avatar">?</span>
-            <span class="header__user-name" id="user-name">Me</span>
-            <svg class="header__user-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
-          <div class="header__dropdown" id="user-dropdown">
-            <a href="/me" class="header__dropdown-item">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              My Dashboard
-            </a>
-            <button class="header__dropdown-item header__dropdown-item--danger" id="logout-btn" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </div>
 
       <button
         class="header__theme-toggle"
@@ -224,43 +174,6 @@ function isActive(href: string): boolean {
     color: var(--color-accent);
   }
 
-  /* Auth container in actions area */
-  .header__auth {
-    display: flex;
-    align-items: center;
-  }
-
-  /* Login button - subtle styling */
-  .header__login-btn {
-    color: var(--color-text-muted);
-    font-size: var(--text-xs);
-    font-weight: 500;
-    text-decoration: none;
-    padding: var(--space-xs) var(--space-sm);
-    border-radius: var(--radius-sm);
-    transition: color var(--transition-fast), background-color var(--transition-fast);
-  }
-
-  .header__login-btn:hover {
-    color: var(--color-text-secondary);
-    background-color: var(--color-bg-secondary);
-  }
-
-  .header__login-btn:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-  }
-
-  /* Role-based nav links */
-  .header__nav-link--dm {
-    color: var(--color-gold);
-  }
-
-  .header__nav-link--dm:hover {
-    color: var(--color-gold);
-    background-color: rgba(var(--color-gold-rgb, 201, 162, 39), 0.1);
-  }
-
   /* Right-aligned actions */
   .header__actions {
     display: flex;
@@ -293,138 +206,6 @@ function isActive(href: string): boolean {
     outline: none;
     border-color: var(--color-accent);
     width: 160px;
-  }
-
-  /* User menu (logged in state) */
-  .header__user-menu {
-    position: relative;
-  }
-
-  .header__user-btn {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: var(--text-xs);
-    padding: var(--space-xs) var(--space-sm);
-    border-radius: var(--radius-sm);
-    transition: background-color var(--transition-fast);
-  }
-
-  .header__user-btn:hover {
-    background: var(--color-bg-secondary);
-  }
-
-  .header__user-btn:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-  }
-
-  .header__user-avatar {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--color-gold), var(--color-accent));
-    color: var(--color-bg);
-    font-size: 10px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-  }
-
-  .header__user-name {
-    font-weight: 500;
-    color: var(--color-text-muted);
-    max-width: 80px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .header__user-chevron {
-    width: 12px;
-    height: 12px;
-    color: var(--color-text-muted);
-    transition: transform var(--transition-fast);
-  }
-
-  .header__user-btn[aria-expanded="true"] .header__user-chevron {
-    transform: rotate(180deg);
-  }
-
-  /* Dropdown menu - compact to match user button */
-  .header__dropdown {
-    position: absolute;
-    top: calc(100% + 4px);
-    right: 0;
-    min-width: 130px;
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-md);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-4px);
-    transition: all var(--transition-fast);
-    z-index: 100;
-  }
-
-  .header__dropdown.is-open {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-  }
-
-  .header__dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    width: 100%;
-    padding: var(--space-xs) var(--space-sm);
-    font-size: var(--text-xs);
-    color: var(--color-text);
-    text-decoration: none;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition: background var(--transition-fast);
-    text-align: left;
-  }
-
-  .header__dropdown-item:first-child {
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  }
-
-  .header__dropdown-item:last-child {
-    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-  }
-
-  .header__dropdown-item:hover {
-    background: var(--color-bg-secondary);
-  }
-
-  .header__dropdown-item:focus-visible {
-    background: var(--color-bg-secondary);
-    outline: none;
-    box-shadow: inset 0 0 0 2px var(--color-accent);
-  }
-
-  .header__dropdown-item svg {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-  }
-
-  .header__dropdown-item--danger {
-    color: var(--color-accent);
-  }
-
-  .header__dropdown-item--danger:hover {
-    background: rgba(var(--color-accent-rgb, 192, 86, 86), 0.1);
   }
 
   /* Theme toggle - minimum 44x44px touch target for accessibility */
@@ -482,12 +263,6 @@ function isActive(href: string): boolean {
   }
 
   /* Responsive styles */
-  @media (max-width: 900px) {
-    .header__user-name {
-      display: none;
-    }
-  }
-
   @media (max-width: 768px) {
     .header__container {
       gap: var(--space-xs);
@@ -520,19 +295,6 @@ function isActive(href: string): boolean {
     .header__search {
       display: none;
     }
-
-    /* Keep auth visible on mobile - just hide username */
-    .header__login-btn {
-      padding: var(--space-xs);
-    }
-
-    .header__user-name {
-      display: none;
-    }
-
-    .header__user-chevron {
-      display: none;
-    }
   }
 
   @media (max-width: 500px) {
@@ -546,141 +308,6 @@ function isActive(href: string): boolean {
 </style>
 
 <script>
-  import { getAuthState, clearAuth, getLoginUrl, isSsoAvailable } from '@lib/auth';
-
-  // Auth UI management
-  (function() {
-    const COGNITO_AUTH_KEY = 'dndblog-cognito-auth';
-    const dmNav = document.getElementById('nav-dm');
-    const loginBtn = document.getElementById('login-btn');
-    const userMenu = document.getElementById('user-menu');
-    const userBtn = document.getElementById('user-btn');
-    const userDropdown = document.getElementById('user-dropdown');
-    const userName = document.getElementById('user-name');
-    const userAvatar = document.getElementById('user-avatar');
-    const logoutBtn = document.getElementById('logout-btn');
-
-    // Character name lookup
-    const characterNames: Record<string, string> = {
-      'rudiger': 'Rudiger',
-      'finnian': 'Finnian',
-      'lyra': 'Lyra',
-      'thane': 'Thane',
-      'zara': 'Zara',
-    };
-
-    function getAuthRoles() {
-      const cognitoAuth = localStorage.getItem(COGNITO_AUTH_KEY);
-      if (cognitoAuth) {
-        try {
-          const auth = JSON.parse(cognitoAuth);
-          if (auth.expiresAt && auth.expiresAt < Date.now()) {
-            localStorage.removeItem(COGNITO_AUTH_KEY);
-            return null;
-          }
-          // Prefer character name over display name
-          const characterSlug = auth.characterSlug;
-          const characterName = characterSlug ? characterNames[characterSlug] : null;
-          return {
-            isDm: auth.roles?.isDm || false,
-            isPlayer: auth.roles?.isPlayer || false,
-            displayName: characterName || auth.displayName || auth.email?.split('@')[0] || 'Adventurer',
-            email: auth.email || '',
-          };
-        } catch {
-          return null;
-        }
-      }
-      return null;
-    }
-
-    function updateAuthUI() {
-      const auth = getAuthRoles();
-      const isLoggedIn = auth !== null;
-
-      // Update DM nav visibility
-      if (dmNav) {
-        dmNav.style.display = auth?.isDm ? '' : 'none';
-      }
-
-      // Update login/user menu visibility
-      if (loginBtn && userMenu) {
-        if (isLoggedIn) {
-          loginBtn.style.display = 'none';
-          userMenu.style.display = 'block';
-
-          // Update user info
-          if (userName && auth) {
-            userName.textContent = auth.displayName;
-          }
-          if (userAvatar && auth) {
-            userAvatar.textContent = auth.displayName.charAt(0).toUpperCase();
-          }
-        } else {
-          loginBtn.style.display = 'inline-block';
-          userMenu.style.display = 'none';
-        }
-      }
-
-      // Update login URL with current page as return URL
-      if (loginBtn && isSsoAvailable()) {
-        const returnUrl = window.location.pathname;
-        loginBtn.setAttribute('href', getLoginUrl(returnUrl));
-      }
-    }
-
-    // Dropdown toggle
-    function toggleDropdown(show?: boolean) {
-      if (!userBtn || !userDropdown) return;
-
-      const isOpen = show ?? !userDropdown.classList.contains('is-open');
-      userDropdown.classList.toggle('is-open', isOpen);
-      userBtn.setAttribute('aria-expanded', String(isOpen));
-    }
-
-    // Event listeners
-    userBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleDropdown();
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      if (userDropdown?.classList.contains('is-open')) {
-        const target = e.target as HTMLElement;
-        if (!target.closest('.header__user-menu')) {
-          toggleDropdown(false);
-        }
-      }
-    });
-
-    // Close dropdown on escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && userDropdown?.classList.contains('is-open')) {
-        toggleDropdown(false);
-        userBtn?.focus();
-      }
-    });
-
-    // Logout handler
-    logoutBtn?.addEventListener('click', () => {
-      clearAuth();
-      window.dispatchEvent(new Event('auth-change'));
-      // Redirect to home
-      window.location.href = '/';
-    });
-
-    // Initial update
-    updateAuthUI();
-
-    // Listen for auth changes
-    window.addEventListener('storage', updateAuthUI);
-    window.addEventListener('auth-change', updateAuthUI);
-
-    // Periodic check for auth changes
-    setInterval(updateAuthUI, 1000);
-  })();
-
   // Theme toggle functionality
   const toggle = document.getElementById('theme-toggle');
 

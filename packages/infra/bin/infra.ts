@@ -3,8 +3,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { StaticSiteStack } from '../lib/static-site-stack.js';
 import { GithubOidcStack } from '../lib/github-oidc-stack.js';
-import { DmGuideStack } from '../lib/dmguide-stack.js';
-import { AuthStack } from '../lib/auth-stack.js';
 
 const app = new cdk.App();
 
@@ -34,9 +32,6 @@ if (githubRepo) {
     env,
     githubRepo,
     description: 'GitHub OIDC authentication for GitHub Actions CI/CD',
-    // Optional: Add these after StaticSiteStack is deployed to grant specific permissions
-    // siteBucketArn: '<bucket-arn-from-static-site-stack>',
-    // distributionId: '<distribution-id-from-static-site-stack>',
   });
 }
 
@@ -46,8 +41,8 @@ if (githubRepo) {
  * Deploy the main site infrastructure:
  *
  *   cdk deploy StaticSiteStack \
- *     --context domainName=blog.example.com \
- *     --context hostedZoneDomain=example.com
+ *     --context domainName=chronicles.mawframe.ninja \
+ *     --context hostedZoneDomain=mawframe.ninja
  *
  * Prerequisites:
  * - AWS account must be CDK bootstrapped: cdk bootstrap
@@ -59,40 +54,8 @@ if (domainName && hostedZoneDomain) {
     env,
     domainName,
     hostedZoneDomain,
-    description: 'Static blog infrastructure: S3 + CloudFront + Route53 + ACM',
+    description: 'Static campaign archive: S3 + CloudFront + Route53 + ACM',
   });
-
-  // Auth Stack - Cognito User Pool for player authentication
-  // Must be created before DmNotesStack to provide auth config
-  const authStack = new AuthStack(app, 'AuthStack', {
-    env,
-    siteDomain: domainName,
-    cognitoDomainPrefix: 'chronicles-mawframe',
-    description: 'Authentication: Cognito User Pool for player login',
-    initialUsers: [
-      // Test user: Rudiger's player
-      {
-        email: 'bryan.egan@gmail.com',
-        group: 'player',
-        characterSlug: 'rudiger',
-      },
-    ],
-  });
-
-  // DM Guide API Stack - for secure DM tools and session management
-  // Uses Cognito JWT authentication from AuthStack
-  const dmGuideStack = new DmGuideStack(app, 'DmNotesStack', {  // Keep stack ID for CloudFormation compatibility
-    env,
-    allowedOrigin: `https://${domainName}`,
-    cognitoAuth: {
-      userPoolId: authStack.userPool.userPoolId,
-      userPoolClientId: authStack.userPoolClient.userPoolClientId,
-    },
-    description: 'DM Notes API: Lambda + API Gateway + S3 for session note uploads',
-  });
-
-  // Ensure DmGuideStack deploys after AuthStack
-  dmGuideStack.addDependency(authStack);
 } else if (!githubRepo) {
   // Provide helpful error message if no context is provided
   console.log(`
@@ -100,9 +63,9 @@ Usage: cdk deploy <StackName> [options]
 
 Available stacks:
 
-  StaticSiteStack - Main site infrastructure
+  StaticSiteStack - Static site infrastructure (S3 + CloudFront)
     Required context:
-      --context domainName=blog.example.com
+      --context domainName=chronicles.example.com
       --context hostedZoneDomain=example.com
 
   GithubOidcStack - GitHub Actions authentication (deploy first)
@@ -119,12 +82,12 @@ Examples:
 
   # Deploy static site
   cdk deploy StaticSiteStack \\
-    --context domainName=blog.example.com \\
+    --context domainName=chronicles.example.com \\
     --context hostedZoneDomain=example.com
 
   # Show changes before deploying
   cdk diff StaticSiteStack \\
-    --context domainName=blog.example.com \\
+    --context domainName=chronicles.example.com \\
     --context hostedZoneDomain=example.com
 `);
 }
