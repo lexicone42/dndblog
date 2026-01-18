@@ -142,11 +142,19 @@ const processedContent = processContent(content || '', entityLookup);
     border-bottom-color: var(--color-accent);
   }
 
-  /* Status variations */
+  /* Status variations - dead/destroyed entities get a subtle dagger symbol */
   .session-content :global(.entity-link--dead),
   .session-content :global(.entity-link--destroyed) {
-    text-decoration: line-through;
-    opacity: 0.8;
+    opacity: 0.85;
+  }
+
+  .session-content :global(.entity-link--dead)::after,
+  .session-content :global(.entity-link--destroyed)::after {
+    content: '\2020'; /* † dagger symbol - traditional mark for deceased */
+    font-size: 0.75em;
+    vertical-align: super;
+    margin-left: 1px;
+    opacity: 0.7;
   }
 
   .session-content :global(.entity-link--transformed) {
