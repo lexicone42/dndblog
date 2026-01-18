@@ -49,8 +49,8 @@ cdk deploy GithubOidcStack --context githubRepo=YOUR-ORG/YOUR-REPO
 
 | Variable | Example | Description |
 |----------|---------|-------------|
-| `DOMAIN_NAME` | `chronicles.mawframe.ninja` | Your blog domain |
-| `HOSTED_ZONE_DOMAIN` | `mawframe.ninja` | Route53 hosted zone |
+| `DOMAIN_NAME` | `campaign.example.com` | Your site's subdomain |
+| `HOSTED_ZONE_DOMAIN` | `example.com` | Route53 hosted zone |
 
 #### Environment (Optional)
 
@@ -64,8 +64,8 @@ Create a `production` environment with:
 
 ```bash
 ./scripts/deploy.sh \
-  --domain chronicles.mawframe.ninja \
-  --zone mawframe.ninja
+  --domain campaign.example.com \
+  --zone example.com
 ```
 
 ### Options
@@ -89,8 +89,8 @@ Options:
 # Deploy static site infrastructure
 cd packages/infra
 cdk deploy StaticSiteStack \
-  --context domainName=chronicles.mawframe.ninja \
-  --context hostedZoneDomain=mawframe.ninja
+  --context domainName=campaign.example.com \
+  --context hostedZoneDomain=example.com
 
 # Sync to S3 only (after CDK deploy)
 aws s3 sync packages/site/dist/ s3://BUCKET-NAME --delete
@@ -139,8 +139,8 @@ Post-deployment verification checks:
 - Security headers are present
 
 ```bash
-# Run locally against production
-PUBLIC_SITE_URL=https://chronicles.mawframe.ninja pnpm test:smoke
+# Run locally against your deployed site
+SITE_URL=https://campaign.example.com pnpm test:smoke
 ```
 
 ## Troubleshooting
@@ -154,7 +154,7 @@ ACM certificates require DNS validation. Ensure your Route53 hosted zone is corr
 aws route53 get-hosted-zone --id ZONE-ID
 
 # Compare with domain registrar
-dig NS mawframe.ninja
+dig NS example.com
 ```
 
 ### "Access Denied" when syncing to S3
