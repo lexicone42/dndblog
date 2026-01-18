@@ -33,21 +33,13 @@ This project implements the following security measures:
 ### Infrastructure (AWS)
 - GitHub OIDC authentication (no long-lived AWS credentials)
 - IAM roles follow least-privilege principle
-- S3 buckets are not publicly accessible
-- CloudFront distributions use HTTPS only
-
-### API Security
-- Token-based authentication via SSM SecureString parameters
-- Rate limiting (5 req/s, burst 10) on API Gateway
-- CORS restrictions (production origin + localhost for dev)
-- Pre-signed S3 URLs expire after 5 minutes
-- Path validation (notes must use `dm-notes/` prefix)
+- S3 bucket is private; content served only through CloudFront
+- CloudFront distribution uses HTTPS only (TLS 1.2+)
 
 ### Content Security
 - Content Security Policy (CSP) headers via CloudFront
-- XSS protection via DOMPurify for markdown rendering
 - Security headers: HSTS, X-Frame-Options, X-Content-Type-Options
-- TLS 1.2+ only
+- Static site only (no API endpoints, no user input handling)
 
 ### Code
 - No secrets or credentials committed to repository
