@@ -16,52 +16,30 @@
 /**
  * CSP directive values organized by directive type.
  * Each directive maps to an array of allowed sources.
+ *
+ * This is a static memorial site with no external API connections.
  */
 export const CSP_DIRECTIVES: Record<string, string[]> = {
   // Default fallback for unspecified directives
   'default-src': ["'self'"],
 
   // JavaScript sources
-  // - 'unsafe-inline': Required for Astro's scoped styles and inline scripts
+  // - 'unsafe-inline': Required for Astro's inline scripts
   // - 'wasm-unsafe-eval': Required for Pagefind search (WebAssembly)
-  // - unpkg.com: EasyMDE, Turndown (used in /dm/notes.astro)
-  // - cdnjs.cloudflare.com: marked, highlight.js, DOMPurify (used in /dm/notes.astro)
-  'script-src': [
-    "'self'",
-    "'unsafe-inline'",
-    "'wasm-unsafe-eval'",
-    'https://unpkg.com',
-    'https://cdnjs.cloudflare.com',
-  ],
+  'script-src': ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'"],
 
   // Stylesheet sources
   // - 'unsafe-inline': Required for Astro's scoped styles
-  // - unpkg.com: EasyMDE styles (used in /dm/notes.astro)
-  // - cdnjs.cloudflare.com: highlight.js themes (used in /dm/notes.astro)
-  'style-src': [
-    "'self'",
-    "'unsafe-inline'",
-    'https://unpkg.com',
-    'https://cdnjs.cloudflare.com',
-  ],
+  'style-src': ["'self'", "'unsafe-inline'"],
 
   // Image sources - allow self, data URIs, and any HTTPS
   'img-src': ["'self'", 'data:', 'https:'],
 
-  // Font sources - self-hosted fonts only (no external CDNs currently used)
-  'font-src': [
-    "'self'",
-    'data:',
-  ],
+  // Font sources - self-hosted fonts only
+  'font-src': ["'self'", 'data:'],
 
-  // API connections - self, AWS API Gateway, S3 for uploads, Cognito for auth, WebSocket for real-time
-  'connect-src': [
-    "'self'",
-    'https://*.execute-api.us-east-1.amazonaws.com',
-    'wss://*.execute-api.us-east-1.amazonaws.com',
-    'https://*.s3.us-east-1.amazonaws.com',
-    'https://*.auth.us-east-1.amazoncognito.com',
-  ],
+  // Connections - static site only needs self
+  'connect-src': ["'self'"],
 
   // Prevent embedding in frames (clickjacking protection)
   'frame-ancestors': ["'none'"],
@@ -92,25 +70,3 @@ export function buildCSPString(): string {
   return [...directiveParts, ...CSP_FLAGS].join('; ');
 }
 
-/**
- * Build a minimal CSP string for specific pages that need fewer permissions.
- * Useful for pages that don't use external CDNs.
- *
- * @returns Minimal CSP header value for static pages
- */
-export function buildMinimalCSPString(): string {
-  const minimalDirectives: Record<string, string[]> = {
-    'default-src': ["'self'"],
-    'script-src': ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'"],
-    'style-src': ["'self'", "'unsafe-inline'"],
-    'img-src': ["'self'", 'data:', 'https:'],
-    'font-src': ["'self'"],
-    'connect-src': ["'self'"],
-  };
-
-  const directiveParts = Object.entries(minimalDirectives).map(
-    ([directive, values]) => `${directive} ${values.join(' ')}`
-  );
-
-  return directiveParts.join('; ');
-}

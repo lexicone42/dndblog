@@ -6,7 +6,8 @@
 /*
   # Content Security Policy
   # Must match packages/infra/lib/shared/csp-config.ts
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.execute-api.us-east-1.amazonaws.com wss://*.execute-api.us-east-1.amazonaws.com https://*.s3.us-east-1.amazonaws.com https://*.auth.us-east-1.amazoncognito.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+  # This is a static memorial site with no external API connections.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
 
   # Other security headers
   X-Frame-Options: DENY

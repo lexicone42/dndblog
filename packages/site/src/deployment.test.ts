@@ -57,7 +57,7 @@ describe.skipIf(!distExists)('Page Build Verification', () => {
     expect(fs.existsSync(pagePath)).toBe(true);
 
     const content = fs.readFileSync(pagePath, 'utf-8');
-    expect(content).toContain('Chronicles of the Mawframe');
+    expect(content).toContain("Rudiger's Evocation of Events");
   });
 
   it('should build sessions page', () => {

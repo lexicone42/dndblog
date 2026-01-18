@@ -274,8 +274,9 @@ describe('CSP Configuration', () => {
     expect(CSP_DIRECTIVES['script-src']).toContain("'wasm-unsafe-eval'");
   });
 
-  test('connect-src includes API Gateway pattern', () => {
+  test('connect-src allows only self for static site', () => {
     const connectSrc = CSP_DIRECTIVES['connect-src'];
-    expect(connectSrc.some((s) => s.includes('execute-api'))).toBe(true);
+    // Static memorial site should not have external API connections
+    expect(connectSrc).toEqual(["'self'"]);
   });
 });

@@ -29,11 +29,8 @@ const URL_PATTERNS: Record<string, { directive: string; regex: RegExp }[]> = {
   fonts: [
     { directive: 'font-src', regex: /url\(["']?(https?:\/\/[^"')]+\.(woff2?|ttf|eot|otf))["']?\)/gi },
   ],
-  // Fetch/XHR calls require connect-src
-  connections: [
-    { directive: 'connect-src', regex: /fetch\(["'`]([^"'`]+)["'`]/gi },
-    { directive: 'connect-src', regex: /\.s3\.[^"'`]+\.amazonaws\.com/gi },
-  ],
+  // Fetch/XHR calls require connect-src (static site has none)
+  connections: [{ directive: 'connect-src', regex: /fetch\(["'`]([^"'`]+)["'`]/gi }],
   // Images require img-src
   images: [
     { directive: 'img-src', regex: /<img[^>]+src=["'](https?:\/\/[^"']+)["']/gi },
@@ -202,91 +199,37 @@ describe('CSP Coverage Analysis', () => {
     expect(uncoveredUrls).toHaveLength(0);
   });
 
-  test('connect-src covers S3 for presigned URL uploads', () => {
+  test('connect-src allows only self for static site', () => {
     const connectSrc = CSP_DIRECTIVES['connect-src'];
 
-    // The DM notes feature uploads directly to S3 via presigned URLs
-    const s3Pattern = 'https://*.s3.us-east-1.amazonaws.com';
-    const hasS3Coverage = connectSrc.some(
-      (src) => src.includes('.s3.') || src.includes('*.s3.')
-    );
-
-    if (!hasS3Coverage) {
-      throw new Error(
-        `CSP connect-src must include S3 for presigned URL uploads.\n` +
-          `  Add: ${s3Pattern}\n` +
-          `  Current connect-src: ${connectSrc.join(' ')}`
-      );
-    }
-
-    expect(hasS3Coverage).toBe(true);
-  });
-
-  test('connect-src covers API Gateway', () => {
-    const connectSrc = CSP_DIRECTIVES['connect-src'];
-
-    const hasApiGateway = connectSrc.some((src) => src.includes('execute-api'));
-
-    if (!hasApiGateway) {
-      throw new Error(
-        `CSP connect-src must include API Gateway.\n` +
-          `  Add: https://*.execute-api.us-east-1.amazonaws.com\n` +
-          `  Current connect-src: ${connectSrc.join(' ')}`
-      );
-    }
-
-    expect(hasApiGateway).toBe(true);
+    // Static memorial site should not need external API connections
+    expect(connectSrc).toEqual(["'self'"]);
   });
 });
 
-describe('CSP Directive Completeness', () => {
-  test('script-src includes all known CDN hosts used in the project', () => {
-    // Known CDNs used in the project (from /dm/notes.astro):
-    // - unpkg.com: EasyMDE, Turndown
-    // - cdnjs.cloudflare.com: marked, highlight.js, DOMPurify
-    const requiredHosts = [
-      'https://unpkg.com',
-      'https://cdnjs.cloudflare.com',
-    ];
-
+describe('CSP Directive Completeness for Static Site', () => {
+  test('script-src includes wasm-unsafe-eval for Pagefind search', () => {
     const scriptSrc = CSP_DIRECTIVES['script-src'];
-    const missing = requiredHosts.filter(
-      (host) => !scriptSrc.some((src) => host.startsWith(src.replace(/\/$/, '')))
-    );
 
-    if (missing.length > 0) {
-      throw new Error(
-        `CSP script-src is missing known CDN hosts:\n` +
-          `  Missing: ${missing.join(', ')}\n` +
-          `  Current script-src: ${scriptSrc.join(' ')}`
-      );
-    }
-
-    expect(missing).toHaveLength(0);
+    // Pagefind search uses WebAssembly
+    expect(scriptSrc).toContain("'wasm-unsafe-eval'");
   });
 
-  test('style-src includes all known CDN hosts used in the project', () => {
-    // Known CDNs used in the project (from /dm/notes.astro):
-    // - unpkg.com: EasyMDE styles
-    // - cdnjs.cloudflare.com: highlight.js themes
-    const requiredHosts = [
-      'https://unpkg.com',
-      'https://cdnjs.cloudflare.com',
-    ];
-
+  test('no external CDN dependencies', () => {
+    const scriptSrc = CSP_DIRECTIVES['script-src'];
     const styleSrc = CSP_DIRECTIVES['style-src'];
-    const missing = requiredHosts.filter(
-      (host) => !styleSrc.some((src) => host.startsWith(src.replace(/\/$/, '')))
-    );
 
-    if (missing.length > 0) {
-      throw new Error(
-        `CSP style-src is missing known CDN hosts:\n` +
-          `  Missing: ${missing.join(', ')}\n` +
-          `  Current style-src: ${styleSrc.join(' ')}`
-      );
-    }
+    // Static memorial site should not have external CDN scripts
+    const hasExternalCdns =
+      scriptSrc.some((src) => src.includes('unpkg.com') || src.includes('cdnjs')) ||
+      styleSrc.some((src) => src.includes('unpkg.com') || src.includes('cdnjs'));
 
-    expect(missing).toHaveLength(0);
+    expect(hasExternalCdns).toBe(false);
+  });
+
+  test('frame-ancestors prevents clickjacking', () => {
+    const frameAncestors = CSP_DIRECTIVES['frame-ancestors'];
+
+    expect(frameAncestors).toEqual(["'none'"]);
   });
 });

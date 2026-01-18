@@ -1,10 +1,8 @@
 /**
- * Session Tracker Integration Tests
+ * Session Tracker Tests
  *
- * These tests verify data format compatibility between:
- * - Player session tracker (/campaign)
- * - DM party tracker (/dm/party-tracker)
- * - API session data storage
+ * These tests verify data format handling for the campaign tracker,
+ * ensuring character session data is properly structured.
  *
  * Run with: pnpm test
  */
