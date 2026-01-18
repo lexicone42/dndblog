@@ -39,17 +39,8 @@ export default defineConfig({
       },
     },
     {
-      name: 'staging-api',
-      testMatch: /staging-api\.spec\.ts/,
-      use: {
-        ...devices['Desktop Chrome'],
-        // API tests don't need baseURL for page navigation
-        // They use direct fetch calls to the API
-      },
-    },
-    {
       name: 'chromium',
-      testIgnore: /(smoke|staging-api)\.spec\.ts/,
+      testIgnore: /smoke\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         baseURL: 'http://localhost:4321',
