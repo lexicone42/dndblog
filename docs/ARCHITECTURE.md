@@ -1,10 +1,10 @@
 # Architecture
 
-This document describes the system architecture of the Rudiger's Evocation of Events platform.
+This document describes the system architecture of Rudiger's Evocation of Events - a static site template for TTRPG campaign archives.
 
 ## Overview
 
-The platform is designed as a modular system that can evolve from a simple static blog (Phase 1) to a full-featured campaign management system with authentication and AI capabilities (Phase 2).
+The platform is a static site generator that produces a fully self-contained campaign archive. Content is written in Markdown/YAML, validated at build time, and deployed to AWS for global distribution.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -41,17 +41,6 @@ The platform is designed as a modular system that can evolve from a simple stati
 | **Route53** | DNS management | A/AAAA records aliased to CloudFront |
 | **ACM** | SSL certificates | DNS-validated, auto-renewal |
 | **IAM** | GitHub Actions auth | OIDC federation, least privilege |
-
-### DM Guide API Components
-
-| Service | Purpose | Configuration |
-|---------|---------|---------------|
-| **API Gateway** | HTTP API | CORS, rate limiting (5 req/s) |
-| **Lambda** | API handlers | Node.js 20, JWT validation |
-| **S3** | Notes storage | dm-notes/ prefix |
-| **Cognito** | Authentication | User Pool with dm/player groups |
-| **Bedrock** | AI review | Claude model for notes review |
-| **CloudWatch** | Monitoring | Alarms + dashboard |
 
 ### Security Architecture
 
@@ -133,26 +122,21 @@ Source Content     Entity Validation    Astro Build        S3 Sync
 
 ### Content Model
 
+Campaign content is stored in YAML files with typed frontmatter:
+
 ```typescript
-interface BlogPost {
-  // Required
-  title: string;
-  description: string;
-  pubDate: Date;
-
-  // Optional
-  updatedDate?: Date;
-  heroImage?: string;
-  draft?: boolean;
+// Example: Character entity
+interface Character {
+  name: string;
+  status: 'active' | 'deceased' | 'missing';
+  subtype?: 'pc' | 'npc' | 'ally' | 'enemy';
+  description?: string;
   tags?: string[];
-  author?: string;
-
-  // Phase 2 (implemented but not used)
-  visibility?: 'public' | 'private' | 'campaign';
-  campaignId?: string;
-  contributors?: string[];
+  // ... additional D&D-specific fields
 }
 ```
+
+Entity types include: `character`, `enemy`, `location`, `faction`, `item`, `spell`.
 
 ## Design Decisions
 
@@ -191,20 +175,6 @@ interface BlogPost {
 - **Least privilege** - Role assumption per-run
 - **Security** - No credentials stored in GitHub
 
-## Authentication Architecture
-
-The platform uses AWS Cognito for authentication:
-
-- **User Pool**: `chronicles-mawframe` with hosted UI
-- **Groups**: `dm` and `player` for role-based access
-- **Custom attributes**: `custom:characterSlug` for player character assignment
-- **Passkey support**: WebAuthn/FIDO2 for passwordless login (30-day sessions)
-- **OAuth flow**: Authorization code grant with PKCE
-
-All API endpoints validate JWTs against the Cognito User Pool. Group membership determines access:
-- DM endpoints require `dm` group membership
-- Player endpoints require `player` group membership
-
 ## Performance Considerations
 
 ### Caching Strategy
@@ -237,7 +207,7 @@ The site includes Progressive Web App capabilities:
 - **WCAG AA color contrast** - All text and UI elements meet 4.5:1 ratio
 - **Keyboard navigation** - Full keyboard accessibility throughout
 
-## Monitoring and Observability
+## Monitoring
 
 ### CloudWatch Alarms
 
@@ -247,31 +217,9 @@ The platform includes proactive monitoring via CloudWatch alarms:
 |-------|-----------|---------|
 | CloudFront 5xx Errors | > 1% for 15 min | Origin/server problems |
 | CloudFront 4xx Errors | > 5% for 15 min | Broken links or attacks |
-| Lambda Errors (per function) | > 1 in 5 min | Function failures |
-
-### CloudWatch Dashboard
-
-A unified dashboard (`MonitoringDashboard` construct) displays:
-
-**CloudFront Metrics:**
-- Request count
-- Error rates (4xx, 5xx)
-- Bytes transferred
-
-**Lambda Metrics (per function):**
-- Invocations
-- Errors
-- Duration (average and max)
-- Throttles and concurrent executions
 
 ### Other Observability
 
 - CloudFront access logs (optional, disabled by default)
 - GitHub Actions workflow history
 - Smoke tests post-deployment verification
-
-### Planned Enhancements
-
-- X-Ray tracing for API calls
-- Cost monitoring alerts
-- Anomaly detection

@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide covers deploying the Rudiger's Evocation of Events to AWS.
+This guide covers deploying the campaign archive site to AWS.
 
 ## Prerequisites
 
@@ -92,10 +92,6 @@ cdk deploy StaticSiteStack \
   --context domainName=chronicles.mawframe.ninja \
   --context hostedZoneDomain=mawframe.ninja
 
-# Deploy DM Notes API (separate stack)
-cdk deploy DmNotesStack \
-  --context allowedOrigin=https://chronicles.mawframe.ninja
-
 # Sync to S3 only (after CDK deploy)
 aws s3 sync packages/site/dist/ s3://BUCKET-NAME --delete
 
@@ -103,80 +99,6 @@ aws s3 sync packages/site/dist/ s3://BUCKET-NAME --delete
 aws cloudfront create-invalidation \
   --distribution-id DISTRIBUTION-ID \
   --paths "/*"
-```
-
-### User Management (Cognito)
-
-After deploying `AuthStack` and `DmNotesStack`, add users via the AWS Console or CLI:
-
-```bash
-# Create a DM user
-aws cognito-idp admin-create-user \
-  --user-pool-id us-east-1_XXXXXX \
-  --username dm@example.com \
-  --user-attributes Name=email,Value=dm@example.com Name=email_verified,Value=true
-
-# Add to DM group
-aws cognito-idp admin-add-user-to-group \
-  --user-pool-id us-east-1_XXXXXX \
-  --username dm@example.com \
-  --group-name dm
-
-# Create a player user with character assignment
-aws cognito-idp admin-create-user \
-  --user-pool-id us-east-1_XXXXXX \
-  --username player@example.com \
-  --user-attributes \
-    Name=email,Value=player@example.com \
-    Name=email_verified,Value=true \
-    Name=custom:characterSlug,Value=rudiger
-
-# Add to player group
-aws cognito-idp admin-add-user-to-group \
-  --user-pool-id us-east-1_XXXXXX \
-  --username player@example.com \
-  --group-name player
-```
-
-**Groups:**
-- `dm` - Full access to DM dashboard, entity staging, draft approval
-- `player` - Access to session tracker, character drafts
-
-### AI Review Setup (Optional)
-
-```bash
-# Optionally enable/disable AI review
-aws ssm put-parameter \
-  --name "/dndblog/ai-review-enabled" \
-  --value "true" \
-  --type String \
-  --overwrite
-```
-
-### GitHub PAT Setup (Draft Approval Flow)
-
-To enable the DM to approve player drafts and create GitHub PRs:
-
-```bash
-# Create a GitHub Personal Access Token with 'repo' scope
-# Then store it in SSM:
-aws ssm put-parameter \
-  --name "/dndblog/github-pat" \
-  --value "ghp_your_token_here" \
-  --type SecureString \
-  --overwrite
-```
-
-Without this token, the approve endpoint will error (reject still works).
-
-Set the API URL as an environment variable for site builds:
-```bash
-export PUBLIC_DM_NOTES_API_URL=https://xxx.execute-api.us-west-2.amazonaws.com
-```
-
-Or add to `.env.production` in `packages/site/`:
-```
-PUBLIC_DM_NOTES_API_URL=https://xxx.execute-api.us-west-2.amazonaws.com
 ```
 
 ## Automated Deployment (GitHub Actions)
@@ -204,10 +126,9 @@ Runs on pull requests:
 Runs on push to main:
 1. Build site and infrastructure
 2. Deploy `StaticSiteStack` via CDK
-3. Deploy `DmNotesStack` via CDK (if changed)
-4. Sync site files to S3
-5. Invalidate CloudFront cache
-6. Run smoke tests for verification
+3. Sync site files to S3
+4. Invalidate CloudFront cache
+5. Run smoke tests for verification
 
 ### Smoke Tests
 

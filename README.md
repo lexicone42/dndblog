@@ -4,195 +4,130 @@
 [![Deploy](https://github.com/lexicone42/dndblog/actions/workflows/deploy.yml/badge.svg)](https://github.com/lexicone42/dndblog/actions/workflows/deploy.yml)
 [![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-6B5CE7?logo=anthropic)](https://claude.ai/code)
 
-A modular static blog platform built with Astro and deployed to AWS, designed for future extension into a private RPG campaign note-tracking system.
+**A template for creating beautiful static sites to preserve your TTRPG campaign's lore.** Built with [Claude Code](https://claude.ai/code), Astro, and AWS.
 
-## Overview
+> *"Ten sessions of adventure across Eberron. Battles fought, secrets uncovered, and a story worth remembering."*
 
-**Current Features:**
-- Public static blog with markdown content
-- D&D 5e 2024 character sheets with interactive components
-- Player Hub with Session Tracker and Party Synergies guide
-- DM session notes editor with S3 storage and AI review
-- CloudWatch monitoring with alarms and dashboards
+## What This Is
+
+This repository serves two purposes:
+
+1. **A living example** - The complete chronicle of our D&D 5e campaign set in Eberron, featuring 10 sessions of adventure through Sharn's towers
+2. **A template you can fork** - Use Claude Code to help you build your own campaign site with the same structure
+
+### What It Tracks
+
+| Content Type | Description |
+|--------------|-------------|
+| **Sessions** | Narrative recaps with automatic entity linking |
+| **Characters** | Player characters and NPCs with full stat blocks |
+| **Enemies** | Monsters and antagonists encountered |
+| **Locations** | Cities, dungeons, taverns, and landmarks |
+| **Factions** | Organizations and their relationships |
+| **Items** | Magic items, artifacts, and loot |
+| **Spells** | Custom or notable spells |
+
+### Features
+
+- Full-text search across all content (via Pagefind)
+- Automatic entity linking in session narratives
+- Interactive D&D 5e character sheets
 - PWA support for offline reading
+- Dark theme optimized for late-night session prep
+- RSS feed for session updates
+- Citation tools for the academically inclined
 
-**Coming Soon:** Enhanced content pipeline, private campaign feeds, AI summarization.
+## See It Live
 
-## Tech Stack
+**[chronicles.mawframe.ninja](https://chronicles.mawframe.ninja)**
 
-- **Static Site Generator:** [Astro](https://astro.build) - Native markdown support, excellent performance
-- **Infrastructure as Code:** AWS CDK (TypeScript) generating CloudFormation
-- **Hosting:** S3 + CloudFront + Route53 + ACM (SSL)
-- **Build System:** Node.js with pnpm workspace
-- **CI/CD:** GitHub Actions with OIDC authentication (no long-lived credentials)
+Browse sessions, explore the party, and dive into the world of Eberron as experienced by our group.
 
-## Quick Start
+## Use This Template
 
-### Prerequisites
-
-- Node.js 20+
-- pnpm 9+
-- AWS CLI configured (for deployment)
-
-### Local Development
+### Quick Start with Claude Code
 
 ```bash
+# Fork and clone the repo
+gh repo fork lexicone42/dndblog --clone
+cd dndblog
+
 # Install dependencies
 pnpm install
 
-# Start development server
-./scripts/dev.sh
-
-# Or manually:
-cd packages/site && pnpm dev
+# Start the dev server
+pnpm dev
 ```
 
-The site will be available at http://localhost:4321
+Then open Claude Code and ask:
 
-### Build
+> "Help me customize this campaign site for my own game. My campaign is set in [your setting] and features [your party]."
+
+Claude Code can help you:
+- Update the site branding and theme
+- Create new character sheets from your party
+- Add session recaps with automatic entity linking
+- Define locations, factions, and items
+- Deploy to your own domain
+
+### Content Structure
+
+Campaign content lives in `packages/site/src/content/campaign/`:
+
+```
+campaign/
+├── characters/     # Player characters and NPCs
+├── enemies/        # Monsters and antagonists
+├── locations/      # Places in your world
+├── factions/       # Organizations and groups
+├── items/          # Magic items and loot
+└── spells/         # Custom or notable spells
+```
+
+Each entity is a YAML file with frontmatter defining its properties. Session posts in `content/blog/` automatically link to entities mentioned in the text.
+
+### Content Pipeline Tools
 
 ```bash
-# Full build pipeline (7 steps)
-./scripts/build.sh
+# Validate all entity cross-references
+pnpm --filter content-pipeline validate
 
-# Individual builds
-cd packages/site && pnpm build        # Static site
-cd packages/infra && pnpm build       # CDK infrastructure
-cd packages/content-pipeline && pnpm build  # Content tools
+# Extract unlinked entity mentions from session posts
+pnpm --filter content-pipeline extract
+
+# Process content from external sources
+pnpm --filter content-pipeline ingest ./my-content
 ```
 
-The `build.sh` script performs:
-1. Install dependencies
-2. Build content-pipeline
-3. Build site package
-4. Build infrastructure
-5. Run security audit
-6. Run all tests
-7. Synthesize CDK templates
+## Tech Stack
 
-### Testing
+| Layer | Technology |
+|-------|------------|
+| Static Site | [Astro](https://astro.build) with content collections |
+| Styling | CSS with dark theme variables |
+| Infrastructure | AWS CDK (S3 + CloudFront + Route53) |
+| CI/CD | GitHub Actions with OIDC (no stored credentials) |
+| Search | Pagefind for client-side full-text search |
 
-```bash
-# Run all tests
-pnpm test
+### Deploy Your Own
 
-# Run tests with watch mode
-pnpm test:watch
-
-# Package-specific tests
-pnpm --filter site test              # Site components (74 tests)
-pnpm --filter content-pipeline test  # Content processing (61 tests)
-pnpm --filter infra test             # CDK constructs (26 tests)
-
-# E2E and smoke tests
-pnpm test:e2e                        # Full E2E with Playwright
-pnpm test:smoke                      # Quick deployment verification
-```
-
-**Test Coverage:**
-- **Site:** Character sheet components, utility functions, content validation
-- **Content-pipeline:** Markdown parsing, image processing, schema validation
-- **Infra:** CDK construct behavior, CloudFormation output verification
-
-### Deploy
-
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment instructions.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed AWS deployment instructions.
 
 ```bash
 # Deploy to AWS (requires credentials)
-./scripts/deploy.sh --domain chronicles.mawframe.ninja --zone mawframe.ninja
+./scripts/deploy.sh --domain your-chronicles.example.com --zone example.com
 ```
-
-## Project Structure
-
-```
-/
-├── packages/
-│   ├── site/              # Astro static site
-│   │   ├── src/
-│   │   │   ├── layouts/   # Page layouts
-│   │   │   ├── pages/     # Routes
-│   │   │   ├── components/# Reusable components
-│   │   │   ├── styles/    # Global CSS
-│   │   │   └── content/   # Markdown blog posts
-│   │   └── public/        # Static assets
-│   │
-│   ├── infra/             # AWS CDK infrastructure
-│   │   ├── bin/           # CDK app entry
-│   │   └── lib/           # Stacks and constructs
-│   │
-│   └── content-pipeline/  # Content processing CLI
-│       └── src/           # Pipeline tools
-│
-├── scripts/               # Build and deploy scripts
-├── docs/                  # Documentation
-└── .github/               # GitHub Actions workflows
-```
-
-## Content Management
-
-Blog posts are written in Markdown with YAML frontmatter:
-
-```markdown
----
-title: "My Blog Post"
-description: "A description of my post"
-pubDate: 2024-01-15
-tags: ["campaign", "adventure"]
-author: "Dungeon Master"
----
-
-Your content here...
-```
-
-### Frontmatter Schema
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `title` | string | Yes | Post title |
-| `description` | string | Yes | Short description for SEO |
-| `pubDate` | date | Yes | Publication date |
-| `updatedDate` | date | No | Last update date |
-| `heroImage` | string | No | Path to hero image |
-| `draft` | boolean | No | If true, excluded from production |
-| `tags` | string[] | No | Post categories |
-| `author` | string | No | Author name |
-
-### Content Pipeline
-
-Process content from external sources:
-
-```bash
-# Ingest and validate markdown files
-pnpm --filter content-pipeline ingest ./my-content
-
-# Process images for web
-pnpm --filter content-pipeline screenshots ./my-images
-
-# Full publish pipeline
-pnpm --filter content-pipeline publish ./my-content
-```
-
-## Security
-
-This project implements security best practices:
-
-- **No public S3 access** - CloudFront Origin Access Control (OAC)
-- **HTTPS everywhere** - HTTP redirects to HTTPS
-- **TLS 1.2+** - Modern TLS only
-- **Security headers** - HSTS, CSP, X-Frame-Options, etc.
-- **No secrets in code** - All configuration via environment variables
-- **OIDC authentication** - No long-lived AWS credentials in CI/CD
-- **Dependency auditing** - Automated security scanning
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) - System design and technical decisions
-- [Deployment](docs/DEPLOYMENT.md) - AWS deployment and CI/CD guide
-- [DM Notes API](docs/DM-NOTES-API.md) - Session notes API reference
+- [Architecture](docs/ARCHITECTURE.md) - How the site is built and deployed
+- [Deployment](docs/DEPLOYMENT.md) - AWS setup and CI/CD guide
 - [Character Sheet](docs/CHARACTER-SHEET.md) - Character sheet component system
-- [Phase 2 Design](docs/PHASE2-DESIGN.md) - Future features roadmap
 
 ## License
 
 Apache-2.0 - See [LICENSE](LICENSE) for details.
+
+---
+
+*Built by a party of adventurers who wanted to remember their story. May your campaigns be as memorable.*
