@@ -1,19 +1,16 @@
 ---
 title: "Welcome to the Adventure"
-description: "You've found these records. We don't know how. Read carefully—knowledge of the leylines carries weight."
+description: "Six adventurers. A sealed primordial. A cult waiting for centuries. This is their story."
 pubDate: 2026-01-13
-heroImage: "/assets/welcome-hero.jpg"
 draft: false
 tags: ["announcement", "campaign", "welcome"]
 author: "The Dungeon Master"
 visibility: "public"
 ---
 
-# You Found This
+# The Story So Far
 
-These are the recovered field notes of six individuals who investigated what they thought were simple bandit raids in the frontier town of Phandalin.
-
-They were wrong about everything.
+Six adventurers investigated what they thought were simple bandit raids in the frontier town of Phandalin. They were wrong about everything.
 
 ---
 
@@ -74,17 +71,20 @@ The Maw Frame still rises in the Astralglades. More anchors need protection. And
 
 ---
 
-## Navigation
+## Where to Go Next
 
-- **[The Sessions](/sessions)** — Chronological records. Some nights were victories. Some were barely survivals.
-- **[The Index](/reference)** — Names. Places. Things that hunt us. Cross-reference everything.
+**Start with the sessions.** Read them in order. Watch six strangers become a team. Watch the mystery unfold.
+
+- **[Session 1: The Bell of Shavras](/blog/session-01-the-bell-of-shavras)** — It starts with missing people and ends with a name that shouldn't exist.
+- **[All Sessions](/sessions)** — The full chronological record. Some nights were victories. Some were barely survivals.
+
+**Or explore the world.**
+
+- **[The Reference Index](/reference)** — Every character, location, faction, and item the party has encountered. Cross-referenced and searchable.
+- **[The Party](/campaign/characters/)** — Meet the six adventurers in detail.
 
 ---
 
 > *"If the pulse breaks, the world will bleed."*
 >
 > — inscription recovered from Dhakaani ruins, depth unknown
-
----
-
-*These records update as events unfold. Check back. Stay careful. The ley remembers what you forget.*

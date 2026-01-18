@@ -9,36 +9,20 @@ import BaseLayout from '@layouts/BaseLayout.astro';
       <p class="landing__subtitle">A chronicle of the Mawframe Campaign</p>
     </header>
 
-    <section class="landing__intro">
-      <p>
-        Six adventurers. A sealed primordial. A cult that has been waiting for centuries.
-      </p>
-      <p>
-        What started as an investigation into bandit raids in Phandalin led to the discovery of something
-        far older and far more dangerous than anyone expected. A resonance engine. A shattered leyline.
-        A name that shouldn't be spoken: <em>Aru'xat the Verdant Maw</em>.
-      </p>
-      <p>
-        These are the recovered records of their campaign — every session, every character,
-        every hard-won victory and narrow escape. Some parts are heroic. Some parts are ridiculous.
-        All of it happened.
-      </p>
-    </section>
-
     <nav class="landing__nav">
       <a href="/blog/welcome-to-the-adventure" class="nav-card nav-card--primary">
         <h2 class="nav-card__title">Enter the Chronicle</h2>
-        <p class="nav-card__description">Meet the party and begin the story</p>
+        <p class="nav-card__description">Six adventurers. A sealed primordial. A cult waiting for centuries. Start here to meet the party and learn what they're fighting.</p>
       </a>
 
       <a href="/sessions" class="nav-card">
-        <h2 class="nav-card__title">Sessions</h2>
-        <p class="nav-card__description">Ten sessions, one impossible threat</p>
+        <h2 class="nav-card__title">Session Records</h2>
+        <p class="nav-card__description">Ten sessions of investigation, combat, and narrow escapes. Read the full campaign from Phandalin to Sharn.</p>
       </a>
 
       <a href="/reference" class="nav-card">
-        <h2 class="nav-card__title">Reference</h2>
-        <p class="nav-card__description">Characters, locations, items, factions</p>
+        <h2 class="nav-card__title">World Reference</h2>
+        <p class="nav-card__description">Characters, locations, items, enemies, and factions. Everything the party has encountered, cross-referenced.</p>
       </a>
     </nav>
 
@@ -60,7 +44,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
   .landing__header {
     text-align: center;
-    margin-bottom: var(--space-xl);
+    margin-bottom: var(--space-2xl);
   }
 
   .landing__title {
@@ -79,42 +63,20 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     margin: 0;
   }
 
-  .landing__intro {
-    max-width: 640px;
-    text-align: center;
-    margin-bottom: var(--space-2xl);
-    color: var(--color-text-secondary);
-    line-height: 1.7;
-  }
-
-  .landing__intro p {
-    margin: 0 0 var(--space-md);
-  }
-
-  .landing__intro p:last-child {
-    margin-bottom: 0;
-  }
-
-  .landing__intro em {
-    color: var(--color-gold);
-    font-style: normal;
-    font-weight: 600;
-  }
-
   .landing__nav {
     display: flex;
     flex-direction: column;
-    gap: var(--space-md);
+    gap: var(--space-lg);
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
     margin-bottom: var(--space-2xl);
   }
 
-  @media (min-width: 800px) {
+  @media (min-width: 900px) {
     .landing__nav {
       flex-direction: row;
-      max-width: 800px;
-      gap: var(--space-lg);
+      max-width: 1000px;
+      gap: var(--space-xl);
     }
 
     .nav-card {
@@ -122,7 +84,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     }
 
     .nav-card--primary {
-      flex: 1.3;
+      flex: 1.2;
     }
   }
 
@@ -131,7 +93,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: var(--space-lg);
+    padding: var(--space-xl) var(--space-lg);
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
@@ -147,15 +109,15 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
   .nav-card:hover {
     border-color: var(--color-gold);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
   }
 
   .nav-card__title {
     font-family: var(--font-display);
-    font-size: var(--text-lg);
+    font-size: var(--text-xl);
     color: var(--color-text);
-    margin: 0 0 var(--space-xs);
+    margin: 0 0 var(--space-sm);
     transition: color 0.2s;
   }
 
@@ -164,16 +126,17 @@ import BaseLayout from '@layouts/BaseLayout.astro';
   }
 
   .nav-card__description {
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
+    font-size: var(--text-base);
+    color: var(--color-text-secondary);
     margin: 0;
+    line-height: 1.5;
   }
 
   .landing__footer {
     text-align: center;
-    padding-top: var(--space-lg);
+    padding-top: var(--space-xl);
     border-top: 1px solid var(--color-border);
-    max-width: 400px;
+    max-width: 500px;
   }
 
   .footer-tagline {
@@ -187,10 +150,6 @@ import BaseLayout from '@layouts/BaseLayout.astro';
   @media (max-width: 640px) {
     .landing {
       padding: var(--space-xl);
-    }
-
-    .landing__intro {
-      font-size: var(--text-sm);
     }
   }
 </style>
