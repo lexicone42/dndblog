@@ -41,8 +41,8 @@ if (githubRepo) {
  * Deploy the main site infrastructure:
  *
  *   cdk deploy StaticSiteStack \
- *     --context domainName=chronicles.mawframe.ninja \
- *     --context hostedZoneDomain=mawframe.ninja
+ *     --context domainName=chronicles.example.com \
+ *     --context hostedZoneDomain=example.com
  *
  * Prerequisites:
  * - AWS account must be CDK bootstrapped: cdk bootstrap

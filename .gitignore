@@ -43,3 +43,7 @@ test-results/
 
 # Serena
 .serena/
+
+# Local-only files (not for public template)
+raw_notes.txt
+packages/infra/static-site-outputs.json

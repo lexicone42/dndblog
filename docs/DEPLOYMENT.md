@@ -74,8 +74,8 @@ Create a `production` environment with:
 ./scripts/deploy.sh --help
 
 Options:
-  --domain <domain>         Domain name (e.g., chronicles.mawframe.ninja)
-  --zone <zone>             Hosted zone domain (e.g., mawframe.ninja)
+  --domain <domain>         Domain name (e.g., chronicles.example.com)
+  --zone <zone>             Hosted zone domain (e.g., example.com)
   --skip-build              Skip the build step
   --require-approval        Require manual approval for CDK changes
 ```

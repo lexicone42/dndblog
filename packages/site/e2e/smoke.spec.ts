@@ -6,7 +6,7 @@
  * - Pagefind search initializes (no CSP blocking WASM)
  * - Security headers are properly set
  *
- * Run with: SITE_URL=https://chronicles.mawframe.ninja pnpm test:smoke
+ * Run with: SITE_URL=https://your-site.example.com pnpm test:smoke
  * Or in CI: The SITE_URL is set from deployment variables
  */
 

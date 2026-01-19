@@ -34,8 +34,8 @@ export default defineConfig({
       testMatch: /smoke\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
-        // Base URL from environment or default to production
-        baseURL: process.env.SITE_URL || 'https://chronicles.mawframe.ninja',
+        // Base URL from environment (required for smoke tests)
+        baseURL: process.env.SITE_URL,
       },
     },
     {

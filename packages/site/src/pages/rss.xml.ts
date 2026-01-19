@@ -19,7 +19,8 @@ export async function GET(context: APIContext) {
   return rss({
     title: "Rudiger's Evocation of Events",
     description: 'Chronicles of our D&D 5e campaign - session recaps, character stories, and adventure logs.',
-    site: context.site ?? 'https://chronicles.mawframe.ninja',
+    // Site URL comes from astro.config.mjs; fallback ensures RSS works in dev
+    site: context.site ?? 'https://example.com',
     items: sortedPosts.map((post: BlogEntry) => ({
       title: post.data.title,
       pubDate: post.data.pubDate,
