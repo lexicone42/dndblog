@@ -20,13 +20,13 @@
   },
   "dependencies": {
     "@dndblog/content-pipeline": "workspace:^",
-    "aws-cdk-lib": "^2.175.0",
-    "constructs": "^10.4.2",
+    "aws-cdk-lib": "^2.235.0",
+    "constructs": "^10.4.5",
     "zod": "^4.3.5"
   },
   "devDependencies": {
-    "@types/node": "^25.0.8",
-    "aws-cdk": "^2.175.0",
+    "@types/node": "^25.0.9",
+    "aws-cdk": "^2.1101.0",
     "esbuild": "^0.27.2",
     "glob": "^13.0.0",
     "tsx": "^4.19.0",
