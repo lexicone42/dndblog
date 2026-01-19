@@ -24,15 +24,15 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.0",
-    "@astrojs/rss": "^4.0.14",
-    "astro": "^5.0.0",
+    "@astrojs/rss": "^4.0.15",
+    "astro": "^5.16.11",
     "easymde": "^2.20.0",
     "marked": "^17.0.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.0",
     "@vitest/coverage-v8": "^4.0.17",
-    "happy-dom": "^20.1.0",
+    "happy-dom": "^20.3.3",
     "pagefind": "^1.4.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
