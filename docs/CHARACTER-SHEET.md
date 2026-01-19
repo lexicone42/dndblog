@@ -1,8 +1,10 @@
 # Character Sheet System
 
-The character sheet system renders interactive, accessible D&D 5e 2024 character data as reusable Astro components. Designed for both desktop and mobile viewing with PWA offline support.
+The character sheet system renders read-only, accessible D&D 5e 2024 character data as reusable Astro components. Designed for both desktop and mobile viewing with PWA offline support.
 
 ## Overview
+
+Character sheets are **static displays** of character data, built at compile time from YAML frontmatter. They include helpful tooltips explaining D&D mechanics but are not editable through the site.
 
 Character sheets display:
 - Ability scores with modifiers and saving throws
@@ -269,38 +271,32 @@ const csheetSchema = z.object({
 
 Build fails if character frontmatter doesn't match schema.
 
-## Session Tracker Integration
+## Interactive Tooltips
 
-The Session Tracker (`/party/session/{slug}`) provides real-time character state management during gameplay sessions.
+Character sheets include informational tooltips to help readers understand D&D 5e mechanics:
 
-### Features
-- **HP Management**: Track current HP, temp HP with +/- buttons
-- **Spell Slot Tracking**: Click to toggle slots between available/expended
-- **Condition Manager**: Add/remove active conditions with duration
-- **Rest Buttons**: Short/Long rest to restore resources
+### Ability Score Tooltips
+Hovering over ability scores shows:
+- The modifier calculation (`(score - 10) / 2`)
+- What the ability affects in gameplay
+- Related saving throws and skills
 
-### Architecture
-```
-Player (authenticated) → Session Tracker UI
-                              ↓
-                         Save Draft
-                              ↓
-                         S3 (player drafts)
-                              ↓
-                         DM Approval
-                              ↓
-                         GitHub PR → Site Rebuild
-```
+### Spell Slot Tooltips
+Spell slot indicators show:
+- Available vs. used slots at each level
+- How slots recover (short rest for some classes, long rest for others)
 
-### Data Flow
-1. Player authenticates with character-specific token
-2. Loads existing draft or character's current stats
-3. Makes changes during session
-4. Saves draft to S3 staging
-5. DM reviews and approves changes
-6. Changes merged to site via GitHub PR
+### Condition Tooltips
+Active condition badges display:
+- Full condition description from 5e 2024 rules
+- Duration remaining
+- Mechanical effects (disadvantage, speed reduction, etc.)
 
-See [DM-NOTES-API.md](./DM-NOTES-API.md#session-tracker-api-per-character) for API documentation.
+### Equipment Tooltips
+Equipment items show:
+- Rarity and attunement status
+- Weapon mastery properties (5e 2024)
+- Link to full item page if available
 
 ---
 
@@ -309,13 +305,8 @@ See [DM-NOTES-API.md](./DM-NOTES-API.md#session-tracker-api-per-character) for A
 ### Planned
 - [ ] Print stylesheet for paper character sheets
 - [ ] PDF export functionality
-- [x] ~~Interactive HP tracker~~ → Implemented via Session Tracker
-- [x] ~~Spell slot toggle~~ → Implemented via Session Tracker
-- [x] ~~Condition tracking~~ → Implemented via Session Tracker
-- [x] ~~Rest buttons~~ → Implemented via Session Tracker
 
 ### Considered
 - [ ] Character comparison view
 - [ ] Level-up wizard
 - [ ] Integration with D&D Beyond import
-- [ ] Real-time WebSocket sync during sessions
