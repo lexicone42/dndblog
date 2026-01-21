@@ -164,20 +164,21 @@ function getKeyFeatures(char: typeof activeParty[0]) {
 }
 
 // Define combat combos
+// Note: Kei retired in Session 11 to found Eaglesnout Academy - combos updated for current party
 const combos = [
   {
     name: 'The Prone Chain',
     rating: 5,
-    participants: ['Kei Eaglesnout', 'Accoa Krigsdottir', 'Stol', 'Rudiger'],
-    setup: "Kei uses Battleaxe (Topple) to knock an enemy Prone",
-    payoff: "All melee attackers (Kei, Accoa, Stol) get Advantage on their attacks against the Prone target. Even Rudiger's Quarterstaff can Topple!",
+    participants: ['Malum', 'Accoa Krigsdottir', 'Stol'],
+    setup: "Malum or another frontliner uses a Topple weapon to knock an enemy Prone",
+    payoff: "All melee attackers get Advantage on their attacks against the Prone target. Rudiger's Quarterstaff can also Topple!",
     tip: "Best against single tough enemies. Prone targets have disadvantage on attacks too.",
   },
   {
     name: 'Sculpt & Strike',
     rating: 5,
-    participants: ['Rudiger', 'Kei Eaglesnout', 'Accoa Krigsdottir', 'Stol'],
-    setup: "Frontline (Kei, Accoa, Stol) engages enemies in melee",
+    participants: ['Rudiger', 'Malum', 'Accoa Krigsdottir', 'Stol'],
+    setup: "Frontline (Malum, Accoa, Stol) engages enemies in melee",
     payoff: "Rudiger casts Fireball centered on the melee. Sculpt Spells lets him choose allies who automatically succeed their saves and take ZERO damage. Enemies take full 8d6 fire.",
     tip: "Don't be afraid to Fireball your friends - Rudiger has their backs!",
   },
@@ -199,19 +200,11 @@ const combos = [
   },
   {
     name: 'Slow & Lock',
-    rating: 3,
-    participants: ['Skid Demon', 'Kei Eaglesnout', 'Accoa Krigsdottir'],
-    setup: "Skid opens combat with his Dryad's Bow (Slow mastery)",
-    payoff: "Target loses 10 ft of movement. This can prevent enemies from reaching Rudiger in the backline, or stop a fleeing enemy from escaping.",
-    tip: "Prioritize Slow on enemies trying to reach your casters.",
-  },
-  {
-    name: 'Vex Advantage Cycling',
     rating: 4,
-    participants: ['Kei Eaglesnout'],
-    setup: "Kei attacks with his +1 Hand Axe (Vex mastery)",
-    payoff: "Hit grants Advantage on Kei's next attack. Kei then attacks with +1 Shortsword (also Vex). This chains: each hit sets up the next with Advantage. With Action Surge, Kei can make 4 attacks, all with cycling advantage!",
-    tip: "Action Surge turns are devastating. Save it for when you really need consistent hits.",
+    participants: ['Skid Demon', 'Accoa Krigsdottir', 'Malum'],
+    setup: "Skid opens combat with his Dryad's Bow (Slow mastery)",
+    payoff: "Target loses 10 ft of movement. This can prevent enemies from reaching Rudiger in the backline, or stop a fleeing enemy from escaping. Frontline holds the line.",
+    tip: "Prioritize Slow on enemies trying to reach your casters.",
   },
   {
     name: 'Double Divine vs Undead',
@@ -220,6 +213,14 @@ const combos = [
     setup: "Party encounters undead enemies",
     payoff: "Stol uses Turn Undead + Sear Undead (Channel Divinity) to deal radiant damage and potentially destroy weak undead. Accoa's Divine Smites deal extra d8 against undead. Stol's Mace of Disruption deals 2d6 extra to undead.",
     tip: "Against undead, lead with Stol's Channel Divinity to thin the herd, then Accoa smites survivors.",
+  },
+  {
+    name: 'Tartan Strength',
+    rating: 3,
+    participants: ['All Party Members'],
+    setup: "The party wears the Eaglesnout Tartan (+1 STR each)",
+    payoff: "The tartan Kei left behind grants +1 Strength to each wearer, improving melee attacks and Athletics checks across the board. His strength lives on.",
+    tip: "Even casters benefit from the CON-equivalent carrying capacity and Athletics checks.",
   },
 ];
 
@@ -466,8 +467,8 @@ const gaps = [
           <h3 class="reference-title">Optimal Turn Order</h3>
           <ol class="turn-order">
             <li><strong>Skid</strong> - Scout, apply Slow to threats</li>
-            <li><strong>Kei</strong> - Topple enemies Prone</li>
-            <li><strong>Accoa/Stol</strong> - Advantage attacks on Prone</li>
+            <li><strong>Malum</strong> - Engage frontline</li>
+            <li><strong>Accoa/Stol</strong> - Divine strikes, Sap defense</li>
             <li><strong>Rudiger</strong> - Fireball with Sculpt Spells</li>
           </ol>
         </div>
@@ -475,11 +476,11 @@ const gaps = [
         <div class="reference-card">
           <h3 class="reference-title">Damage Types Covered</h3>
           <ul class="damage-types">
-            <li><span class="damage-icon">🔥</span> Fire (Rudiger)</li>
-            <li><span class="damage-icon">⚡</span> Lightning (Rudiger)</li>
-            <li><span class="damage-icon">✨</span> Radiant (Stol, Accoa)</li>
-            <li><span class="damage-icon">🗡️</span> Slashing/Piercing (Kei, Skid)</li>
-            <li><span class="damage-icon">💀</span> Necrotic Resist (Accoa)</li>
+            <li>Fire (Rudiger)</li>
+            <li>Lightning (Rudiger)</li>
+            <li>Radiant (Stol, Accoa)</li>
+            <li>Slashing/Piercing (Malum, Skid)</li>
+            <li>Necrotic Resist (Accoa)</li>
           </ul>
         </div>
 
@@ -489,9 +490,8 @@ const gaps = [
             <li><strong>Spell Slots:</strong> Rudiger, Stol, Skid, Accoa</li>
             <li><strong>Channel Divinity:</strong> Stol (3), Accoa (1)</li>
             <li><strong>Lay on Hands:</strong> Accoa (30 HP)</li>
-            <li><strong>Action Surge:</strong> Kei (1/short rest)</li>
-            <li><strong>Second Wind:</strong> Kei (1d10+6 HP)</li>
             <li><strong>Dreadful Strike:</strong> Skid (3/long rest)</li>
+            <li><strong>Eaglesnout Tartan:</strong> +1 STR (all members)</li>
           </ul>
         </div>
       </div>

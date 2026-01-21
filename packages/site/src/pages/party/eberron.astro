@@ -10,11 +10,11 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
 // World quick facts
 const worldFacts = [
-  { aspect: 'Setting', detail: 'High magic, wide magic - magic is common and integrated into daily life', icon: '✨' },
-  { aspect: 'Technology', detail: 'Magitech (lightning rail, airships, warforged, everbright lanterns)', icon: '⚡' },
-  { aspect: 'Tone', detail: 'Noir, pulp adventure, political intrigue, moral complexity', icon: '🎭' },
-  { aspect: 'Era', detail: 'Post-war (Treaty of Thronehold signed 2 years ago)', icon: '📅' },
-  { aspect: 'Key Feature', detail: 'Dragonmarked Houses control commerce and industry', icon: '🏛️' },
+  { aspect: 'Setting', detail: 'High magic, wide magic - magic is common and integrated into daily life' },
+  { aspect: 'Technology', detail: 'Magitech (lightning rail, airships, warforged, everbright lanterns)' },
+  { aspect: 'Tone', detail: 'Noir, pulp adventure, political intrigue, moral complexity' },
+  { aspect: 'Era', detail: 'Post-war (Treaty of Thronehold signed 2 years ago)' },
+  { aspect: 'Key Feature', detail: 'Dragonmarked Houses control commerce and industry' },
 ];
 
 // The Five Nations
@@ -23,36 +23,31 @@ const fiveNations = [
     name: 'Breland',
     status: 'visited',
     description: 'Industrial heart of Khorvaire, known for diversity and progress',
-    highlight: 'Home to Sharn, City of Towers - our primary location',
-    icon: '🏭',
+    highlight: 'Home to Sharn, City of Towers - our base of operations',
   },
   {
     name: 'Aundair',
     status: 'mentioned',
     description: 'Arcane education and magical research',
     highlight: 'Famous for the Floating Towers of Arcanix',
-    icon: '📚',
   },
   {
     name: 'Karrnath',
     status: 'mentioned',
     description: 'Martial nation with a dark history',
     highlight: 'Employed undead soldiers during the Last War',
-    icon: '💀',
   },
   {
     name: 'Thrane',
     status: 'mentioned',
     description: 'Theocratic nation devoted to the Silver Flame',
     highlight: 'Religious zealotry meets political power',
-    icon: '🔥',
   },
   {
     name: 'Cyre (The Mournland)',
     status: 'destroyed',
     description: 'Once the jewel of Galifar, now a dead gray wasteland',
     highlight: 'Destroyed by the Day of Mourning - cause unknown',
-    icon: '☠️',
   },
 ];
 
@@ -77,14 +72,21 @@ const sharnDistricts = [
     level: 'Hidden',
     status: 'visited',
     description: 'Secret Emerald Enclave grove within a tower',
-    events: ['Met Elder Elarion Mossbark', 'Received the Heart of the Wild', 'Drank from Thalen\'s Well (+5 max HP)'],
+    events: ['Met Elder Elarion Mossbark and Rook', 'Received the Heart of the Wild', 'Drank from Thalen\'s Well (+5 max HP)', 'Learned of Kei\'s departure to found Eaglesnout Academy'],
   },
   {
-    name: 'Dava Gate (Sky Market)',
+    name: 'Sky Market',
     level: 'Upper',
     status: 'visited',
     description: 'Floating marketplace with rope bridges and arcane lifts',
     events: ['Explored shops', 'Met Lux at The Floating Trinket', 'Used Grand Lift to Skyway'],
+  },
+  {
+    name: 'Dava Gate',
+    level: 'Upper',
+    status: 'visited',
+    description: 'Primary airship terminal for Sharn',
+    events: ['Departed for Xen\'Drik aboard the Stormlight', 'Reunited with Captain Tallow'],
   },
   {
     name: 'Skyway',
@@ -109,7 +111,41 @@ const sharnLocations = [
   { name: 'Cannith Hall (Suite 47)', district: 'Skyway', description: 'Arvell d\'Cannith\'s office in House Cannith facility' },
   { name: 'Thalen\'s Well', district: 'Verdant Hollow', description: 'Sacred pool connected to leylines, grants vitality' },
   { name: 'Heart Stone Chamber', district: 'The Depths', description: 'Ancient ley anchor we stabilized' },
+  { name: 'Terminus 3', district: 'Dava Gate', description: 'Charter berth where the Stormlight was docked' },
 ];
+
+// Xen'Drik locations (Session 11)
+const xendrikLocations = [
+  {
+    name: 'Stormreach',
+    type: 'City',
+    status: 'visited',
+    description: 'Frontier port city on the northern coast of Xen\'Drik',
+    events: ['Arrived by airship', 'Questioned dockworkers about Circle expedition', 'Picked up their trail heading inland'],
+  },
+  {
+    name: 'The Jungle Interior',
+    type: 'Wilderness',
+    status: 'visited',
+    description: 'Dense jungle filled with ancient ruins and living leylines',
+    events: ['Tracked the Circle expedition', 'Fell into a sinkhole', 'Ambushed by Circle rear guard', 'Encountered Xen\'Drik Drow'],
+  },
+];
+
+// The Stormlight
+const stormlight = {
+  name: 'The Stormlight',
+  type: 'Airship',
+  captain: 'Captain Tallow',
+  description: 'Storm-grey airship with copper trim, powered by a bound air elemental',
+  features: ['Wind turbines for propulsion', 'Defensive cannons', 'Bow-mounted heavy crossbow', 'Elemental binding sphere'],
+  events: [
+    'Departed Sharn for Xen\'Drik',
+    'Ambushed by Slanted Circle vessel mid-flight',
+    'Won the sky battle, captured enemy ship',
+    'Made landfall at Stormreach',
+  ],
+};
 
 // Dragonmarked houses
 const houses = [
@@ -119,7 +155,20 @@ const houses = [
     role: 'Manufacturing, artifice, creation',
     encountered: true,
     details: 'Developed the ley regulator technology. Key NPC: Arvell d\'Cannith. Symbol: Gorgon\'s head.',
-    icon: '⚙️',
+  },
+  {
+    name: 'House Lyrandar',
+    mark: 'Mark of Storm',
+    role: 'Airship and sea transport',
+    encountered: true,
+    details: 'Half-elf house controlling airship travel. The Stormlight uses their elemental binding contracts.',
+  },
+  {
+    name: 'House Orien',
+    mark: 'Mark of Passage',
+    role: 'Land transportation and shipping',
+    encountered: true,
+    details: 'Operates the Lightning Rail network. We traveled to Sharn on their trains.',
   },
   {
     name: 'House Jorasco',
@@ -127,7 +176,6 @@ const houses = [
     role: 'Healing services and medicine',
     encountered: false,
     details: 'Halfling house that runs hospitals and healing services across Khorvaire.',
-    icon: '💚',
   },
   {
     name: 'House Ghallanda',
@@ -135,15 +183,6 @@ const houses = [
     role: 'Inns, taverns, food service',
     encountered: false,
     details: 'Halfling house known for exceptional hospitality and protection of guests.',
-    icon: '🏨',
-  },
-  {
-    name: 'House Orien',
-    mark: 'Mark of Passage',
-    role: 'Transportation and shipping',
-    encountered: true,
-    details: 'Operates the Lightning Rail. We traveled on their trains.',
-    icon: '🚂',
   },
   {
     name: 'House Sivis',
@@ -151,7 +190,6 @@ const houses = [
     role: 'Communication and documentation',
     encountered: false,
     details: 'Gnome house that handles sending stones, message services, and notary work.',
-    icon: '✍️',
   },
 ];
 
@@ -160,44 +198,44 @@ const concepts = [
   {
     name: 'Leylines & Ley Network',
     description: 'Rivers of magical energy flowing beneath the world',
-    encountered: 'Stabilized a Dhakaani anchor, received blessing from Thalen\'s Well',
+    encountered: 'Stabilized a Dhakaani anchor, received blessing from Thalen\'s Well, felt the jungle pulse in Xen\'Drik',
     threat: 'The Ley Maw - a growing rift that threatens the network',
-    icon: '🌐',
   },
   {
     name: 'Dragonshards',
     description: 'Crystallized magic used in magical devices and technology',
     encountered: 'Recovered shards from ruins, intercepted a shipment',
     threat: 'Slanted Circle was stealing dragonshard shipments',
-    icon: '💎',
   },
   {
-    name: 'Everbright Lanterns',
-    description: 'Magical lighting that illuminates Sharn',
-    encountered: 'Used them to signal Emerald Enclave (turned green)',
-    threat: null,
-    icon: '💡',
+    name: 'Airship Travel',
+    description: 'Flying vessels powered by bound elementals, faster than lightning rail for long distances',
+    encountered: 'Traveled to Xen\'Drik aboard the Stormlight, survived a sky battle with Circle forces',
+    threat: 'Circle operatives ambushed us mid-flight',
   },
   {
     name: 'The Lightning Rail',
     description: 'Magical train system connecting cities across Khorvaire',
     encountered: 'Battle with Slanted Circle on a train',
     threat: 'Slanted Circle attacked our train',
-    icon: '⚡',
+  },
+  {
+    name: 'Everbright Lanterns',
+    description: 'Magical lighting that illuminates Sharn',
+    encountered: 'Used them to signal Emerald Enclave (turned green)',
+    threat: null,
   },
   {
     name: 'Changelings',
     description: 'Shapeshifting humanoids who can assume any humanoid form',
     encountered: 'Veyra was a changeling (traitor, now dead)',
     threat: 'Impossible to trust appearances',
-    icon: '🎭',
   },
   {
     name: 'Warforged',
     description: 'Living constructs created by House Cannith for the Last War',
     encountered: 'Mentioned in Cannith history',
     threat: null,
-    icon: '🤖',
   },
 ];
 
@@ -208,39 +246,43 @@ const history = [
     era: 'Thousands of years ago',
     description: 'Ancient goblinoid civilization that ruled Khorvaire',
     relevance: 'Built the ruins beneath Sharn, including the Heart Stone we stabilized. General Varkuun was their last warlord - we defeated his undead form.',
-    icon: '👹',
+  },
+  {
+    name: 'The Giants of Xen\'Drik',
+    era: 'Tens of thousands of years ago',
+    description: 'Ancient civilization of giants that once ruled the southern continent',
+    relevance: 'Their ruins dot the jungles of Xen\'Drik. We saw massive stone structures looming above the canopy - too large for human hands.',
   },
   {
     name: 'Thalen',
     era: 'Centuries ago',
     description: 'Ancient druid who bound himself to the leylines beneath Sharn',
     relevance: 'His essence merged with the water table, creating Thalen\'s Well. We drank from it and gained +5 max HP.',
-    icon: '🌿',
   },
   {
     name: 'The Day of Mourning',
     era: '2 years ago (994 YK)',
     description: 'Catastrophe that destroyed the nation of Cyre in a single day',
     relevance: 'Cause unknown. Created the Mournland, a dead gray wasteland. Could it happen again?',
-    icon: '💥',
   },
   {
     name: 'The Last War',
     era: '102 years (894-996 YK)',
     description: 'Century-long civil war between the Five Nations',
     relevance: 'Ended with Treaty of Thronehold. Peace is fragile. Political tensions remain.',
-    icon: '⚔️',
   },
 ];
 
 // Campaign connections - NPCs
 const npcs = [
+  { name: 'Rook', role: 'Emerald Enclave handler', connection: 'Arranges missions and intelligence, delivered Kei\'s farewell letter' },
+  { name: 'Captain Tallow', role: 'Airship captain', connection: 'Commands the Stormlight, transported us to Xen\'Drik' },
   { name: 'Arvell d\'Cannith', role: 'House Cannith artificer', connection: 'Leading the regulator project, attacked by Slanted Circle' },
   { name: 'Lux', role: 'Halfling shopkeeper', connection: 'Runs The Floating Trinket, secret Emerald Enclave agent' },
   { name: 'Elder Elarion Mossbark', role: 'Emerald Enclave leader', connection: 'Gave us the Heart of the Wild' },
   { name: 'Master Molrik', role: 'Dwarven clan leader', connection: 'Allied with us in Sharn' },
-  { name: 'Captain Tallow', role: 'Druid ship captain', connection: 'Brought us to Sharn' },
   { name: 'Alkanar', role: 'Dragonborn historian', connection: 'Provided information about Dhakaani ruins' },
+  { name: 'Xen\'Drik Drow Leader', role: 'Drow scout/priestess', connection: 'Intercepted us in the jungle, potential ally against the Circle' },
 ];
 
 // Ongoing threats
@@ -249,22 +291,25 @@ const threats = [
     name: 'The Slanted Circle',
     status: 'active',
     description: 'Criminal organization stealing dragonshards and magical artifacts',
-    lastEncounter: 'Attacked Cannith Hall, stole regulator plans',
-    icon: '⭕',
+    lastEncounter: 'Operating in Xen\'Drik, ambushed us by airship and left rear guard in the jungle',
   },
   {
     name: 'The Ley Maw',
     status: 'growing',
-    description: 'A mysterious rift in the ley network beneath Sharn',
-    lastEncounter: 'Mentioned by the Emerald Enclave - "The Maw isn\'t a threat—it\'s a door."',
-    icon: '🕳️',
+    description: 'A mysterious rift in the ley network - may be connected to Xen\'Drik\'s leyline nexus',
+    lastEncounter: '"The Maw isn\'t a threat—it\'s a door." The Circle is trying to reach something through it.',
   },
   {
     name: 'Circle Mage',
     status: 'escaped',
     description: 'Powerful spellcaster working with the Slanted Circle',
-    lastEncounter: 'Escaped during the Cannith Hall attack',
-    icon: '🧙',
+    lastEncounter: 'Leading the Xen\'Drik expedition with stolen regulator plans',
+  },
+  {
+    name: 'Xen\'Drik Expedition',
+    status: 'active',
+    description: '6-8 Circle operatives with pack animals and crates, heading to an ancient ruin',
+    lastEncounter: 'One hour ahead of us in the jungle, we have their partially burned map',
   },
 ];
 ---
@@ -288,10 +333,7 @@ const threats = [
 
     <!-- World at a Glance -->
     <section class="section section--highlight">
-      <h2 class="section-title">
-        <span class="section-icon">🌍</span>
-        The World at a Glance
-      </h2>
+      <h2 class="section-title">The World at a Glance</h2>
       <p class="section-intro">
         Eberron is a world of swashbuckling adventure and noir intrigue, where magic fuels technology and the scars of war are still fresh.
       </p>
@@ -299,7 +341,6 @@ const threats = [
       <div class="facts-grid">
         {worldFacts.map((fact) => (
           <div class="fact-card">
-            <span class="fact-icon">{fact.icon}</span>
             <div class="fact-content">
               <span class="fact-aspect">{fact.aspect}</span>
               <span class="fact-detail">{fact.detail}</span>
@@ -311,13 +352,10 @@ const threats = [
 
     <!-- Khorvaire -->
     <section class="section">
-      <h2 class="section-title">
-        <span class="section-icon">🏰</span>
-        Khorvaire
-      </h2>
+      <h2 class="section-title">Khorvaire</h2>
       <p class="section-intro">
         The primary continent of Eberron, home to the Five Nations and the dragonmarked houses.
-        We're currently in <strong>Breland</strong>, in the city of <strong>Sharn</strong>.
+        Our journey began in <strong>Sharn</strong>, the City of Towers in <strong>Breland</strong>.
       </p>
 
       <h3 class="subsection-title">The Five Nations</h3>
@@ -327,10 +365,9 @@ const threats = [
         {fiveNations.map((nation) => (
           <div class={`nation-card nation-card--${nation.status}`}>
             <div class="nation-header">
-              <span class="nation-icon">{nation.icon}</span>
               <h4 class="nation-name">{nation.name}</h4>
               <span class={`status-badge status-badge--${nation.status}`}>
-                {nation.status === 'visited' ? '✓ Visited' : nation.status === 'destroyed' ? '💀 Destroyed' : 'Mentioned'}
+                {nation.status === 'visited' ? 'Visited' : nation.status === 'destroyed' ? 'Destroyed' : 'Mentioned'}
               </span>
             </div>
             <p class="nation-description">{nation.description}</p>
@@ -342,13 +379,10 @@ const threats = [
 
     <!-- Sharn -->
     <section class="section">
-      <h2 class="section-title">
-        <span class="section-icon">🏙️</span>
-        Sharn, City of Towers
-      </h2>
+      <h2 class="section-title">Sharn, City of Towers</h2>
       <p class="section-intro">
         A massive vertical city built on five plateaus, with towers reaching into the sky.
-        Sharn is where our adventure is centered.
+        Sharn served as our base of operations for the first arc of the campaign.
       </p>
 
       <div class="sharn-structure">
@@ -410,12 +444,64 @@ const threats = [
       </div>
     </section>
 
+    <!-- Xen'Drik -->
+    <section class="section section--highlight">
+      <h2 class="section-title">Xen'Drik — Current Location</h2>
+      <p class="section-intro">
+        A wild continent south of Khorvaire, home to ancient giant ruins, dense jungles, and the mysterious drow.
+        We arrived in Session 11 in pursuit of the Slanted Circle.
+      </p>
+
+      <h3 class="subsection-title">The Stormlight</h3>
+      <div class="stormlight-card">
+        <div class="stormlight-header">
+          <h4 class="stormlight-name">{stormlight.name}</h4>
+          <span class="stormlight-captain">Captain: {stormlight.captain}</span>
+        </div>
+        <p class="stormlight-description">{stormlight.description}</p>
+        <div class="stormlight-features">
+          <span class="features-label">Features:</span>
+          <ul class="features-list">
+            {stormlight.features.map((feature) => (
+              <li>{feature}</li>
+            ))}
+          </ul>
+        </div>
+        <div class="stormlight-events">
+          <span class="events-label">Journey events:</span>
+          <ul class="events-list">
+            {stormlight.events.map((event) => (
+              <li>{event}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <h3 class="subsection-title">Locations Visited</h3>
+      <div class="xendrik-locations">
+        {xendrikLocations.map((loc) => (
+          <div class="xendrik-location-card">
+            <div class="xendrik-location-header">
+              <h4 class="xendrik-location-name">{loc.name}</h4>
+              <span class="xendrik-location-type">{loc.type}</span>
+            </div>
+            <p class="xendrik-location-description">{loc.description}</p>
+            <div class="xendrik-location-events">
+              <span class="events-label">What happened here:</span>
+              <ul class="events-list">
+                {loc.events.map((event) => (
+                  <li>{event}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
     <!-- Dragonmarked Houses -->
     <section class="section">
-      <h2 class="section-title">
-        <span class="section-icon">🏛️</span>
-        The Dragonmarked Houses
-      </h2>
+      <h2 class="section-title">The Dragonmarked Houses</h2>
       <p class="section-intro">
         Thirteen powerful houses bearing hereditary magical marks.
         They control much of Khorvaire's commerce and industry.
@@ -425,13 +511,12 @@ const threats = [
         {houses.map((house) => (
           <div class={`house-card ${house.encountered ? 'house-card--encountered' : ''}`}>
             <div class="house-header">
-              <span class="house-icon">{house.icon}</span>
               <div class="house-titles">
                 <h4 class="house-name">{house.name}</h4>
                 <span class="house-mark">{house.mark}</span>
               </div>
               {house.encountered && (
-                <span class="encountered-badge">✓ Encountered</span>
+                <span class="encountered-badge">Encountered</span>
               )}
             </div>
             <p class="house-role">{house.role}</p>
@@ -443,10 +528,7 @@ const threats = [
 
     <!-- Eberron Concepts -->
     <section class="section">
-      <h2 class="section-title">
-        <span class="section-icon">⚡</span>
-        Eberron Concepts
-      </h2>
+      <h2 class="section-title">Eberron Concepts</h2>
       <p class="section-intro">
         Key magical and technological concepts that define the world of Eberron.
       </p>
@@ -455,7 +537,6 @@ const threats = [
         {concepts.map((concept) => (
           <div class="concept-card">
             <div class="concept-header">
-              <span class="concept-icon">{concept.icon}</span>
               <h4 class="concept-name">{concept.name}</h4>
             </div>
             <p class="concept-description">{concept.description}</p>
@@ -465,7 +546,7 @@ const threats = [
             </div>
             {concept.threat && (
               <div class="concept-threat">
-                <span class="threat-icon">⚠️</span>
+                <span class="threat-label">Threat:</span>
                 <span class="threat-text">{concept.threat}</span>
               </div>
             )}
@@ -476,10 +557,7 @@ const threats = [
 
     <!-- Ancient History -->
     <section class="section">
-      <h2 class="section-title">
-        <span class="section-icon">📜</span>
-        Ancient History
-      </h2>
+      <h2 class="section-title">Ancient History</h2>
       <p class="section-intro">
         The past shapes the present. These historical events are relevant to our campaign.
       </p>
@@ -488,7 +566,6 @@ const threats = [
         {history.map((event) => (
           <div class="history-card">
             <div class="history-header">
-              <span class="history-icon">{event.icon}</span>
               <div class="history-titles">
                 <h4 class="history-name">{event.name}</h4>
                 <span class="history-era">{event.era}</span>
@@ -506,10 +583,7 @@ const threats = [
 
     <!-- Campaign Connections -->
     <section class="section">
-      <h2 class="section-title">
-        <span class="section-icon">🎭</span>
-        Campaign Connections
-      </h2>
+      <h2 class="section-title">Campaign Connections</h2>
       <p class="section-intro">
         What we've encountered in our adventure so far.
       </p>
@@ -534,7 +608,6 @@ const threats = [
             {threats.map((threat) => (
               <div class={`threat-card threat-card--${threat.status}`}>
                 <div class="threat-header">
-                  <span class="threat-card-icon">{threat.icon}</span>
                   <h4 class="threat-name">{threat.name}</h4>
                   <span class={`threat-status threat-status--${threat.status}`}>
                     {threat.status}
@@ -554,24 +627,27 @@ const threats = [
         <h3 class="connections-title">Notable Items Acquired</h3>
         <div class="items-grid">
           <div class="item-card">
-            <span class="item-icon">💚</span>
             <div class="item-content">
               <h4 class="item-name">Heart of the Wild</h4>
               <p class="item-description">Legendary dragonshard gifted by the Emerald Enclave</p>
             </div>
           </div>
           <div class="item-card">
-            <span class="item-icon">💎</span>
-            <div class="item-content">
-              <h4 class="item-name">Dragonshards</h4>
-              <p class="item-description">Recovered from Dhakaani ruins</p>
-            </div>
-          </div>
-          <div class="item-card">
-            <span class="item-icon">❤️</span>
             <div class="item-content">
               <h4 class="item-name">Thalen's Blessing</h4>
               <p class="item-description">+5 max HP from drinking at Thalen's Well</p>
+            </div>
+          </div>
+          <div class="item-card">
+            <div class="item-content">
+              <h4 class="item-name">Eaglesnout Tartan</h4>
+              <p class="item-description">+1 Strength, gifted by Kei before his departure</p>
+            </div>
+          </div>
+          <div class="item-card">
+            <div class="item-content">
+              <h4 class="item-name">Circle Cipher Disk</h4>
+              <p class="item-description">Decodes Slanted Circle communications</p>
             </div>
           </div>
         </div>
@@ -1001,6 +1077,117 @@ const threats = [
     margin: 0;
   }
 
+  /* Xen'Drik & Stormlight */
+  .stormlight-card {
+    padding: var(--space-lg);
+    background: var(--color-bg);
+    border: 2px solid var(--color-accent);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-xl);
+  }
+
+  .stormlight-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .stormlight-name {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-gold);
+    margin: 0;
+  }
+
+  .stormlight-captain {
+    font-size: var(--text-sm);
+    color: var(--color-accent);
+  }
+
+  .stormlight-description {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-md);
+  }
+
+  .stormlight-features,
+  .stormlight-events {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-sm);
+  }
+
+  .features-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .features-list {
+    margin: var(--space-xs) 0 0;
+    padding-left: var(--space-lg);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .features-list li {
+    margin-bottom: var(--space-xs);
+  }
+
+  .xendrik-locations {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .xendrik-location-card {
+    padding: var(--space-lg);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .xendrik-location-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+  }
+
+  .xendrik-location-name {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: var(--color-gold);
+    margin: 0;
+  }
+
+  .xendrik-location-type {
+    font-size: var(--text-xs);
+    padding: 2px var(--space-sm);
+    background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    color: var(--color-accent);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .xendrik-location-description {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-md);
+  }
+
+  .xendrik-location-events {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-sm);
+  }
+
   /* Houses Grid */
   .houses-grid {
     display: grid;
@@ -1132,20 +1319,22 @@ const threats = [
 
   .concept-threat {
     display: flex;
-    align-items: start;
-    gap: var(--space-sm);
+    flex-direction: column;
+    gap: 2px;
     padding: var(--space-sm);
     background: color-mix(in srgb, var(--color-warning) 10%, var(--color-bg));
     border-radius: var(--radius-sm);
   }
 
-  .threat-icon {
-    flex-shrink: 0;
+  .threat-label {
+    font-size: var(--text-xs);
+    color: var(--color-warning);
+    font-weight: 600;
   }
 
   .threat-text {
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
   }
 
   /* History List */
