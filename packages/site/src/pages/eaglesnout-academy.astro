@@ -1,0 +1,186 @@
+---
+/**
+ * Eaglesnout Academy Memorial Page
+ *
+ * A tribute to Kei Eaglesnout and the player who brought him to life.
+ * The academy represents Kei's dream of training future guardians.
+ */
+
+import MemePage from '@components/MemePage.astro';
+
+const academyArt = `
+                  .........','',;;;;;;,'.'''...........................
+                ......',,'....'..............''.........................
+           ............   ...''.......',;;;;,,,,...................... ........
+   .   ........'''..   .';,'....''''...',,,,;;;;;;,................     ........
+     ........'''.   ..,,'',::;;;,',,,..',,;,,.';:c:;,'....'.........   .........
+  .. ........'.   ...,,,'',;;,,,,'.....',;;;,;;;:cc:'...',,''...................
+............'.    ..',,,,'''',,,''',,,,;;::;;,;;::::,...''''....................
+...........''.   .....'.'''',,,,,;:loooclc::::;;;;;;;...................     ...
+.............'  ...''.......,,,:clddkkkxddolc:,,;;,,,'.................
+............   ...''.......,;;:cloxkO0OOkxdol::c;'...................
+........     ....,,''''''';l:;;cooxk000000Okkxxxxdl:'...'...,:::;'...
+........   ..'.......''';lkd,',ldokx0000000000000OOkxoc'...,cllooc,...
+   ......  ...  ......':dOOo:;lxdxOO0KKKKKKKKKKKKK000OOl....:clll:,'...
+      ..... . .  ...',;lxOOOkOOO00KKKKKKKKKKKK000OOkkkkd... ....'........
+           ..  ..  ..',cxOO00KKKKKKKK00OO0000Oxoc:;:lddo'.................
+           .. .     ..'oO0OO000Okdlcc:cldxOOkdlc:clcllldl..................
+           .     ..  .;kOOOxxxddl::c:clodx0K0dlc::ccdookO,......................
+            ..   .. .;dO0Okxxoc;,;ckxdxkkkO0K0kxxxkkkkO00o......................
+...        .o:......,xOOOO0OOkOOOOOOkkOOOOOO0KKOOOO00KKK0k;'''''................
+.....      :o:c:;'..:xOOOO00KKK00OO000K000OO0KKKO00KKKXK0Ol,,,,'''..............
+ ...       .dxOdcc.':dkkOOO00KKXXKKKKKK00OOOO0KKKOkkO0000Od,...'................
+            lkOxxkd;:lkkkkOOO0KKKKKKK0OkO00Ok00K0OOxdkOOOOk;....................
+            .xOOkOOxccxkkkOOOO000000Okxxxxxxdxkxxdxxddxkkkk:....................
+             .oOO00OxldkkkOOOOOOOOOOkkOOOxdolc::ldxkxdxxkkk:..................,;
+              .,dOO0kodxkkkkOkkkkkOkkOOOOOOOkxdxkkkkxooxOkk:.................,:l
+                ..'':dxxkkkkOOOkkkkkOkkOOOOOkkxxddlldxkOOkx,.................':c
+               .....'odxxkkkOOOOOOOOxooooodxdxxOkkxxO00Okxc....................,
+                .....coddkkkkOOOO00OOOOkkkkkkkkkxxkOOOOkdc......................
+     ..            ..;dooddkkOOkkOO00KK00OOkkxxxkOO00Oxoc.   ...................
+   ......            'xlooloxxkkkkkOO0K0000K00000K000Od:........................
+  .......            .dkolcccloldxdodk00KKK0O00000Okxdc'........................
+........             .lOOxdolc:;,clc:cdkOOOkxkkkkxooc,..........................
+ .....                :O00OOkkxo:;,;,,,;:clooolllc::c..............  ...........
+                     .ok000000OOkdl::;,'''',,,,;;codo     .........   ..........
+                  ...;kkO0KKK000OOkkxxdollcccloodxxxl               ............
+                 ...;xOkO0KKK0k0000OOOOkkkkkkkkxxxxk:.              ............
+                 ..lkO0OO0KKKKKKKK000OOOkkkkkxxdxxkkl...             ...........
+               .'lkOO000000KKKKKKKKK000OOOOkkxxxxkkkOkl:,'...        ...........
+      ..    ..;oOKKKKKKKKKKKKKKKKKKKKK0000OOOkkkkkOkk0O:;:lcc:;,'...............
+...   .   ..;cc:coOXNNXXXKKKXXXKKKKKKKK00000OOOkkOOkkO0;;;cclllllllc:;'.........
+`;
+
+const consoleMessage = `
+%c
+╔════════════════════════════════════════════════════════════════╗
+║                                                                ║
+║                    IN MEMORY OF TYRJAL                         ║
+║                                                                ║
+║     "My friends, it has been one of life's great joys          ║
+║      to come to know and fight alongside you all."             ║
+║                                                                ║
+║               Rest well, friend. We miss you.                  ║
+║                                                                ║
+╚════════════════════════════════════════════════════════════════╝
+`;
+---
+
+<MemePage
+  title="Eaglesnout Academy"
+  description="Training future guardians of the realms."
+  pageTitle="Est. Session 11"
+  asciiArt={academyArt}
+  caption="RIP tyrjal, we miss you"
+  whisperText="The tartan carries his strength forward."
+  artColor="#8B4513"
+  artColorDark="#D2691E"
+  artAnimation="animate-memorial"
+  backgroundGradient="radial-gradient(ellipse at center, transparent 0%, rgba(139, 69, 19, 0.05) 100%)"
+>
+  <div slot="caption" class="memorial-caption-container">
+    <span class="memorial-icon">⚔️</span>
+    <div class="memorial-text">
+      <p class="academy-name">The Eaglesnout Academy</p>
+      <p class="memorial-dedication">RIP tyrjal, we miss you</p>
+    </div>
+    <span class="memorial-icon">🛡️</span>
+  </div>
+</MemePage>
+
+<script define:vars={{ consoleMessage }}>
+  // Console tribute for tyrjal
+  console.log(consoleMessage, 'color: #D2691E; font-family: monospace; font-size: 12px;');
+</script>
+
+<style is:global>
+  /* Memorial page warm glow effect */
+  .animate-memorial {
+    text-shadow: 0 0 15px rgba(139, 69, 19, 0.2);
+    animation: memorial-pulse 4s ease-in-out infinite;
+  }
+
+  :global([data-theme='dark']) .animate-memorial,
+  :global(.dark) .animate-memorial {
+    text-shadow: 0 0 25px rgba(210, 105, 30, 0.3);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .animate-memorial {
+      text-shadow: 0 0 25px rgba(210, 105, 30, 0.3);
+    }
+  }
+
+  @keyframes memorial-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.9; }
+  }
+
+  /* Memorial caption styling */
+  .memorial-caption-container {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    margin-top: var(--space-xl);
+    padding: var(--space-lg);
+    background: rgba(139, 69, 19, 0.05);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(139, 69, 19, 0.2);
+  }
+
+  :global([data-theme='dark']) .memorial-caption-container,
+  :global(.dark) .memorial-caption-container {
+    background: rgba(210, 105, 30, 0.08);
+    border-color: rgba(210, 105, 30, 0.3);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .memorial-caption-container {
+      background: rgba(210, 105, 30, 0.08);
+      border-color: rgba(210, 105, 30, 0.3);
+    }
+  }
+
+  .memorial-icon {
+    font-size: var(--text-3xl);
+    opacity: 0.8;
+  }
+
+  .memorial-text {
+    text-align: center;
+    flex: 1;
+  }
+
+  .academy-name {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    color: #8B4513;
+    margin: 0 0 var(--space-xs) 0;
+    font-weight: 700;
+  }
+
+  :global([data-theme='dark']) .academy-name,
+  :global(.dark) .academy-name {
+    color: #D2691E;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .academy-name {
+      color: #D2691E;
+    }
+  }
+
+  .memorial-dedication {
+    font-size: var(--text-lg);
+    font-style: italic;
+    color: var(--color-text-muted);
+    margin: 0;
+    opacity: 0.9;
+  }
+
+  /* Override meme-title for solemn effect */
+  .meme-title {
+    animation: none !important;
+    opacity: 0.7;
+  }
+</style>

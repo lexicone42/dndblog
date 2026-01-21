@@ -85,10 +85,63 @@ const { Content } = await render(entry);
 const statusColors: Record<string, string> = {
   active: 'status--active',
   inactive: 'status--inactive',
+  retired: 'status--retired',
   dead: 'status--dead',
   destroyed: 'status--dead',
   unknown: 'status--unknown',
 };
+
+// Console tribute for Kei's page
+const isKei = entry.id === 'kei';
+const keiTributeArt = `
+%c
+                  .........','',;;;;;;,'.'''...........................
+                ......',,'....'..............''.........................
+           ............   ...''.......',;;;;,,,,...................... ........
+   .   ........'''..   .';,'....''''...',,,,;;;;;;,................     ........
+     ........'''.   ..,,'',::;;;,',,,..',,;,,.';:c:;,'....'.........   .........
+  .. ........'.   ...,,,'',;;,,,,'.....',;;;,;;;:cc:'...',,''...................
+............'.    ..',,,,'''',,,''',,,,;;::;;,;;::::,...''''....................
+...........''.   .....'.'''',,,,,;:loooclc::::;;;;;;;...................     ...
+.............'  ...''.......,,,:clddkkkxddolc:,,;;,,,'.................
+............   ...''.......,;;:cloxkO0OOkxdol::c;'...................
+........     ....,,''''''';l:;;cooxk000000Okkxxxxdl:'...'...,:::;'...
+........   ..'.......''';lkd,',ldokx0000000000000OOkxoc'...,cllooc,...
+   ......  ...  ......':dOOo:;lxdxOO0KKKKKKKKKKKKK000OOl....:clll:,'...
+      ..... . .  ...',;lxOOOkOOO00KKKKKKKKKKKK000OOkkkkd... ....'........
+           ..  ..  ..',cxOO00KKKKKKKK00OO0000Oxoc:;:lddo'.................
+           .. .     ..'oO0OO000Okdlcc:cldxOOkdlc:clcllldl..................
+           .     ..  .;kOOOxxxddl::c:clodx0K0dlc::ccdookO,......................
+            ..   .. .;dO0Okxxoc;,;ckxdxkkkO0K0kxxxkkkkO00o......................
+...        .o:......,xOOOO0OOkOOOOOOkkOOOOOO0KKOOOO00KKK0k;'''''................
+.....      :o:c:;'..:xOOOO00KKK00OO000K000OO0KKKO00KKKXK0Ol,,,,'''..............
+ ...       .dxOdcc.':dkkOOO00KKXXKKKKKK00OOOO0KKKOkkO0000Od,...'................
+            lkOxxkd;:lkkkkOOO0KKKKKKK0OkO00Ok00K0OOxdkOOOOk;....................
+            .xOOkOOxccxkkkOOOO000000Okxxxxxxdxkxxdxxddxkkkk:....................
+             .oOO00OxldkkkOOOOOOOOOOkkOOOxdolc::ldxkxdxxkkk:..................,;
+              .,dOO0kodxkkkkOkkkkkOkkOOOOOOOkxdxkkkkxooxOkk:.................,:l
+                ..'':dxxkkkkOOOkkkkkOkkOOOOOkkxxddlldxkOOkx,.................':c
+               .....'odxxkkkOOOOOOOOxooooodxdxxOkkxxO00Okxc....................,
+                .....coddkkkkOOOO00OOOOkkkkkkkkkxxkOOOOkdc......................
+     ..            ..;dooddkkOOkkOO00KK00OOkkxxxkOO00Oxoc.   ...................
+   ......            'xlooloxxkkkkkOO0K0000K00000K000Od:........................
+  .......            .dkolcccloldxdodk00KKK0O00000Okxdc'........................
+........             .lOOxdolc:;,clc:cdkOOOkxkkkkxooc,..........................
+ .....                :O00OOkkxo:;,;,,,;:clooolllc::c..............  ...........
+                     .ok000000OOkdl::;,'''',,,,;;codo     .........   ..........
+                  ...;kkO0KKK000OOkkxxdollcccloodxxxl               ............
+                 ...;xOkO0KKK0k0000OOOOkkkkkkkkxxxxk:.              ............
+                 ..lkO0OO0KKKKKKKK000OOOkkkkkxxdxxkkl...             ...........
+               .'lkOO000000KKKKKKKKK000OOOOkkxxxxkkkOkl:,'...        ...........
+      ..    ..;oOKKKKKKKKKKKKKKKKKKKKK0000OOOkkkkkOkk0O:;:lcc:;,'...............
+...   .   ..;cc:coOXNNXXXKKKXXXKKKKKKKK00000OOOkkOOkkO0;;;cclllllllc:;'.........
+
+                        RIP tyrjal, we miss you
+
+    "My friends, it has been one of life's great joys
+     to come to know and fight alongside you all."
+
+`;
 ---
 
 <BaseLayout
@@ -134,6 +187,17 @@ const statusColors: Record<string, string> = {
             <em>The Tale of Two Rudigers — A cosmic coincidence you WON'T believe!</em>
           </span>
           <span class="promo-sparkle">&#10022;</span>
+        </a>
+      )}
+
+      {entry.id === 'kei' && (
+        <a href="/eaglesnout-academy" class="kei-memorial">
+          <span class="memorial-emblem">⚔️</span>
+          <span class="memorial-content">
+            <strong>The Eaglesnout Academy</strong>
+            <em>Training future guardians of the realms</em>
+          </span>
+          <span class="memorial-emblem">🛡️</span>
         </a>
       )}
 
@@ -462,6 +526,75 @@ const statusColors: Record<string, string> = {
     text-shadow: 0 0 20px rgba(212, 175, 55, 0.8);
   }
 
+  /* Kei Memorial Link */
+  .kei-memorial {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    margin: var(--space-lg) 0;
+    padding: var(--space-md) var(--space-lg);
+    background: linear-gradient(135deg, #1a1208 0%, #2d1f0d 50%, #1a1208 100%);
+    border: 2px solid #8B4513;
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kei-memorial::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at center, rgba(139, 69, 19, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .memorial-emblem {
+    font-size: var(--text-2xl);
+    opacity: 0.8;
+  }
+
+  .memorial-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    z-index: 1;
+  }
+
+  .memorial-content strong {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    color: #D2691E;
+    letter-spacing: 0.05em;
+  }
+
+  .memorial-content em {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+
+  .kei-memorial:hover {
+    border-color: #D2691E;
+    box-shadow: 0 0 15px rgba(210, 105, 30, 0.3);
+  }
+
+  .kei-memorial:hover .memorial-content strong {
+    color: #E8A642;
+  }
+
+  /* Retired status badge */
+  .status--retired {
+    background-color: rgba(139, 69, 19, 0.2);
+    color: #D2691E;
+    border: 1px solid rgba(139, 69, 19, 0.4);
+  }
+
   .entity-content {
     margin-bottom: var(--space-2xl);
   }
@@ -772,3 +905,10 @@ const statusColors: Record<string, string> = {
     });
   })();
 </script>
+
+{/* Console tribute for Kei's page */}
+{isKei && (
+  <script define:vars={{ keiTributeArt }}>
+    console.log(keiTributeArt, 'color: #D2691E; font-family: monospace; font-size: 10px; line-height: 1.1;');
+  </script>
+)}

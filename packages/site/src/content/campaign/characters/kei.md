@@ -2,8 +2,8 @@
 name: "Kei Eaglesnout"
 type: "character"
 subtype: "pc"
-status: "active"
-description: "A powerful Human Fighter and Champion of the battlefield, known for his exceptional strength and competitive spirit"
+status: "retired"
+description: "A powerful Human Fighter and Champion of the battlefield, known for his exceptional strength and competitive spirit. Now founder of the Eaglesnout Academy."
 race: "Human"
 class: "Fighter"
 subclass: "Champion"
@@ -180,3 +180,23 @@ Experienced a haunting vision in the Hall of Warriors—the weight of command an
 ## Combat Role
 
 As the party's frontline damage dealer and tank, Kei excels at sustained melee combat. With Extra Attack and high Strength, he can reliably put out consistent damage every turn. The Champion's Improved Critical gives him a 10% chance of devastating critical hits, and his Topple mastery allows battlefield control by knocking enemies Prone for the party to capitalize on.
+
+## The Eaglesnout Academy
+
+After Session 10, Kei received word that his family farm had been destroyed. With support from the Emerald Enclave, he returned home—not just to rebuild, but to pursue a dream: founding the **[Eaglesnout Academy](/eaglesnout-academy)**, a place to train future guardians of the realms.
+
+Before departing, Kei left gifts for each party member: pieces of Eaglesnout clan tartan that carry a portion of his strength (+1 STR when equipped). His farewell letter speaks to the bonds forged through adventure:
+
+> *"My friends, it has been one of life's great joys to come to know and fight alongside you all. I hold hope that our paths will cross again. Until then, wield your strength in my absence."*
+
+The Emerald Enclave watches over Kei, and his legacy continues through the adventurers he trained and inspired.
+
+---
+
+## In Memoriam
+
+*Kei Eaglesnout was brought to life by **tyrjal**, whose strength of spirit matched that of his champion. Though the player has left this world, Kei's story lives on in these chronicles.*
+
+*The Eaglesnout Academy will train guardians for generations to come. And we carry the tartan forward, into whatever darkness awaits.*
+
+*Rest well, friend. We miss you.*

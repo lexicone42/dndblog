@@ -90,7 +90,7 @@ const authoritySchema = z.object({
 const baseEntityFields = {
   name: z.string(),
   slug: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'dead', 'destroyed', 'unknown', 'missing', 'transformed', 'dormant']).default('active'),
+  status: z.enum(['active', 'inactive', 'dead', 'destroyed', 'unknown', 'missing', 'transformed', 'dormant', 'retired']).default('active'),
   visibility: z.enum(['public', 'dm-only']).default('public'),
   firstAppearance: z.string().optional(),
   lastAppearance: z.string().optional(),
