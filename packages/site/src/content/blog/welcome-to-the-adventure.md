@@ -67,7 +67,11 @@ Now they've gone further—across the Thunder Sea aboard Captain Tallow's airshi
 
 They lost a friend along the way. Not to death—to duty. Kei left to rebuild what he'd lost and build something new. The party carries pieces of his tartan now. Reminders.
 
-Skid's eyes glow. The leylines pulse beneath the jungle floor. The Circle is here, ahead of them. And whatever they're looking for in Xen'Drik—it's bad enough they sent an airship to stop the party from finding it first.
+**Deep in the jungle, an hour behind the Circle expedition, the party has just encountered the Xen'Drik Drow.** These ancient dark elves are not allies of the Circle—they view them as dangerous trespassers on sacred ley ground. Whether the drow become guides or enemies depends on what answer the party gives next.
+
+The jungle breathes. Somewhere below, something pulses like a heartbeat. The Circle seeks a massive leyline nexus—a source of power they believe will open a door. The Emerald Enclave has warned the party: the Circle doesn't understand what they're trying to control.
+
+Skid's eyes glow. The leylines pulse beneath the jungle floor. The captured Circle agents carried crude schematics, drow trade tokens, and a partially burned map leading to an ancient ruin marked with a symbol older than the Circle itself.
 
 The Maw Frame still rises in the Astralglades. More anchors need protection. The adventure continues.
 
