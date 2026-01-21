@@ -70,9 +70,9 @@ His voice grew grave.
 
 ---
 
-## Dava Gate Terminal
+## [Dava Gate](/campaign/locations/dava-gate) Terminal
 
-The lightning rail deposited us at Dava Gate with hours to spare—or so we thought. The terminal buzzed with travelers, merchants, and the particular chaos of Sharn's transportation hub. But Terminus 3 was different.
+The lightning rail deposited us at [Dava Gate](/campaign/locations/dava-gate) with hours to spare—or so we thought. The terminal buzzed with travelers, merchants, and the particular chaos of Sharn's transportation hub. But Terminus 3 was different.
 
 A massive airship hung at dock, her hull painted storm-grey with copper trim that caught the afternoon sun. The name **Stormlight** was etched across her bow in flowing script. And standing at the gangplank, arms crossed, grinning like a man who'd pulled off the longest con in Khorvaire, was **[Captain Tallow](/campaign/characters/captain-tallow)**.
 
@@ -234,22 +234,22 @@ When the dust settled, we stood victorious—but winded.
 - Ley-Tinged Pelt (2)
 - Arcane Crystal Shard (2)
 - Tattered Spellbook
-- Blackened Dagger (+1 when attuned)
-- Silver Amulet of the Tilted Eye (advantage on Arcana checks)
+- [Blackened Dagger](/campaign/items/blackened-dagger) (+1 when attuned)
+- [Silver Amulet of the Tilted Eye](/campaign/items/silver-amulet-of-the-tilted-eye) (advantage on Arcana checks)
 - Assorted coins (115gp, 30sp)
 - Cult Parchment with secrets
-- Arcane Razor longsword
+- [Arcane Razor](/campaign/items/arcane-razor) longsword
 - Ley-Insulated Satchel
 - Arcane Spike Grenade (2d6 force, 10-ft radius)
-- Circle Cipher Disk
-- Crystal Focus Rod (+1 force spell attacks)
+- [Circle Cipher Disk](/campaign/items/circle-cipher-disk)
+- [Crystal Focus Rod](/campaign/items/crystal-focus-rod) (+1 force spell attacks)
 - Potion of Quickstep
 
 The map was particularly interesting. It showed a path through the jungle leading to an ancient ruin—and at the center, a symbol we didn't recognize. Not Circle. Older.
 
 ---
 
-## The Drow
+## The [Drow](/campaign/factions/xendrik-drow)
 
 We pressed onward, following the expedition's trail. The canopy went silent. No insects. No birds. Just the heartbeat of the leylines below.
 
@@ -257,7 +257,7 @@ Then a voice spoke from above—calm, cold, and very close.
 
 *"You chase foolishly."*
 
-Six **Drow** stepped from the shadows, some descending from the trees on silken ropes. Five warriors, weapons drawn, and one who carried herself with the authority of a priestess or scout leader.
+Six **[Xen'Drik Drow](/campaign/factions/xendrik-drow)** stepped from the shadows, some descending from the trees on silken ropes. Five warriors, weapons drawn, and one who carried herself with the authority of a priestess or scout leader.
 
 Their weapons were lowered... for now.
 
