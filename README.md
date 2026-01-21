@@ -1,3 +1,14 @@
+> ⚠️ **This repository has been archived.**
+>
+> This project has been migrated to the **dnd-platform** monorepo:
+> - **New repository:** [lexicone42/dnd-platform](https://github.com/lexicone42/dnd-platform)
+> - **Chronicles app:** `apps/chronicles/` in the monorepo
+> - **Live site:** [chronicles.mawframe.ninja](https://chronicles.mawframe.ninja)
+>
+> All future development happens in the monorepo.
+
+---
+
 # Rudiger's Evocation of Events
 
 [![CI](https://github.com/lexicone42/dndblog/actions/workflows/ci.yml/badge.svg)](https://github.com/lexicone42/dndblog/actions/workflows/ci.yml)
