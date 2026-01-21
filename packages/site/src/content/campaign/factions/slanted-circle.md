@@ -90,6 +90,12 @@ Members can be identified by:
 
 Their ultimate objective is to align the ley lines in a specific configuration that will awaken Aru'xat the Verdant Maw. Success would mean catastrophic destruction.
 
+## Known Operations
+
+- **Sharn Infiltration** - Planted agents within the Emerald Enclave
+- **Stonehell Isle** - The Circle Mage killed Nythraxil the dragon
+- **Xen'Drik Presence** - Active operations in the southern continent (Session 11)
+
 ## Threat Assessment
 
-The Slanted Circle represents the primary antagonist faction of the campaign. Their infiltration of the Emerald Enclave demonstrates sophisticated intelligence capabilities, and The Circle Mage remains a dangerous threat.
+The Slanted Circle represents the primary antagonist faction of the campaign. Their infiltration of the Emerald Enclave demonstrates sophisticated intelligence capabilities, and their reach now extends to Xen'Drik. The Circle Mage remains at large and dangerous.

@@ -6,13 +6,13 @@
 
 **A template for creating beautiful static sites to preserve your TTRPG campaign's lore.** Built with [Claude Code](https://claude.ai/code), Astro, and AWS.
 
-> *"Ten sessions of adventure across Eberron. Battles fought, secrets uncovered, and a story worth remembering."*
+> *"Eleven sessions of adventure across Eberron—from Phandalin to Sharn to the wilds of Xen'Drik. Battles fought, friends lost, and a story worth remembering."*
 
 ## What This Is
 
 This repository serves two purposes:
 
-1. **A living example** - The complete chronicle of our D&D 5e campaign set in Eberron, featuring 10 sessions of adventure through Sharn's towers
+1. **A living example** - The complete chronicle of our D&D 5e campaign set in Eberron, featuring 11 sessions of adventure from Sharn's towers to the jungles of Xen'Drik
 2. **A template you can fork** - Use Claude Code to help you build your own campaign site with the same structure
 
 ### What It Tracks

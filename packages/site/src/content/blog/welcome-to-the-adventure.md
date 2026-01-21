@@ -1,7 +1,8 @@
 ---
 title: "Welcome to the Adventure"
-description: "Six adventurers. A sealed primordial. A cult waiting for centuries. This is their story."
+description: "Five adventurers. A sealed primordial. A cult waiting for centuries. This is their story."
 pubDate: 2026-01-13
+updatedDate: 2026-01-20
 draft: false
 tags: ["announcement", "campaign", "welcome"]
 author: "The Dungeon Master"
@@ -10,7 +11,7 @@ visibility: "public"
 
 # The Story So Far
 
-Six adventurers investigated what they thought were simple bandit raids in the frontier town of Phandalin. They were wrong about everything.
+A party of adventurers investigated what they thought were simple bandit raids in the frontier town of Phandalin. They were wrong about everything.
 
 ---
 
@@ -42,32 +43,33 @@ They've been planning this for a very long time.
 
 ## The Party
 
-Six people. Not heroes—not yet. Just the ones who happened to be there when everything started falling apart.
+Five remain. Not heroes—not yet. Just the ones still standing when everything started falling apart.
 
 | | |
 |---|---|
 | **Stol** | Human Cleric. Life Domain. Keeps the others standing. |
 | **Rudiger** | Human Wizard. Evoker. Storm building inside. |
 | **Skid Demon** | Half-Elf Ranger. Gloom Stalker. *Marked by the leylines now.* |
-| **Kei Eaglesnout** | Human Fighter. Champion. Won't let go. |
 | **Malum Munus Exemplar** | Half-Elf Rogue. Assassin. Works from the dark. |
 | **Accoa Krigsdottir** | Aasimar Paladin. Oath of the Ancients. Light in bad places. |
+
+*[Kei Eaglesnout](/campaign/characters/kei) left in Session 11 to found the [Eaglesnout Academy](/eaglesnout-academy). His tartan remains with each party member—a reminder that he didn't leave them alone. He left them stronger.*
 
 ---
 
 ## The Current Situation
 
-**Ten sessions recorded.**
+**Eleven sessions recorded.**
 
-The party has traveled from Phandalin to the cursed depths of **Whisperwood Forest**, to the ancient rose-quartz dragon **Nythraxil** on Stonehell Isle, to the planar city of **Sharn** in Eberron.
+The party has traveled from Phandalin to the cursed depths of **Whisperwood Forest**, to the ancient rose-quartz dragon **Nythraxil** on Stonehell Isle, to the planar city of **Sharn** in Eberron. There, beneath a million towers, in ruins of the **Dhakaani Empire**, they stabilized a ley anchor that had been cracking for millennia.
 
-There, beneath a million towers, in ruins of the **Dhakaani Empire**, they stabilized a ley anchor that had been cracking for millennia.
+Now they've gone further—across the Thunder Sea aboard Captain Tallow's airship **The Stormlight**, fighting through a Slanted Circle ambush in the sky, to land in the untamed jungles of **Xen'Drik**.
 
-The Circle Mage escaped. Left only a sigil burned into stone.
+They lost a friend along the way. Not to death—to duty. Kei left to rebuild what he'd lost and build something new. The party carries pieces of his tartan now. Reminders.
 
-Skid's eyes glow now. He can feel the pulse of the leylines like a second heartbeat.
+Skid's eyes glow. The leylines pulse beneath the jungle floor. The Circle is here, ahead of them. And whatever they're looking for in Xen'Drik—it's bad enough they sent an airship to stop the party from finding it first.
 
-The Maw Frame still rises in the Astralglades. More anchors need protection. And somewhere in the dark, the Slanted Circle prepares their next move.
+The Maw Frame still rises in the Astralglades. More anchors need protection. The adventure continues.
 
 ---
 
@@ -81,7 +83,7 @@ The Maw Frame still rises in the Astralglades. More anchors need protection. And
 **Or explore the world.**
 
 - **[The Reference Index](/reference)** — Every character, location, faction, and item the party has encountered. Cross-referenced and searchable.
-- **[The Party](/campaign/characters/)** — Meet the six adventurers in detail.
+- **[The Party](/campaign/characters/)** — Meet the adventurers in detail.
 
 ---
 

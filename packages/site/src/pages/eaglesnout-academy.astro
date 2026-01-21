@@ -1,55 +1,12 @@
 ---
 /**
- * Eaglesnout Academy Memorial Page
+ * Eaglesnout Academy Page
  *
- * A tribute to Kei Eaglesnout and the player who brought him to life.
- * The academy represents Kei's dream of training future guardians.
+ * An in-universe page celebrating Kei's work at the Academy.
+ * The out-of-game tribute to tyrjal lives only in the console.
  */
 
-import MemePage from '@components/MemePage.astro';
-
-const academyArt = `
-                  .........','',;;;;;;,'.'''...........................
-                ......',,'....'..............''.........................
-           ............   ...''.......',;;;;,,,,...................... ........
-   .   ........'''..   .';,'....''''...',,,,;;;;;;,................     ........
-     ........'''.   ..,,'',::;;;,',,,..',,;,,.';:c:;,'....'.........   .........
-  .. ........'.   ...,,,'',;;,,,,'.....',;;;,;;;:cc:'...',,''...................
-............'.    ..',,,,'''',,,''',,,,;;::;;,;;::::,...''''....................
-...........''.   .....'.'''',,,,,;:loooclc::::;;;;;;;...................     ...
-.............'  ...''.......,,,:clddkkkxddolc:,,;;,,,'.................
-............   ...''.......,;;:cloxkO0OOkxdol::c;'...................
-........     ....,,''''''';l:;;cooxk000000Okkxxxxdl:'...'...,:::;'...
-........   ..'.......''';lkd,',ldokx0000000000000OOkxoc'...,cllooc,...
-   ......  ...  ......':dOOo:;lxdxOO0KKKKKKKKKKKKK000OOl....:clll:,'...
-      ..... . .  ...',;lxOOOkOOO00KKKKKKKKKKKK000OOkkkkd... ....'........
-           ..  ..  ..',cxOO00KKKKKKKK00OO0000Oxoc:;:lddo'.................
-           .. .     ..'oO0OO000Okdlcc:cldxOOkdlc:clcllldl..................
-           .     ..  .;kOOOxxxddl::c:clodx0K0dlc::ccdookO,......................
-            ..   .. .;dO0Okxxoc;,;ckxdxkkkO0K0kxxxkkkkO00o......................
-...        .o:......,xOOOO0OOkOOOOOOkkOOOOOO0KKOOOO00KKK0k;'''''................
-.....      :o:c:;'..:xOOOO00KKK00OO000K000OO0KKKO00KKKXK0Ol,,,,'''..............
- ...       .dxOdcc.':dkkOOO00KKXXKKKKKK00OOOO0KKKOkkO0000Od,...'................
-            lkOxxkd;:lkkkkOOO0KKKKKKK0OkO00Ok00K0OOxdkOOOOk;....................
-            .xOOkOOxccxkkkOOOO000000Okxxxxxxdxkxxdxxddxkkkk:....................
-             .oOO00OxldkkkOOOOOOOOOOkkOOOxdolc::ldxkxdxxkkk:..................,;
-              .,dOO0kodxkkkkOkkkkkOkkOOOOOOOkxdxkkkkxooxOkk:.................,:l
-                ..'':dxxkkkkOOOkkkkkOkkOOOOOkkxxddlldxkOOkx,.................':c
-               .....'odxxkkkOOOOOOOOxooooodxdxxOkkxxO00Okxc....................,
-                .....coddkkkkOOOO00OOOOkkkkkkkkkxxkOOOOkdc......................
-     ..            ..;dooddkkOOkkOO00KK00OOkkxxxkOO00Oxoc.   ...................
-   ......            'xlooloxxkkkkkOO0K0000K00000K000Od:........................
-  .......            .dkolcccloldxdodk00KKK0O00000Okxdc'........................
-........             .lOOxdolc:;,clc:cdkOOOkxkkkkxooc,..........................
- .....                :O00OOkkxo:;,;,,,;:clooolllc::c..............  ...........
-                     .ok000000OOkdl::;,'''',,,,;;codo     .........   ..........
-                  ...;kkO0KKK000OOkkxxdollcccloodxxxl               ............
-                 ...;xOkO0KKK0k0000OOOOkkkkkkkkxxxxk:.              ............
-                 ..lkO0OO0KKKKKKKK000OOOkkkkkxxdxxkkl...             ...........
-               .'lkOO000000KKKKKKKKK000OOOOkkxxxxkkkOkl:,'...        ...........
-      ..    ..;oOKKKKKKKKKKKKKKKKKKKKK0000OOOkkkkkOkk0O:;:lcc:;,'...............
-...   .   ..;cc:coOXNNXXXKKKXXXKKKKKKKK00000OOOkkOOkkO0;;;cclllllllc:;'.........
-`;
+import BaseLayout from '@layouts/BaseLayout.astro';
 
 const consoleMessage = `
 %c
@@ -66,121 +23,200 @@ const consoleMessage = `
 `;
 ---
 
-<MemePage
-  title="Eaglesnout Academy"
-  description="Training future guardians of the realms."
-  pageTitle="Est. Session 11"
-  asciiArt={academyArt}
-  caption="RIP tyrjal, we miss you"
-  whisperText="The tartan carries his strength forward."
-  artColor="#8B4513"
-  artColorDark="#D2691E"
-  artAnimation="animate-memorial"
-  backgroundGradient="radial-gradient(ellipse at center, transparent 0%, rgba(139, 69, 19, 0.05) 100%)"
+<BaseLayout
+  title="Eaglesnout Academy - Rudiger's Evocation of Events"
+  description="Training future guardians of the realms. Founded by Kei Eaglesnout in Session 11."
 >
-  <div slot="caption" class="memorial-caption-container">
-    <span class="memorial-icon">⚔️</span>
-    <div class="memorial-text">
-      <p class="academy-name">The Eaglesnout Academy</p>
-      <p class="memorial-dedication">RIP tyrjal, we miss you</p>
-    </div>
-    <span class="memorial-icon">🛡️</span>
-  </div>
-</MemePage>
+  <article class="academy-page">
+    <header class="academy-header">
+      <div class="academy-emblem">⚔️</div>
+      <h1 class="academy-title">The Eaglesnout Academy</h1>
+      <p class="academy-motto">"Strength to serve. Heart to protect."</p>
+    </header>
+
+    <section class="academy-section">
+      <h2>A Dream Realized</h2>
+      <p>
+        When Kei Eaglesnout left the party in Session 11, it wasn't to rest. It was to build something that would outlast any single adventure: a school for those who would defend the innocent when no one else could.
+      </p>
+      <p>
+        The Eaglesnout Academy stands on the rebuilt foundations of Kei's family farm—the same land that raiders once burned, now transformed into training grounds for future guardians.
+      </p>
+    </section>
+
+    <section class="academy-section">
+      <h2>What They're Teaching</h2>
+      <ul class="training-list">
+        <li><strong>Combat Fundamentals</strong> — Kei's championship fighting techniques, adapted for defenders rather than glory-seekers</li>
+        <li><strong>Tactical Awareness</strong> — Reading a battlefield, protecting allies, knowing when to hold and when to strike</li>
+        <li><strong>The Guardian's Code</strong> — Strength means nothing without purpose; power must serve those who cannot protect themselves</li>
+        <li><strong>Arm Wrestling</strong> — Kei insists this builds character (and he's undefeated against the students)</li>
+      </ul>
+    </section>
+
+    <section class="academy-section">
+      <h2>The First Class</h2>
+      <p>
+        The academy's inaugural students include orphans from Phandalin, survivors of bandit raids, and young people who saw the party's heroics and wanted to learn to do the same. Kei trains them personally, using the lessons he learned fighting alongside the party.
+      </p>
+      <blockquote class="kei-quote">
+        <p>"Every one of you has lost something. That loss made you strong enough to walk through those gates. Now we turn that strength into something that protects others."</p>
+        <cite>— Kei Eaglesnout, addressing new students</cite>
+      </blockquote>
+    </section>
+
+    <section class="academy-section">
+      <h2>A Visitor at the Forest Edge</h2>
+      <p>
+        In recent weeks, the students have reported an unusual sight: a creature appearing at the tree line near the training grounds. Slightly larger than a raccoon, with lighter-colored fur, it watches the students train but never approaches. Some say it seems to approve.
+      </p>
+      <p>
+        Kei has instructed the students to leave food out for it. "Some guardians," he told them, "protect from the shadows. Respect that."
+      </p>
+      <p class="visitor-note">
+        The creature has not been identified. It comes and goes as it pleases.
+      </p>
+    </section>
+
+    <section class="academy-section">
+      <h2>The Tartan Legacy</h2>
+      <p>
+        Each graduate of the Eaglesnout Academy will receive a piece of clan tartan—deep forest green crossed with threads of gold and crimson. The same pattern Kei gave to his former companions before departing.
+      </p>
+      <p>
+        The tartan carries more than symbolism. Those who wear it carry a piece of Kei's strength forward.
+      </p>
+    </section>
+
+    <footer class="academy-footer">
+      <p class="return-link">
+        <a href="/campaign/characters/kei">← Return to Kei Eaglesnout's page</a>
+      </p>
+    </footer>
+  </article>
+</BaseLayout>
 
 <script define:vars={{ consoleMessage }}>
   // Console tribute for tyrjal
   console.log(consoleMessage, 'color: #D2691E; font-family: monospace; font-size: 12px;');
 </script>
 
-<style is:global>
-  /* Memorial page warm glow effect */
-  .animate-memorial {
-    text-shadow: 0 0 15px rgba(139, 69, 19, 0.2);
-    animation: memorial-pulse 4s ease-in-out infinite;
+<style>
+  .academy-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
   }
 
-  :global([data-theme='dark']) .animate-memorial,
-  :global(.dark) .animate-memorial {
-    text-shadow: 0 0 25px rgba(210, 105, 30, 0.3);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :global(:root:not([data-theme='light'])) .animate-memorial {
-      text-shadow: 0 0 25px rgba(210, 105, 30, 0.3);
-    }
-  }
-
-  @keyframes memorial-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.9; }
-  }
-
-  /* Memorial caption styling */
-  .memorial-caption-container {
-    display: flex;
-    align-items: center;
-    gap: var(--space-lg);
-    margin-top: var(--space-xl);
-    padding: var(--space-lg);
-    background: rgba(139, 69, 19, 0.05);
-    border-radius: var(--radius-lg);
-    border: 1px solid rgba(139, 69, 19, 0.2);
-  }
-
-  :global([data-theme='dark']) .memorial-caption-container,
-  :global(.dark) .memorial-caption-container {
-    background: rgba(210, 105, 30, 0.08);
-    border-color: rgba(210, 105, 30, 0.3);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :global(:root:not([data-theme='light'])) .memorial-caption-container {
-      background: rgba(210, 105, 30, 0.08);
-      border-color: rgba(210, 105, 30, 0.3);
-    }
-  }
-
-  .memorial-icon {
-    font-size: var(--text-3xl);
-    opacity: 0.8;
-  }
-
-  .memorial-text {
+  .academy-header {
     text-align: center;
-    flex: 1;
+    margin-bottom: var(--space-2xl);
+    padding-bottom: var(--space-xl);
+    border-bottom: 2px solid var(--color-border);
   }
 
-  .academy-name {
+  .academy-emblem {
+    font-size: 3rem;
+    margin-bottom: var(--space-md);
+  }
+
+  .academy-title {
     font-family: var(--font-display);
-    font-size: var(--text-2xl);
-    color: #8B4513;
-    margin: 0 0 var(--space-xs) 0;
-    font-weight: 700;
+    font-size: var(--text-3xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-sm) 0;
   }
 
-  :global([data-theme='dark']) .academy-name,
-  :global(.dark) .academy-name {
-    color: #D2691E;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :global(:root:not([data-theme='light'])) .academy-name {
-      color: #D2691E;
-    }
-  }
-
-  .memorial-dedication {
+  .academy-motto {
+    font-family: var(--font-serif);
     font-size: var(--text-lg);
     font-style: italic;
-    color: var(--color-text-muted);
+    color: var(--color-text-secondary);
     margin: 0;
-    opacity: 0.9;
   }
 
-  /* Override meme-title for solemn effect */
-  .meme-title {
-    animation: none !important;
-    opacity: 0.7;
+  .academy-section {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .academy-section h2 {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-gold);
+    margin: 0 0 var(--space-md) 0;
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .academy-section p {
+    line-height: 1.7;
+    margin: 0 0 var(--space-md) 0;
+    color: var(--color-text);
+  }
+
+  .training-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .training-list li {
+    padding: var(--space-sm) 0;
+    padding-left: var(--space-lg);
+    position: relative;
+    line-height: 1.6;
+  }
+
+  .training-list li::before {
+    content: "⚔️";
+    position: absolute;
+    left: 0;
+    font-size: 0.9em;
+  }
+
+  .kei-quote {
+    margin: var(--space-lg) 0;
+    padding: var(--space-lg);
+    background: var(--color-bg-secondary);
+    border-left: 4px solid var(--color-gold);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+
+  .kei-quote p {
+    font-style: italic;
+    margin: 0 0 var(--space-sm) 0;
+  }
+
+  .kei-quote cite {
+    display: block;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    font-style: normal;
+  }
+
+  .visitor-note {
+    font-size: var(--text-sm);
+    font-style: italic;
+    color: var(--color-text-muted);
+    padding-top: var(--space-sm);
+    border-top: 1px dashed var(--color-border);
+    margin-top: var(--space-md);
+  }
+
+  .academy-footer {
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-xl);
+    border-top: 2px solid var(--color-border);
+    text-align: center;
+  }
+
+  .return-link a {
+    color: var(--color-gold);
+    text-decoration: none;
+    font-family: var(--font-display);
+  }
+
+  .return-link a:hover {
+    text-decoration: underline;
   }
 </style>
