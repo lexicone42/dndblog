@@ -42,6 +42,12 @@ relationships:
   - entity: "rook-targrave"
     type: "ally"
     note: "Emerald Enclave handler"
+  - entity: "house-cannith"
+    type: "ally"
+    note: "Shared regulator research, victim of Circle theft"
+  - entity: "xendrik"
+    type: "located-in"
+    note: "Current location as of Session 11"
 ---
 
 # The Party
